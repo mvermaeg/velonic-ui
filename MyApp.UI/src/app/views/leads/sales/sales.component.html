@@ -1,0 +1,145 @@
+<app-page-title title="Lead Sales" subtitle="Leads" header="Track real sold leads and revenue" />
+
+<div class="row mb-3">
+  <div class="col-md-4">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <h6>Total Sold Leads</h6>
+        <h2>{{ total }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <h6>Total Revenue</h6>
+        <h2>${{ totalRevenue | number: '1.0-2' }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input class="form-control" placeholder="Search..." [(ngModel)]="filters.search" />
+      </div>
+
+      <div class="col-md-3">
+        <input class="form-control" placeholder="Campaign Name" [(ngModel)]="filters.campaignName" />
+      </div>
+
+      <div class="col-md-2">
+        <input class="form-control" placeholder="Client ID" [(ngModel)]="filters.clientId" />
+      </div>
+
+      <div class="col-md-3 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="load()">Search</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card mb-3" *ngIf="showReturnBox">
+  <div class="card-header">
+    <strong>Return Lead</strong>
+  </div>
+
+  <div class="card-body">
+    <p class="mb-2">
+      Lead: <strong>{{ selectedSale?.leadUuid }}</strong>
+    </p>
+
+    <div class="mb-3">
+      <label class="form-label">Return Reason</label>
+      <input class="form-control" [(ngModel)]="returnReason" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      <textarea class="form-control" [(ngModel)]="returnNotes"></textarea>
+    </div>
+
+    <button class="btn btn-warning me-2" type="button" (click)="submitReturn()">
+      Submit Return
+    </button>
+
+    <button class="btn btn-outline-secondary" type="button" (click)="showReturnBox = false">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading sales...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Action</th>
+            <th>ID</th>
+            <th>Sold On</th>
+            <th>Lead UUID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Campaign</th>
+            <th>Source</th>
+            <th>Client</th>
+            <th>State</th>
+            <th>City</th>
+            <th>Revenue</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let row of records">
+            <td>
+              <button class="btn btn-sm btn-warning" type="button" (click)="openReturn(row)">
+                Return
+              </button>
+            </td>
+
+            <td>{{ row.id }}</td>
+            <td>{{ row.deliveredOn | date: 'short' }}</td>
+            <td class="text-nowrap text-primary">{{ row.leadUuid }}</td>
+            <td>{{ row.fullName || '-' }}</td>
+            <td>{{ row.email || '-' }}</td>
+            <td>{{ row.campaignName || '-' }}</td>
+            <td>{{ row.sourceName || '-' }}</td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary">
+                {{ row.clientName }}
+              </span>
+            </td>
+            <td>{{ row.state || '-' }}</td>
+            <td>{{ row.city || '-' }}</td>
+            <td>
+              <strong>${{ row.saleAmount | number: '1.0-2' }}</strong>
+            </td>
+            <td>
+              <span class="badge bg-success">{{ row.deliveryStatus }}</span>
+            </td>
+          </tr>
+
+          <tr *ngIf="records.length === 0">
+            <td colspan="13" class="text-center text-muted py-4">
+              No sold leads found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

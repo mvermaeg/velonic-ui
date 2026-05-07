@@ -1,0 +1,106 @@
+<ng-template #modalTemplate let-modal>
+
+  <div class="modal-header">
+    <h3>{{ title }}</h3>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body">
+
+    <div class="card-body">
+      <ul ngbNav #bordernav="ngbNav" [activeId]="1" class="nav nav-tabs nav-justified nav-bordered mb-3">
+
+        <li [ngbNavItem]="1" class="nav-item">
+          <a ngbNavLink class="nav-link">General</a>
+          <ng-template ngbNavContent>
+
+            <div class="accordion">
+              <div class="card mb-1" *ngFor="let section of sections; let i = index">
+
+                <div class="card-header">
+                  <h5 class="m-0">
+                    <a class="text-reset d-block" (click)="toggle(i)" href="javascript:void(0);">
+                      {{ section.title }}
+                    </a>
+                  </h5>
+                </div>
+
+                <div [ngbCollapse]="activeIndex !== i">
+                  <div class="card-body pt-0">
+                    <div class="row" *ngFor="let item of section.data">
+                      <label>{{ item.label }}</label>
+                      <span>{{ item.value }}</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="2">
+          <a ngbNavLink>Fraud</a>
+          <ng-template ngbNavContent>
+            <div class="card p-3">
+              <h3>Phone Fraud Check</h3>
+
+              <div class="card-body">
+                <div class="row" *ngFor="let item of leadDetails">
+                  <label>{{ item.label }}</label>
+                  <span>{{ item.value }}</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="card p-3">
+              <h3>Email Fraud Check</h3>
+
+              <div class="card-body">
+                <div class="row" *ngFor="let item of leadDetails">
+                  <label>{{ item.label }}</label>
+                  <span>{{ item.value }}</span>
+                </div>
+              </div>
+
+            </div>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="3">
+          <a ngbNavLink>Blocked</a>
+          <ng-template ngbNavContent>
+            <p>Fraud content...</p>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="4">
+          <a ngbNavLink>Delivery</a>
+          <ng-template ngbNavContent>
+            <p>Fraud content...</p>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="5">
+          <a ngbNavLink>Data</a>
+          <ng-template ngbNavContent>
+            <p>Fraud content...</p>
+          </ng-template>
+        </li>
+
+        <li [ngbNavItem]="6">
+          <a ngbNavLink>Tme line</a>
+          <ng-template ngbNavContent>
+            <p>Fraud content...</p>
+          </ng-template>
+        </li>
+
+      </ul>
+
+      <div [ngbNavOutlet]="bordernav"></div>
+
+    </div>
+  </div>
+
+</ng-template>

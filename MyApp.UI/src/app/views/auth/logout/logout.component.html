@@ -1,0 +1,39 @@
+<app-auth-layout>
+  <div class="d-flex flex-column h-100">
+    <div class="auth-brand p-4">
+      <a routerLink="/" class="logo-light">
+        <img src="assets/images/logo.png" alt="logo" height="22" />
+      </a>
+      <a routerLink="/" class="logo-dark">
+        <img src="assets/images/logo-dark.png" alt="dark logo" height="22" />
+      </a>
+    </div>
+    <div class="p-4 my-auto">
+      <div class="my-auto">
+        <div class="text-center">
+          <h4 class="mt-0 fs-20">See You Again !</h4>
+          <p class="text-muted mb-4">You are now successfully sign out.</p>
+        </div>
+
+        <div class="logout-icon m-auto">
+          <img src="assets/images/svg/shield.gif" alt="" class="img-fluid" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #bottomLinks>
+    <div class="row">
+      <div class="col-12 text-center">
+        <p class="text-dark-emphasis">
+          Back To
+          <a
+            routerLink="/auth/login"
+            class="text-dark fw-bold ms-1 link-offset-3 text-decoration-underline"
+            ><b>Log In</b></a
+          >
+        </p>
+      </div>
+    </div>
+  </ng-template>
+</app-auth-layout>

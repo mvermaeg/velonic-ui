@@ -1,0 +1,15 @@
+<div class="wrapper">
+  <app-topbar
+    (mobileMenuButtonClicked)="onToggleMobileMenu()"
+  />
+  <app-sidebar />
+
+  <div [ngClass]="{ 'content-page': size != 'full' }">
+    <div class="content">
+      <div class="container-fluid">
+        <router-outlet />
+      </div>
+    </div>
+    <app-footer />
+  </div>
+</div>

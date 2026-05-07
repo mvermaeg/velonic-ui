@@ -1,0 +1,59 @@
+<div class="card mb-1">
+  <div class="card-body">
+    <div class="row">
+
+      <div class="col">
+        <input class="form-control" placeholder="Search..." [(ngModel)]="table_data.searchTerm">
+      </div>
+
+      <div class="col">
+        <select class="form-select" [(ngModel)]="table_data.source">
+          <option value="">Sources</option>
+          <option>AG - Facebook </option>
+          <option>ERD - Facebook</option>
+          <option>External Google</option>
+          <option>Facebook - Ads</option>
+          <option>Facebook - Aggr</option>
+          <option>Google Search</option>
+          <option>Native Email</option>
+          <option>Linkedin</option>
+        </select>
+      </div>
+
+
+      <div class="col">
+        <select class="form-select" [(ngModel)]="table_data.tier">
+          <option value="">Tier</option>
+          <option>All Tier</option>
+          <option>Tier 1-Premium</option>
+          <option>Tier 2-Standard</option>
+          <option>Tier 3-Low</option>
+        </select>
+      </div>
+
+      <div class="col">
+        <select class="form-select" [(ngModel)]="table_data.campaign">
+          <option value="">Campaigns</option>
+          <option>Bathroom</option>
+          <option>Care Home</option>
+          <option>Doors</option>
+          <option>Electrical</option>
+          <option>Fencing</option>
+          <option>Flooring</option>
+          <option>HVAC</option>
+        </select>
+      </div>
+
+
+
+      <div class="col">
+        <select class="form-select" [(ngModel)]="table_data.pageSize">
+          <option [ngValue]="6">6</option>
+          <option [ngValue]="8">8</option>
+          <option [ngValue]="10">10</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+</div>

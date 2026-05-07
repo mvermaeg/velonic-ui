@@ -1,0 +1,140 @@
+
+.lead_id{
+    color:#047cd6 ;
+    cursor: pointer;
+}
+
+
+.custom-modal {
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+}
+
+.modal-header,
+.modal-footer {
+  flex-shrink: 0;
+}
+
+.modal-tabs {
+  flex-shrink: 0;
+}
+
+.modal-content-area {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.tab-inner {
+  padding: 10px;
+}
+
+
+
+/* Container */
+.lead-container {
+  padding: 20px;
+  background: #f5f7fb;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Header */
+.header {
+  margin-bottom: 15px;
+}
+
+.header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 30px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 10px 0;
+  cursor: pointer;
+  color: #6b7280;
+  font-weight: 500;
+  position: relative;
+}
+
+.tab.active {
+  color: #2563eb;
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 2px;
+}
+
+/* Card */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.card-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.arrow {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Card Body */
+.card-body {
+  padding: 10px 20px 20px;
+}
+
+/* Rows */
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row label {
+  color: #6b7280;
+  font-weight: 500;
+  width: 40%;
+}
+
+.row span {
+  color: #111827;
+  font-weight: 500;
+  width: 60%;
+  text-align: left;
+}

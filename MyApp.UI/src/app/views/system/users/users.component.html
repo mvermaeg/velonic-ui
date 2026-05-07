@@ -1,0 +1,163 @@
+<div class="container-fluid">
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="page-title-box">
+        <h4 class="mb-1">User Management</h4>
+        <p class="text-muted mb-0">
+          Create team members, assign roles, and manage user access.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Add New User</h5>
+        </div>
+
+        <div class="card-body">
+          <form [formGroup]="userForm" (ngSubmit)="createUser()">
+
+            <div class="mb-3">
+              <label class="form-label">Full Name</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="fullName"
+                placeholder="Enter full name"
+                [ngClass]="{ 'is-invalid': submitted && form['fullName'].errors }"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Email Address</label>
+              <input
+                type="email"
+                class="form-control"
+                formControlName="email"
+                placeholder="Enter email"
+                [ngClass]="{ 'is-invalid': submitted && form['email'].errors }"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="password"
+                placeholder="Enter password"
+                [ngClass]="{ 'is-invalid': submitted && form['password'].errors }"
+              />
+              <small class="text-muted">Default testing password: 123456</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Role</label>
+              <select
+                class="form-select"
+                formControlName="role"
+                [ngClass]="{ 'is-invalid': submitted && form['role'].errors }"
+              >
+                <option value="">Select role</option>
+                <option *ngFor="let role of roles" [value]="role">
+                  {{ role }}
+                </option>
+              </select>
+            </div>
+
+            <div class="alert alert-success py-2" *ngIf="successMessage">
+              {{ successMessage }}
+            </div>
+
+            <div class="alert alert-danger py-2" *ngIf="errorMessage">
+              {{ errorMessage }}
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit" [disabled]="saving">
+              {{ saving ? 'Creating...' : 'Create User' }}
+            </button>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="card-title mb-0">Users</h5>
+            <small class="text-muted">All internal users and assigned roles</small>
+          </div>
+
+          <button class="btn btn-sm btn-outline-primary" type="button" (click)="loadUsers()">
+            Refresh
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div class="text-muted" *ngIf="loading">Loading users...</div>
+
+          <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Roles</th>
+                  <th>Status</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let user of users">
+                  <td>
+                    <strong>{{ user.fullName }}</strong>
+                  </td>
+
+                  <td>{{ user.email }}</td>
+
+                  <td>
+                    <span class="badge bg-primary-subtle text-primary me-1" *ngFor="let role of user.roles">
+                      {{ role }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span class="badge" [ngClass]="user.isActive ? 'bg-success' : 'bg-danger'">
+                      {{ user.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+
+                  <td class="text-end">
+                    <button
+                      class="btn btn-sm"
+                      [ngClass]="user.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                      type="button"
+                      (click)="toggleStatus(user)"
+                    >
+                      {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                    </button>
+                  </td>
+                </tr>
+
+                <tr *ngIf="users.length === 0">
+                  <td colspan="5" class="text-center text-muted py-4">
+                    No users found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

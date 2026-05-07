@@ -1,0 +1,22 @@
+<custom-card-portlet cardTitle="Last 24 Hours" cardTitleClass="header-title" headerClass="p-3">
+  <div class="card-body pt-0">
+    <div dir="ltr">
+  
+       <div id="line-chart" class="apex-charts" data-colors="#edc755">
+            <apx-chart
+              [chart]="lineChart.chart!"
+              [dataLabels]="lineChart.dataLabels!"
+              [stroke]="lineChart.stroke!"
+              [series]="lineChart.series!"
+              [title]="lineChart.title!"
+              [grid]="lineChart.grid!"
+              [labels]="lineChart.labels!"
+              [xaxis]="lineChart.xaxis!"
+              [responsive]="lineChart.responsive!"
+              [colors]="lineChart.colors!"
+            />
+          </div>
+    </div>
+  </div>
+</custom-card-portlet>
+

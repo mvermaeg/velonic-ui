@@ -1,0 +1,27 @@
+<section class="stats">
+
+  <div class="grid">
+
+    <div class="card" *ngFor="let item of stats" [ngClass]="item.color">
+
+      <div class="top">
+        <div>
+          <p class="title">{{ item.title }}</p>
+          <h3>{{ item.value }}</h3>
+        </div>
+
+        <div class="icon">
+          <i class="fa-solid" [ngClass]="item.icon"></i>
+        </div>
+      </div>
+
+      <div class="bottom" [ngClass]="item.trend">
+        <span>{{ item.change }}</span>
+        <small>{{ item.note }}</small>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>

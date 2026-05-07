@@ -1,0 +1,94 @@
+<div class="row">
+
+  <!-- LEFT FILTER PANEL -->
+  <div class="col-md-3">
+
+    <div class="card p-3">
+
+      <h5>Filters</h5>
+
+      <input class="form-control mb-2"
+             placeholder="Search"
+             [(ngModel)]="filters.search">
+
+      <input type="date"
+             class="form-control mb-2"
+             [(ngModel)]="filters.fromDate">
+
+      <input type="date"
+             class="form-control mb-2"
+             [(ngModel)]="filters.toDate">
+
+      <div class="form-check mb-2">
+        <input type="checkbox"
+               class="form-check-input"
+               [(ngModel)]="filters.excludeAfterSale">
+        <label class="form-check-label">Exclude After Sale</label>
+      </div>
+
+      <button class="btn btn-primary w-100"
+              (click)="load()">
+        Search
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- RIGHT TABLE -->
+  <div class="col-md-9">
+
+    <div class="card p-3">
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Created</th>
+            <th>Lead UUID</th>
+            <th>Email</th>
+            <th>Campaign</th>
+            <th>Source</th>
+            <th>Client</th>
+            <th>Bid</th>
+            <th>Status</th>
+            
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let r of records">
+            <td>
+  <button
+    class="btn btn-sm btn-success"
+    type="button"
+    *ngIf="!r.isSold"
+    (click)="deliver(r.id)">
+    Sell Lead
+  </button>
+
+  <span class="badge bg-success" *ngIf="r.isSold">
+    Delivered
+  </span>
+</td>
+            <td>{{ r.createdOn | date:'short' }}</td>
+            <td>{{ r.leadUuid }}</td>
+            <td>{{ r.email }}</td>
+            <td>{{ r.campaignName }}</td>
+            <td>{{ r.sourceName }}</td>
+            <td>{{ r.clientName }}</td>
+            <td>{{ r.bidAmount }}</td>
+            <td>
+              <span *ngIf="r.isSold" class="badge bg-success">Sold</span>
+              <span *ngIf="!r.isSold" class="badge bg-warning">Open</span>
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,99 @@
+<app-page-title
+  title="Website Templates"
+  subtitle="Sites"
+  header="Manage reusable website templates"
+/>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Quick filter templates..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <select class="form-select" [(ngModel)]="statusFilter">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" type="button" (click)="loadTemplates()">
+          Refresh
+        </button>
+      </div>
+
+      <div class="col-md-2 ms-auto">
+        <button class="btn btn-success w-100" type="button" (click)="exportToCSV()">
+          <i class="ri-download-2-line"></i> Export
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading templates...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Template</th>
+            <th>Key</th>
+            <th>Source Folder</th>
+            <th>Version</th>
+            <th>Description</th>
+            <th>Created</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredTemplates">
+            <td>
+              <div class="fw-semibold">{{ item.templateName }}</div>
+              <small class="text-muted">Reusable website layout</small>
+            </td>
+
+            <td>
+              <span class="badge bg-light text-dark border">
+                {{ item.templateKey }}
+              </span>
+            </td>
+
+            <td>{{ item.sourceFolder || '-' }}</td>
+            <td>{{ item.version || '-' }}</td>
+            <td>{{ item.description || '-' }}</td>
+            <td>{{ item.createdOn | date: 'short' }}</td>
+
+            <td>
+              <span
+                class="badge"
+                [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'"
+              >
+                {{ item.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredTemplates.length === 0">
+            <td colspan="7" class="text-center text-muted py-4">
+              No templates found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

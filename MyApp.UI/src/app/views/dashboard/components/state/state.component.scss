@@ -1,0 +1,128 @@
+.stats {
+  padding: 0px 0px 30px;
+}
+
+.grid {
+  display              : grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap                  : 20px;
+}
+
+.card {
+  padding      : 20px;
+  border-radius: 12px;
+  background   : #fff;
+  position     : relative;
+  overflow     : hidden;
+  transition   : 0.3s;
+  margin-bottom: 0px;
+}
+
+.card:hover {
+  transform : translateY(-1px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+
+.top {
+  display        : flex;
+  justify-content: space-between;
+  align-items    : center;
+}
+
+.title {
+  font-size    : 16px;
+  color        : #111827;
+  margin-bottom: 10px;
+
+}
+
+h3 {
+  margin     : 5px 0;
+  color      : #111827;
+  font-weight: 600;
+}
+
+.icon {
+  width          : 55px;
+  height         : 55px;
+  border-radius  : 12px;
+  display        : flex;
+  align-items    : center;
+  justify-content: center;
+  font-size      : 34px;
+  color          : #fff;
+}
+
+.bottom {
+  margin-top: 15px;
+  font-size : 16px;
+  color     : #111827;
+}
+
+.bottom span {
+  font-weight : bold;
+  margin-right: 5px;
+}
+
+.bottom small {
+  margin-right: 5px;
+  font-size   : 14px;
+  color       : #111827;
+}
+
+.blue {
+  background: linear-gradient(to right, #EFF4FF, #FFFCFC);
+}
+
+.blue .icon {
+  background: #487FFF;
+}
+
+.green1 {
+  background: linear-gradient(to right, #EAFFF9, #FFFCFC);
+}
+
+.green1 .icon {
+  background: #45B369;
+}
+
+.yellow {
+  background: linear-gradient(to right, #FFF5E9, #FFFCFC);
+}
+
+.yellow .icon {
+  background: #F4941E;
+}
+
+.purple {
+  background: linear-gradient(to right, #F3EEFF, #FFFCFC);
+}
+
+.purple .icon {
+  background: #8252E9;
+}
+
+.cyan {
+  background: linear-gradient(to right, #EEFBFF, #FFFCFC);
+}
+
+.cyan .icon {
+  background: #00B8F2;
+}
+
+.pink {
+  background: linear-gradient(to right, #FFF2FE, #FFFCFC);
+}
+
+.pink .icon {
+  background: #DE3ACE;
+}
+
+.up span {
+  color: #45B369;
+}
+
+.down span {
+  color: #ef4444;
+}

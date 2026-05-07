@@ -1,0 +1,137 @@
+<app-page-title title="Lead Dashboard" subtitle="Leads" header="Manage and track all your leads" />
+
+<div class="stats-container mb-3">
+  <div class="card card_hover gradient-blue">
+    <h4>Total Leads</h4>
+    <h2>{{ totalLeads }}</h2>
+    <p>Filtered results</p>
+  </div>
+
+  <div class="card card_hover gradient-purple">
+    <h4>Total Sales</h4>
+    <h2>${{ totalSales | number: '1.0-0' }}</h2>
+    <p>Revenue generated</p>
+  </div>
+
+  <div class="card card_hover gradient-green">
+    <h4>Total Profit</h4>
+    <h2>${{ totalProfit | number: '1.0-0' }}</h2>
+    <p>Net profit</p>
+  </div>
+
+  <div class="card card_hover gradient-orange">
+    <h4>Avg. Sale Value</h4>
+    <h2>${{ avgSaleValue | number: '1.0-0' }}</h2>
+    <p>Per lead</p>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select">
+          <option>Campaigns</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select">
+          <option>Status</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" type="button" (click)="loadLeads()">
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <h5 class="mb-0">Leads</h5>
+      <small class="text-muted">Website / affiliate / campaign lead records</small>
+    </div>
+
+    <button class="btn btn-sm btn-success" type="button">
+      Export
+    </button>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading leads...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Created</th>
+            <th>UUID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Campaign</th>
+            <th>Affiliate</th>
+            <th>Page</th>
+            <th>Step</th>
+            <th>Completed</th>
+            <th>Postcode</th>
+            <th>State</th>
+            <th>City</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let lead of filteredLeads">
+            <td>{{ lead.id }}</td>
+            <td>{{ lead.createdAt | date: 'short' }}</td>
+            <td class="text-nowrap">{{ lead.leadUuid }}</td>
+            <td>{{ lead.fullName }}</td>
+            <td>{{ lead.email }}</td>
+            <td>{{ lead.phone }}</td>
+            <td>{{ lead.campaignName }}</td>
+            <td>{{ lead.affiliateName }}</td>
+            <td>{{ lead.pageName }}</td>
+            <td>{{ lead.step }}</td>
+            <td>
+              <span class="badge" [ngClass]="lead.isCompleted ? 'bg-success' : 'bg-warning'">
+                {{ lead.isCompleted ? 'Yes' : 'No' }}
+              </span>
+            </td>
+            <td>{{ lead.postcode }}</td>
+            <td>{{ lead.state }}</td>
+            <td>{{ lead.city }}</td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary">
+                {{ lead.leadStatus }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredLeads.length === 0">
+            <td colspan="15" class="text-center text-muted py-4">
+              No leads found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,108 @@
+<app-page-title title="Media Buying Clicks" subtitle="Media Buying" header="Track clicks on campaign links" />
+
+
+
+<div class="row justify-content-center">
+  <div class="col-12">
+    <div class="card">
+
+      <div class="card-body">
+        <form>
+
+          <div class="mb-3 row">
+            <div class="col-3">
+              <label for="table-complete-search" class="col-xs-3 col-sm-auto col-form-label">Full text search:</label>
+              <div class="col-xs-3 col-sm-auto">
+                <input id="table-complete-search" type="text" class="form-control" name="searchTerm"
+                  [(ngModel)]="tableService.searchTerm" placeholder="Search..." />
+              </div>
+
+              @if (tableService.loading$ | async) {
+              <span class="col col-form-label">Loading...</span>
+              }
+            </div>
+
+            <div class="col-3">
+              <label for="table-complete-search" class="col-xs-3 col-sm-auto col-form-label">Date:</label>
+              <input type="text" id="basic-datepicker" mwlFlatpickr class="form-control" placeholder="Date.." />
+            </div>
+
+            <div class="col-3">
+              <label for="table-complete-search" class="col-xs-3 col-sm-auto col-form-label">Items per page:</label>
+              <select class="form-select" name="pageSize" [(ngModel)]="tableService.pageSize">
+                <option [ngValue]="2">2 items</option>
+                <option [ngValue]="4">4 items</option>
+                <option [ngValue]="6">6 items</option>
+                <option [ngValue]="8">8 items </option>
+                <option [ngValue]="10">10 items</option>
+              </select>
+            </div>
+
+            <div class="col-3 export_btn">
+              <button class="btn btn-primary" (click)="exportToCSV()"><i class=" ri-download-2-line"></i>
+                Export</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table datatable">
+
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col" sortable="name" (sort)="onCompleteSort($event)">Name</th>
+                  <th scope="col" sortable="offerlink" (sort)="onCompleteSort($event)"> Offer Link</th>
+                  <th scope="col" sortable="campaignname" (sort)="onCompleteSort($event)">Campaign Name</th>
+                  <th scope="col" sortable="sourcename" (sort)="onCompleteSort($event)"> Source Name</th>
+                  <th scope="col" sortable="created" (sort)="onCompleteSort($event)"> Created </th>
+                  <th scope="col" sortable="updated" (sort)="onCompleteSort($event)"> Updated </th>
+
+                  <th>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of records$ | async; track item) {
+                <tr>
+                  <th scope="row">{{ item.id }}</th>
+                  <td><ngb-highlight [result]="item.name" [term]="tableService.searchTerm" /> </td>
+                  <td><ngb-highlight [result]="item.offerlink" [term]="tableService.searchTerm" /> </td>
+                  <td><ngb-highlight [result]="item.campaignname" [term]="tableService.searchTerm" /></td>
+                  <td><ngb-highlight [result]="item.sourcename" [term]="tableService.searchTerm" /> </td>
+                  <td><ngb-highlight [result]="item.created" [term]="tableService.searchTerm" /> </td>
+                  <td><ngb-highlight [result]="item.updated" [term]="tableService.searchTerm" /> </td>
+                  <td><i class="ri-eye-fill"></i>&nbsp;
+                    <i class="ri-delete-bin-5-fill"></i>
+                  </td>
+                </tr>
+                } @empty {
+                <tr>
+                  <td colspan="4" style="text-align: center"> No countries found</td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+
+            <div class="text-muted">
+              Showing{{ (tableService.page - 1) * tableService.pageSize + 1 }} to{{(tableService.page - 1) *
+              tableService.pageSize + (recordsLength || 0) }} of {{ total$ | async }} products
+            </div>
+
+
+            <ngb-pagination [collectionSize]="(total$ | async)!" [(page)]="tableService.page"
+              [pageSize]="tableService.pageSize">
+              <ng-template ngbPaginationPrevious><i class="ri-arrow-left-double-line"></i></ng-template>
+              <ng-template ngbPaginationNext><i class=" ri-arrow-right-double-line"></i></ng-template>
+            </ngb-pagination>
+
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

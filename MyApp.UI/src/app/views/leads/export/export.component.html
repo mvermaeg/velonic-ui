@@ -1,0 +1,56 @@
+<app-page-title title="Leads Export" subtitle="Leads" header="Export and download lead data" />
+
+
+<app-search></app-search>
+
+
+<div class="card">
+    <div class="card-body">
+        <div class="export_btn mb-2">
+            <button class="btn btn-primary" (click)="exportToCSV()"><i class=" ri-download-2-line"></i>
+                Export</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        @for (field of selectedFields; track field) {<th>{{ formatHeader(field)}}
+                        </th>}
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (item of records$ | async; track item) {
+                    <tr>
+                        @for (field of selectedFields; track field) {
+                        <td>
+                            <ng-container [ngSwitch]="field">
+                                <span *ngSwitchDefault> {{ getValue(item, field) }} </span>
+                            </ng-container>
+                        </td>
+                        }
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td [attr.colspan]="selectedFields.length" class="text-center">
+                            No Data Found
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mt-2">
+
+            <div> Showing {{ (table_data.page - 1) * table_data.pageSize + 1 }} to {{(table_data.page - 1) *
+                table_data.pageSize +
+                (recordsLength || 0) }} of {{ total$ | async }} products </div>
+
+            <ngb-pagination *ngIf="recordsLength!==0" [collectionSize]="(total$ | async)!" [(page)]="table_data.page"
+                [pageSize]="table_data.pageSize">
+            </ngb-pagination>
+
+        </div>
+    </div>
+</div>

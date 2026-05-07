@@ -1,0 +1,400 @@
+<app-page-title title="Sites" subtitle="Sites" header="Manage your micro websites" />
+
+<div class="sites-toolbar card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-5">
+        <input
+          type="text"
+          class="form-control"
+          name="search"
+          placeholder="Quick Filter..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-7 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="showAddForm = !showAddForm">
+          <i class="ri-add-line"></i> Add Site
+        </button>
+
+        <button class="btn btn-outline-primary me-2" type="button" (click)="loadSites()">
+          <i class="ri-refresh-line"></i> Refresh
+        </button>
+
+        <button class="btn btn-success" type="button" (click)="exportToCSV()">
+          <i class="ri-download-2-line"></i> Export
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3" *ngIf="showAddForm">
+  <div class="card-header">
+    <h5 class="mb-0">Add New Site</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Site Name</label>
+        <input
+          type="text"
+          class="form-control"
+          name="siteName"
+          placeholder="Roofing Contractors"
+          [(ngModel)]="newSite.siteName"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Domain Name</label>
+        <input
+          type="text"
+          class="form-control"
+          name="domainName"
+          placeholder="roofing-demo.local"
+          [(ngModel)]="newSite.domainName"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Slug</label>
+        <input
+          type="text"
+          class="form-control"
+          name="slug"
+          placeholder="roofing"
+          [(ngModel)]="newSite.slug"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Old Theme Key</label>
+        <select class="form-select" name="themeKey" [(ngModel)]="newSite.themeKey">
+          <option value="theme-1">Theme 1</option>
+          <option value="theme-2">Theme 2</option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Website Template</label>
+        <select
+          class="form-select"
+          name="websiteTemplateId"
+          [(ngModel)]="newSite.websiteTemplateId"
+        >
+          <option [ngValue]="null">Select Template</option>
+          <option *ngFor="let item of templates" [ngValue]="item.id">
+            {{ item.templateName }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Website Theme</label>
+        <select
+          class="form-select"
+          name="websiteThemeId"
+          [(ngModel)]="newSite.websiteThemeId"
+        >
+          <option [ngValue]="null">Select Theme</option>
+          <option *ngFor="let item of themes" [ngValue]="item.id">
+            {{ item.themeName }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-2 d-flex align-items-end">
+        <button
+          class="btn btn-primary w-100"
+          type="button"
+          (click)="createSite()"
+          [disabled]="saving"
+        >
+          {{ saving ? 'Saving...' : 'Save Site' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">
+  {{ successMessage }}
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading sites...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 90px;">Code</th>
+            <th>Name</th>
+            <th>Domain</th>
+            <th>Slug</th>
+            <th>Template</th>
+            <th>Website Theme</th>
+            <th>Theme Key</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let site of filteredSites">
+            <td>
+              <span class="site-code">S-{{ site.id }}</span>
+            </td>
+
+            <td>
+              <strong>{{ site.siteName }}</strong>
+            </td>
+
+            <td>{{ site.domainName || '-' }}</td>
+
+            <td>
+              <span class="text-muted">/{{ site.slug }}</span>
+            </td>
+
+            <td>{{ site.templateName || '-' }}</td>
+
+            <td>{{ site.themeName || '-' }}</td>
+
+            <td>{{ site.themeKey || '-' }}</td>
+
+            <td>{{ site.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="site.isActive ? 'bg-success' : 'bg-danger'">
+                {{ site.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-sm"
+                [ngClass]="site.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                (click)="toggleStatus(site)"
+              >
+                {{ site.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredSites.length === 0">
+            <td colspan="10" class="text-center text-muted py-4">
+              No sites found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- <app-page-title title="Sites" subtitle="Sites" header="Manage your micro websites" />
+
+<div class="sites-toolbar card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-5">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Quick Filter..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-7 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="showAddForm = !showAddForm">
+          <i class="ri-add-line"></i> Add Site
+        </button>
+
+        <button class="btn btn-outline-primary me-2" type="button" (click)="loadSites()">
+          <i class="ri-refresh-line"></i> Refresh
+        </button>
+
+        <button class="btn btn-success" type="button" (click)="exportToCSV()">
+          <i class="ri-download-2-line"></i> Export
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3" *ngIf="showAddForm">
+  <div class="card-header">
+    <h5 class="mb-0">Add New Site</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Site Name</label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Roofing Contractors"
+          [(ngModel)]="newSite.siteName"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Domain Name</label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="roofing-demo.local"
+          [(ngModel)]="newSite.domainName"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Slug</label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="roofing"
+          [(ngModel)]="newSite.slug"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Theme</label>
+        <select class="form-select" [(ngModel)]="newSite.themeKey">
+          <option value="theme-1">Theme 1</option>
+          <option value="theme-2">Theme 2</option>
+        </select>
+      </div>
+
+
+
+      <div class="col-md-6">
+  <label class="form-label">Website Template</label>
+  <select
+    class="form-select"
+    name="websiteTemplateId"
+    [(ngModel)]="newSite.websiteTemplateId"
+  >
+    <option [ngValue]="null">Select Template</option>
+    <option *ngFor="let item of templates" [ngValue]="item.id">
+      {{ item.templateName }}
+    </option>
+  </select>
+</div>
+
+<div class="col-md-6">
+  <label class="form-label">Website Theme</label>
+  <select
+    class="form-select"
+    name="websiteThemeId"
+    [(ngModel)]="newSite.websiteThemeId"
+  >
+    <option [ngValue]="null">Select Theme</option>
+    <option *ngFor="let item of themes" [ngValue]="item.id">
+      {{ item.themeName }}
+    </option>
+  </select>
+</div>
+
+
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" type="button" (click)="createSite()" [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save Site' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">
+  {{ successMessage }}
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading sites...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 90px;">Code</th>
+            <th>Name</th>
+            <th>Domain</th>
+            <th>Slug</th>
+            <th>Theme</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let site of filteredSites">
+            <td>
+              <span class="site-code">S-{{ site.id }}</span>
+            </td>
+
+            <td>
+              <strong>{{ site.siteName }}</strong>
+            </td>
+
+            <td>{{ site.domainName || '-' }}</td>
+
+            <td>
+              <span class="text-muted">/{{ site.slug }}</span>
+            </td>
+
+            <td>{{ site.themeKey }}</td>
+
+            <td>{{ site.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="site.isActive ? 'bg-success' : 'bg-danger'">
+                {{ site.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-sm"
+                [ngClass]="site.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                (click)="toggleStatus(site)"
+              >
+                {{ site.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredSites.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">
+              No sites found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div> -->

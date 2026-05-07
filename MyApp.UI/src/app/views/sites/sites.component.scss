@@ -1,0 +1,27 @@
+.sites-toolbar {
+  border: 0;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+}
+
+.site-code {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: #334155;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.card {
+  border-radius: 14px;
+}
+
+.table th {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.table td {
+  vertical-align: middle;
+}

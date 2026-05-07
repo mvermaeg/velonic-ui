@@ -1,0 +1,82 @@
+<app-page-title title="Clicks" subtitle="Affiliates" header="Track affiliate traffic and click attribution" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input class="form-control" placeholder="Quick Filter..." [(ngModel)]="filters.search" />
+      </div>
+
+      <div class="col-md-3">
+        <input class="form-control" placeholder="Campaign Name" [(ngModel)]="filters.campaignName" />
+      </div>
+
+      <div class="col-md-2">
+        <input class="form-control" placeholder="Affiliate ID" [(ngModel)]="filters.affiliateId" />
+      </div>
+
+      <div class="col-md-3 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="load()">Search</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading clicks...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Click UUID</th>
+            <th>Affiliate</th>
+            <th>Sub ID</th>
+            <th>Page</th>
+            <th>Campaign</th>
+            <th>Source</th>
+            <th>URL</th>
+            <th>IP Address</th>
+            <th>User Agent</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let row of records">
+            <td>{{ row.id }}</td>
+            <td class="text-primary text-nowrap">{{ row.clickUuid }}</td>
+            <td>{{ row.affiliateName || '-' }}</td>
+            <td>{{ row.subId || '-' }}</td>
+            <td>{{ row.pageName || '-' }}</td>
+            <td>{{ row.campaignName || '-' }}</td>
+            <td>{{ row.sourceName || '-' }}</td>
+            <td style="max-width: 260px;" class="text-truncate">
+              {{ row.url || '-' }}
+            </td>
+            <td>{{ row.ipAddress || '-' }}</td>
+            <td style="max-width: 320px;" class="text-truncate">
+              {{ row.userAgent || '-' }}
+            </td>
+            <td>{{ row.createdOn | date: 'short' }}</td>
+          </tr>
+
+          <tr *ngIf="records.length === 0">
+            <td colspan="11" class="text-center text-muted py-4">
+              No clicks found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

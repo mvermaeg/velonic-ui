@@ -1,0 +1,34 @@
+.bidding-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 1040;
+}
+
+.bidding-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(980px, 96vw);
+  height: 100vh;
+  background: #f5f7fb;
+  z-index: 1050;
+  box-shadow: -12px 0 30px rgba(15, 23, 42, 0.18);
+  overflow-y: auto;
+}
+
+.bidding-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+}
+
+.bidding-body {
+  padding: 20px;
+}

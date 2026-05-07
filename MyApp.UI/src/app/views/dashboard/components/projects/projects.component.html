@@ -1,0 +1,87 @@
+<custom-card-portlet cardTitle="Latest Leads" cardTitleClass="header-title" headerClass="p-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Email</th>
+          <th>Name</th>
+          <th>Campagin</th>
+          <th>Time</th>
+          <th>Revenue</th>
+        </tr>
+      </thead>
+      <tbody> @for (data of Leads; track $index) { <tr>
+          <td class="lead_id" (click)=" rightModal.open()">{{
+            data.id }}</td>
+          <td>{{ data.email }}</td>
+          <td>{{ data.name }}</td>
+          <td>{{ data.campagin }}</td>
+          <td>{{ data.time }}</td>
+          <td>{{ data.revenue }}</td>
+        </tr> } </tbody>
+    </table>
+  </div>
+</custom-card-portlet>
+
+<div class="row">
+  <div class="col-lg-4"> <custom-card-portlet cardTitle="Top Campaigns" cardTitleClass="header-title" headerClass="p-3">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Campagin</th>
+              <th>Revenue</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody> @for (data of Campagin; track $index) { <tr>
+              <td>{{ data.campagin }}</td>
+              <td>{{ data.revenue }}</td>
+              <td>{{ data.cost }}</td>
+            </tr> } </tbody>
+        </table>
+      </div>
+    </custom-card-portlet>
+  </div>
+
+  <div class="col-lg-4">
+    <custom-card-portlet cardTitle="Top Clients" cardTitleClass="header-title" headerClass="p-3">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Clients</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody> @for (data of Clients; track $index) { <tr>
+              <td>{{ data.clients }}</td>
+              <td>{{ data.revenue }}</td>
+            </tr> } </tbody>
+        </table>
+      </div>
+    </custom-card-portlet>
+  </div>
+
+  <div class="col-lg-4">
+    <custom-card-portlet cardTitle="Top Contracts" cardTitleClass="header-title" headerClass="p-3">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Contracts</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody> @for (data of Contracts; track $index) { <tr>
+              <td>{{ data.contracts }}</td>
+              <td>{{ data.revenue }}</td>
+            </tr> } </tbody>
+        </table>
+      </div>
+    </custom-card-portlet>
+  </div>
+</div>
+
+<app-leads-form #rightModal="appRightModal" title="Lead # 369-268-371"></app-leads-form>

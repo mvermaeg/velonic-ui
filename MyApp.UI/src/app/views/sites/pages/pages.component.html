@@ -1,0 +1,76 @@
+<app-page-title title="Sites Pages" subtitle="Sites" header="Manage your landing pages" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search pages..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" type="button" (click)="loadPages()">
+          Refresh
+        </button>
+      </div>
+
+      <div class="col-md-2 ms-auto">
+        <button class="btn btn-success w-100" type="button" (click)="exportToCSV()">
+          <i class="ri-download-2-line"></i> Export
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading pages...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Path</th>
+            <th>Campaign</th>
+            <th>Affiliate</th>
+            <th>Page Title</th>
+            <th>Hero Title</th>
+            <th>Created</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let page of filteredPages">
+            <td>{{ page.pageName }}</td>
+            <td>/{{ page.pageSlug }}</td>
+            <td>{{ page.campaignName }}</td>
+            <td>{{ page.affiliateName }}</td>
+            <td>{{ page.pageTitle }}</td>
+            <td>{{ page.heroTitle }}</td>
+            <td>{{ page.createdOn | date: 'short' }}</td>
+            <td>
+              <span class="badge" [ngClass]="page.isActive ? 'bg-success' : 'bg-danger'">
+                {{ page.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredPages.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">
+              No pages found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

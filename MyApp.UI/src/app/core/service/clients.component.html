@@ -1,0 +1,156 @@
+<app-page-title title="Clients" subtitle="Clients" header="Manage clients and buyers" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-5">
+        <input class="form-control" placeholder="Quick Filter..." [(ngModel)]="search" />
+      </div>
+
+      <div class="col-md-7 text-md-end">
+        <button class="btn btn-primary me-2" (click)="showCreate = !showCreate">
+          <i class="ri-add-line"></i> Add Client
+        </button>
+
+        <button class="btn btn-outline-primary" (click)="loadClients()">
+          <i class="ri-refresh-line"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3" *ngIf="showCreate">
+  <div class="card-header">
+    <h5 class="mb-0">Create Client</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Client Name</label>
+        <input class="form-control" [(ngModel)]="newClient.clientName" placeholder="Client Name" />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Tier</label>
+        <select class="form-select" [(ngModel)]="newClient.tier">
+          <option>Tier 1</option>
+          <option>Tier 2</option>
+          <option>Tier 3</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Status</label>
+        <select class="form-select" [(ngModel)]="newClient.accountStatus">
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Timezone</label>
+        <select class="form-select" [(ngModel)]="newClient.timezone">
+          <option>UTC-05:00 - Eastern Standard Time (EST)</option>
+          <option>UTC-08:00 - Pacific Time</option>
+          <option>UTC+05:30 - India Standard Time (IST)</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Return Agreement</label>
+        <select class="form-select" [(ngModel)]="newClient.returnAgreement">
+          <option>Uncapped</option>
+          <option>Capped</option>
+          <option>No Return</option>
+        </select>
+      </div>
+
+      <div class="col-md-6 d-flex align-items-end gap-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" [(ngModel)]="newClient.acceptsWebLeads" />
+          <label class="form-check-label">Web Leads</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" [(ngModel)]="newClient.acceptsInboundCalls" />
+          <label class="form-check-label">Inbound Calls</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" [(ngModel)]="newClient.isBuyer" />
+          <label class="form-check-label">Buyer</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" [(ngModel)]="newClient.isVendor" />
+          <label class="form-check-label">Vendor</label>
+        </div>
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-primary w-100" (click)="createClient()" [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save Client' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">Loading clients...</div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Client ID</th>
+            <th>Client Name</th>
+            <th>Tier</th>
+            <th>Buyer</th>
+            <th>Vendor</th>
+            <th>Timezone</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let client of filteredClients">
+            <td>{{ client.id }}</td>
+            <td><strong>{{ client.clientName }}</strong></td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary">{{ client.tier || '-' }}</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="client.isBuyer ? 'bg-success' : 'bg-secondary'">
+                {{ client.isBuyer ? 'YES' : 'NO' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="client.isVendor ? 'bg-success' : 'bg-secondary'">
+                {{ client.isVendor ? 'YES' : 'NO' }}
+              </span>
+            </td>
+            <td>{{ client.timezone }}</td>
+            <td>
+              <span class="badge" [ngClass]="client.accountStatus === 'Active' ? 'bg-success' : 'bg-danger'">
+                {{ client.accountStatus }}
+              </span>
+            </td>
+            <td>{{ client.createdOn | date: 'short' }}</td>
+          </tr>
+
+          <tr *ngIf="filteredClients.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">No clients found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

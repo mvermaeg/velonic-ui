@@ -1,0 +1,47 @@
+<div class="card">
+  <div class="card-body">
+
+    <div class="export_btn mb-2">
+      <button class="btn btn-primary" (click)="exportToCSV()"><i class=" ri-download-2-line"></i>
+        Export</button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover">
+
+        <thead>
+          <tr>@for (field of selectedFields; track field) {<th>{{ formatHeader(field) }}</th>}</tr>
+        </thead>
+
+        <tbody> @for (item of records$ | async; track item) {
+          <tr>@for (field of selectedFields; track field) {
+            <td [class.bold]="field === 'Campaign_Name' || field === 'Source_Name'"
+              (click)="(field === 'Campaign_Name' || field === 'Source_Name') && rightModal.open()">
+              {{ getValue(item, field) }}
+            </td>
+            }
+          </tr>
+          } @empty {
+          <tr>
+            <td [attr.colspan]="selectedFields.length" class="text-center">
+              No Data Found
+            </td>
+          </tr>
+          }
+        </tbody>
+
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-2">
+
+      <div>Showing {{ startIndex }} to {{ endIndex }} of {{ total$ | async }} products </div>
+
+      <ngb-pagination [collectionSize]="(total$ | async)!" [(page)]="table_data.page" [pageSize]="table_data.pageSize">
+      </ngb-pagination>
+
+    </div>
+  </div>
+</div>
+
+<app-leads-form #rightModal="appRightModal" title="H-RF - Roofing"></app-leads-form>

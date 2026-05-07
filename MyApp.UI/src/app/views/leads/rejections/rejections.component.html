@@ -1,0 +1,122 @@
+<app-page-title title="Lead Rejections" subtitle="Leads" header="Manage rejected leads" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input class="form-control" placeholder="Search..." [(ngModel)]="filters.search" />
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="filters.source">
+          <option value="">All Sources</option>
+          <option value="Admin">Admin</option>
+          <option value="System">System</option>
+          <option value="Validation">Validation</option>
+          <option value="Client">Client</option>
+        </select>
+      </div>
+
+      <div class="col-md-5 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="load()">Search</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <strong>Create Rejection</strong>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-2">
+        <label class="form-label">Lead ID</label>
+        <input class="form-control" type="number" [(ngModel)]="newRejection.leadId" />
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Source</label>
+        <select class="form-select" [(ngModel)]="newRejection.rejectionSource">
+          <option>Admin</option>
+          <option>System</option>
+          <option>Validation</option>
+          <option>Client</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Reason</label>
+        <input class="form-control" [(ngModel)]="newRejection.rejectionReason" />
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-danger w-100" type="button" (click)="createRejection()">
+          Reject Lead
+        </button>
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" rows="2" [(ngModel)]="newRejection.notes"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading rejections...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Created</th>
+            <th>Lead ID</th>
+            <th>Lead UUID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Campaign</th>
+            <th>Source</th>
+            <th>Reason</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let row of records">
+            <td>{{ row.id }}</td>
+            <td>{{ row.createdOn | date: 'short' }}</td>
+            <td>{{ row.leadId }}</td>
+            <td class="text-primary text-nowrap">{{ row.leadUuid }}</td>
+            <td>{{ row.fullName || '-' }}</td>
+            <td>{{ row.email || '-' }}</td>
+            <td>{{ row.campaignName || '-' }}</td>
+            <td>
+              <span class="badge bg-danger-subtle text-danger">
+                {{ row.rejectionSource || '-' }}
+              </span>
+            </td>
+            <td>{{ row.rejectionReason }}</td>
+            <td>{{ row.notes || '-' }}</td>
+          </tr>
+
+          <tr *ngIf="records.length === 0">
+            <td colspan="10" class="text-center text-muted py-4">
+              No rejections found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

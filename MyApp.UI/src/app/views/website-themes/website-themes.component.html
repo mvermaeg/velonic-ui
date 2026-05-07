@@ -1,0 +1,91 @@
+<app-page-title
+  title="Website Themes"
+  subtitle="Sites"
+  header="Manage reusable website themes"
+/>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Quick filter themes..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <select class="form-select" [(ngModel)]="statusFilter">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" type="button" (click)="loadThemes()">
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading themes...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Theme</th>
+            <th>Key</th>
+            <th>Primary</th>
+            <th>Secondary</th>
+            <th>Font</th>
+            <th>Created</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredThemes">
+            <td class="fw-semibold">{{ item.themeName }}</td>
+            <td>{{ item.themeKey }}</td>
+            <td>
+              <span class="badge border text-dark" [style.background]="item.primaryColor">
+                {{ item.primaryColor || '-' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge border text-dark" [style.background]="item.secondaryColor">
+                {{ item.secondaryColor || '-' }}
+              </span>
+            </td>
+            <td>{{ item.fontFamily || '-' }}</td>
+            <td>{{ item.createdOn | date: 'short' }}</td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'"
+              >
+                {{ item.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredThemes.length === 0">
+            <td colspan="7" class="text-center text-muted py-4">
+              No themes found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

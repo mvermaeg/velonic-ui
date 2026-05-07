@@ -1,0 +1,222 @@
+/* You can add global styles to this file, and also import other style files */
+@import "nouislider/dist/nouislider.css";
+@import "quill/dist/quill.snow.css";
+@import "quill/dist/quill.bubble.css";
+@import "jsvectormap/dist/css/jsvectormap.css";
+@import "flatpickr/dist/flatpickr.css";
+@import "nouislider/dist/nouislider.css";
+@import "../public/assets/scss/app.scss";
+// @import "../public/assets/scss/icons.scss";
+
+
+.apex-charts {
+  div {
+    min-height: 0 !important;
+  }
+}
+
+ngb-pagination {
+  ul {
+    margin-bottom: 0px;
+  }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+
+.ri-eye-fill {
+  color    : green;
+  font-size: 20px;
+  cursor   : pointer;
+}
+
+.ri-edit-box-fill {
+  color    : #047cd6;
+  font-size: 20px;
+  cursor   : pointer;
+}
+
+.ri-delete-bin-5-fill {
+  color    : red;
+  font-size: 20px;
+  cursor   : pointer;
+}
+
+.ri-download-2-fill {
+  color    : #1a2942;
+  font-size: 20px;
+  cursor   : pointer;
+}
+
+.export_btn {
+  text-align: end;
+  font-size : 20px;
+  cursor    : pointer;
+}
+
+.green {
+  color      : green !important;
+  font-weight: 700;
+}
+
+.SSuccess {
+  background   : #dbfce7;
+  color        : #008236;
+  padding      : 5px 12px;
+  border-radius: 25px;
+  font-weight  : 600;
+}
+
+.SPrimary {
+  background   : #dbeafe;
+  color        : #3447e6;
+  padding      : 5px 12px;
+  border-radius: 25px;
+  font-weight  : 600;
+}
+
+.SInfo {
+  background   : #fef9c2;
+  color        : #a65f00;
+  padding      : 5px 12px;
+  border-radius: 25px;
+  font-weight  : 600;
+}
+
+.SLight {
+  background   : #f2f2f7;
+  color        : #212529;
+  padding      : 5px 12px;
+  border-radius: 25px;
+  font-weight  : 600;
+}
+
+.SSecondary {
+  background   : #cefafe;
+  color        : #007595;
+  padding      : 5px 12px;
+  border-radius: 25px;
+  font-weight  : 600;
+}
+
+.SPurple {
+  background   : #f3e8ff;
+  color        : #8200e0;
+  padding      : 5px 12px;
+  border-radius: 25px;
+  font-weight  : 600;
+}
+
+.btn-primary {
+  background: #3bc0c3 !important;
+  border    : 1px solid #3bc0c3;
+
+  &:hover,
+  &:active {
+    background: #3bc0c3 !important;
+  }
+}
+
+
+.card {
+  border-radius: 12px;
+}
+
+// *\-----------  Data Table ---------------\*
+
+
+.table> :not(caption)>*>* {
+  padding: 0.7rem 0.7rem;
+}
+
+
+.table>thead {
+  background: #f3f3f5 !important;
+
+  th {
+    color : var(--tz-heading-color);;
+    cursor: pointer;
+  }
+}
+
+
+.table {
+  width       : 100%;
+  table-layout: auto;
+}
+
+.table th,
+.table td {
+  white-space   : nowrap;
+  width         : 1%;
+  vertical-align: middle;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  padding   : 0px 1.5rem 1.5rem 1.5rem;
+}
+
+.bold {
+  font-weight: 600;
+  cursor     : pointer;
+
+  &:hover {
+    color: $cyan;
+  }
+}
+
+// ==========================  Modal Popup =======================
+.modal-body {
+  width     : 96%;
+  align-self: center;
+}
+
+.modal-header {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+
+  h3 {
+    margin-bottom: 0px;
+  }
+}
+
+.modal-dialog {
+  width: -webkit-fill-available;
+}
+
+.modal-right {
+  justify-content: start !important;
+}
+
+
+// ========================= Accordion ========================  
+
+.accordion {
+  .card {
+    // box-shadow      : 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    border: 1px solid #5959592b;
+    background-color: none !important;
+  }
+
+  .card-header {
+    border-radius: 12px;
+  }
+
+  h5{
+    color:$black;
+    font-weight: 500;
+  }
+}
+
+// ====================== Nav Tabs ===============================
+
+.nav-tabs > li > a {
+    color: $black;
+     font-weight: 500;
+}
+
+.nav-tabs .nav-link.active{
+color:$primary
+}
