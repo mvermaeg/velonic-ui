@@ -1,0 +1,282 @@
+<app-page-title
+  title="Page Sections"
+  subtitle="Sites"
+  header="Manage dynamic website page sections"
+/>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <select
+          class="form-select"
+          name="selectedSiteId"
+          [(ngModel)]="selectedSiteId"
+          (change)="onSiteChange()"
+        >
+          <option [ngValue]="null">Select Site</option>
+          <option *ngFor="let site of sites" [ngValue]="site.id">
+            {{ site.siteName }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <select
+          class="form-select"
+          name="selectedPageId"
+          [(ngModel)]="selectedPageId"
+          (change)="onPageChange()"
+        >
+          <option [ngValue]="null">Select Page</option>
+          <option *ngFor="let page of filteredPages" [ngValue]="page.id">
+            {{ page.pageName }} /{{ page.pageSlug }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-5 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="startAdd()">
+          <i class="ri-add-line"></i> Add Section
+        </button>
+
+        <button class="btn btn-outline-primary" type="button" (click)="loadSections()">
+          <i class="ri-refresh-line"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">
+  {{ successMessage }}
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card mb-3" *ngIf="showForm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      {{ editingId ? 'Edit Section' : 'Add Section' }}
+    </h5>
+
+    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cancelForm()">
+      Close
+    </button>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Section Key</label>
+        <select class="form-select" name="sectionKey" [(ngModel)]="form.sectionKey">
+          <option value="">Select Section Type</option>
+          <option value="about">About</option>
+          <option value="services">Services</option>
+          <option value="feature">Feature</option>
+          <option value="gallery">Gallery</option>
+          <option value="testimonial">Testimonial</option>
+          <option value="faq">FAQ</option>
+          <option value="custom-html">Custom HTML</option>
+        </select>
+      </div>
+
+      <div class="col-md-5">
+        <label class="form-label">Section Title</label>
+        <input
+          class="form-control"
+          name="sectionTitle"
+          placeholder="Professional Roofing Experts"
+          [(ngModel)]="form.sectionTitle"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Sort Order</label>
+        <input
+          type="number"
+          class="form-control"
+          name="sortOrder"
+          [(ngModel)]="form.sortOrder"
+        />
+      </div>
+
+      <div class="col-md-2 d-flex align-items-end">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            name="isActive"
+            [(ngModel)]="form.isActive"
+          />
+          <label class="form-check-label">Active</label>
+        </div>
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">Section Subtitle</label>
+        <textarea
+          class="form-control"
+          name="sectionSubtitle"
+          rows="2"
+          placeholder="Short section description"
+          [(ngModel)]="form.sectionSubtitle"
+        ></textarea>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Image URL</label>
+        <input
+          class="form-control"
+          name="imageUrl"
+          placeholder="/assets/templates/template-modern/images/home/about1.jpg"
+          [(ngModel)]="form.imageUrl"
+        />
+
+        <div class="section-image-preview mt-2" *ngIf="form.imageUrl">
+          <img [src]="form.imageUrl" alt="Preview" />
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Button Text</label>
+        <input
+          class="form-control"
+          name="buttonText"
+          placeholder="Contact Us"
+          [(ngModel)]="form.buttonText"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Button URL / Page Slug</label>
+        <input
+          class="form-control"
+          name="buttonUrl"
+          placeholder="contact"
+          [(ngModel)]="form.buttonUrl"
+        />
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">HTML Content</label>
+        <textarea
+          class="form-control code-box"
+          name="htmlContent"
+          rows="7"
+          placeholder="<p>Your custom content here...</p>"
+          [(ngModel)]="form.htmlContent"
+        ></textarea>
+      </div>
+
+      <div class="col-md-12 text-end">
+        <button class="btn btn-outline-secondary me-2" type="button" (click)="cancelForm()">
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-primary"
+          type="button"
+          (click)="saveSection()"
+          [disabled]="saving"
+        >
+          {{ saving ? 'Saving...' : editingId ? 'Update Section' : 'Save Section' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading sections...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Sort</th>
+            <th>Key</th>
+            <th>Title</th>
+            <th>Image</th>
+            <th>Button</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let section of sections">
+            <td>{{ section.sortOrder }}</td>
+
+            <td>
+              <span class="badge bg-light text-dark border">
+                {{ section.sectionKey }}
+              </span>
+            </td>
+
+            <td>
+              <strong>{{ section.sectionTitle || '-' }}</strong>
+              <div class="small text-muted">
+                {{ section.sectionSubtitle || '-' }}
+              </div>
+            </td>
+
+            <td>
+              <img
+                *ngIf="section.imageUrl"
+                class="table-section-img"
+                [src]="section.imageUrl"
+                alt="Section"
+              />
+              <span *ngIf="!section.imageUrl" class="text-muted">-</span>
+            </td>
+
+            <td>
+              <div>{{ section.buttonText || '-' }}</div>
+              <small class="text-muted">{{ section.buttonUrl || '' }}</small>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="section.isActive ? 'bg-success' : 'bg-danger'">
+                {{ section.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <td>{{ section.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+
+            <td class="text-end">
+              <button
+                class="btn btn-sm btn-outline-primary me-2"
+                type="button"
+                (click)="editSection(section)"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-sm"
+                [ngClass]="section.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                (click)="toggleStatus(section)"
+              >
+                {{ section.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="sections.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">
+              Select a page to manage sections.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

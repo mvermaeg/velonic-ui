@@ -1,49 +1,44 @@
 <section id="Header">
-  <div class="container-fluid">
+  <div class="template-container">
     <div class="top-bar">
       <div class="top-inner">
         <div class="left">
-          <span><i class="fa-solid fa-location-dot"></i> 72 Main Drive, Calibry, FL</span>
-          <span><i class="fa-regular fa-clock"></i> Mon - Sat : 9am to 7pm Sunday is CLOSED</span>
+          <span><i class="fa-solid fa-location-dot"></i> {{ addressLine1 }}, {{ addressLine2 }}</span>
+          <span><i class="fa-regular fa-clock"></i> {{ businessHours }}</span>
         </div>
 
         <div class="right">
           <div class="social">
-            <i class="fa-brands fa-facebook-f"></i>
-            <i class="fa-brands fa-linkedin-in"></i>
-            <i class="fa-brands fa-instagram"></i>
-            <i class="fa-brands fa-google-plus-g"></i>
-            <i class="fa-brands fa-twitter"></i>
+            <a *ngIf="facebookUrl" [href]="facebookUrl" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+            <a *ngIf="linkedinUrl" [href]="linkedinUrl" target="_blank"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a *ngIf="instagramUrl" [href]="instagramUrl" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+            <a *ngIf="twitterUrl" [href]="twitterUrl" target="_blank"><i class="fa-brands fa-twitter"></i></a>
+            <a *ngIf="youtubeUrl" [href]="youtubeUrl" target="_blank"><i class="fa-brands fa-youtube"></i></a>
           </div>
         </div>
       </div>
     </div>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="template-navbar">
       <div class="nav-left">
-        <img
-          class="img_height"
-          src="/assets/templates/template-modern/images/logo.png"
-          style="cursor:pointer;"
-          alt="Logo"
-        />
+        <img class="img_height" [src]="logoUrl" alt="Logo" (click)="setActivePage('home')" />
       </div>
 
-      <button class="navbar-toggler" type="button" (click)="toggleNavbar()">
-        <span class="navbar-toggler-icon"></span>
+      <button class="mobile-menu-btn" type="button" (click)="toggleNavbar()">
+        <i class="fa-solid fa-bars"></i>
       </button>
 
-      <div class="collapse navbar-collapse" [ngClass]="{ show: isCollapsed }">
-        <ul class="navbar-nav nav-center">
+      <div class="nav-content" [class.show]="isCollapsed">
+        <ul class="nav-center">
           <li class="nav-item" *ngFor="let item of navItems">
-            <a class="nav-link" href="#">
+            <button type="button" class="nav-link" [class.active]="activePage?.pageSlug === item.slug" (click)="setActivePage(item.slug)">
               <span>{{ item.label }}</span>
-            </a>
+            </button>
           </li>
         </ul>
 
         <div class="nav-right">
-          <button class="quote-btn" type="button">
+          <button class="quote-btn" type="button" (click)="setActivePage('contact')">
             <span>GET A QUOTE</span>
             <i class="corner top-left"></i>
             <i class="corner bottom-right"></i>
@@ -54,263 +49,378 @@
   </div>
 </section>
 
-<section id="hero">
+<section id="hero" *ngIf="isHomePage">
   <div class="overlay"></div>
+
   <div class="container hero-content">
     <p class="tagline">Welcome To {{ site?.siteName || 'HVAC Master' }}</p>
-
-    <h1>
-      Quality Garage Door <br />
-      Installations & Repairs
-    </h1>
-
-    <h5 class="sub_tag">
-      Mod tempor incididunt ut laboret dolore magna aliqua tenim adnim veniam quis nostrud
-      exercitation ullamco.
-    </h5>
+    <h1>{{ activePage?.heroTitle || 'Quality Garage Door Installations & Repairs' }}</h1>
+    <h4 class="sub_tag">{{ activePage?.heroSubtitle || 'Fast response and trusted service experts.' }}</h4>
 
     <div class="cta-group">
-      <button class="primary-btn" type="button">
-        Book A Service <i class="fa-solid fa-arrow-right-long"></i>
+      <div class="appointment-box">
+        <div class="icon"><i class="fa-solid fa-mobile-screen"></i></div>
+        <div class="content">
+          <p>Book an Appointment Today!</p>
+          <h2>{{ phoneNumber }}</h2>
+        </div>
+      </div>
+
+      <button class="quote-btn" type="button" (click)="setActivePage('contact')">
+        <span>GET A QUOTE</span>
+        <i class="corner top-left"></i>
+        <i class="corner bottom-right"></i>
       </button>
+    </div>
+  </div>
+</section>
 
-      <button class="secondary-btn" type="button">
-        Get A Quote <i class="fa-solid fa-arrow-right-long"></i>
+<section class="breadcrumb-hero" *ngIf="!isHomePage">
+  <div class="overlay"></div>
+  <div class="content">
+    <h1>{{ activePage?.pageName }}</h1>
+    <p>{{ activePage?.heroSubtitle }}</p>
+  </div>
+</section>
+
+<ng-container *ngIf="isHomePage">
+  <section class="about-section">
+    <div class="container">
+      <div class="left">
+        <img src="/assets/templates/template-modern/images/home/about1.jpg" alt="Worker" />
+      </div>
+
+      <div class="right">
+        <span class="tag">ABOUT US</span>
+        <h2 class="title">Reliable Home Repairs And Renovations</h2>
+        <p class="desc">
+          Expert services you can trust for every repair and renovation project,
+          ensuring lasting results, exceptional quality, and peace of mind for you and your home.
+        </p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="icon"><i class="fa-solid fa-trophy"></i></div>
+            <div>
+              <h4>Experienced, Skilled Team</h4>
+              <p>Our experienced team provides expert solutions tailored to your renovation.</p>
+            </div>
+          </div>
+
+          <div class="feature">
+            <div class="icon"><i class="fa-solid fa-headset"></i></div>
+            <div>
+              <h4>Support 24/7</h4>
+              <p>Emergency services are available for urgent repairs and customer support.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary-btn" type="button" (click)="setActivePage('about')">About Us</button>
+          <div class="call">
+            <div class="call-icon"><i class="fa-solid fa-phone-volume"></i></div>
+            <div class="call-text">Call Us Now:<strong>{{ phoneNumber }}</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="quote">
+    <div class="container">
+      <div class="left">
+        <img src="/assets/templates/template-modern/images/home/counter1.jpg" alt="quote" />
+        <div class="call-box">
+          <div class="icon"><i class="fa-solid fa-phone-volume"></i></div>
+          <div class="info">
+            <span>Call Us Now:</span>
+            <h3>{{ phoneNumber }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <span class="tag">GET A QUOTE</span>
+        <h2 class="title">Book Our Expert <br />Quote Today!</h2>
+        <p class="desc">
+          From plumbing to electrical and HVAC, our skilled experts are ready to handle all your
+          home repair and maintenance needs.
+        </p>
+        <button class="primary-btn" type="button" (click)="setActivePage('contact')">Contact Us</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="why">
+    <div class="container">
+      <div class="left">
+        <span class="tag">WHY CHOOSE US</span>
+        <h2 class="title">
+          Expert HVAC Solutions You <br />
+          Can Rely On For Year-Round <br />
+          Comfort
+        </h2>
+        <p class="desc">
+          Our skilled team provides dependable services, from installation to repair and maintenance.
+        </p>
+        <button class="primary-btn" type="button" (click)="setActivePage('about')">About Us</button>
+      </div>
+
+      <div class="right">
+        <div class="card" *ngFor="let item of features">
+          <div class="icon" [innerHTML]="item.icon"></div>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lead-form-section" id="lead-form">
+    <div class="container">
+      <div class="lead-form-box">
+        <div class="form-left">
+          <span class="tag">GET A QUOTE</span>
+          <h2 class="title">{{ formTitle }}</h2>
+          <p class="desc">Submit your details and our team will contact you shortly.</p>
+        </div>
+
+        <div class="form-right">
+          <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+          <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+          <div class="row g-3">
+            <div class="col-md-6" *ngIf="showField('fullName')">
+              <input class="form-control" name="fullName" placeholder="Full Name" [(ngModel)]="leadForm.fullName" />
+            </div>
+
+            <div class="col-md-6" *ngIf="showField('phone')">
+              <input class="form-control" name="phone" placeholder="Phone Number" [(ngModel)]="leadForm.phone" />
+            </div>
+
+            <div class="col-md-6" *ngIf="showField('email')">
+              <input class="form-control" name="email" placeholder="Email Address" [(ngModel)]="leadForm.email" />
+            </div>
+
+            <div class="col-md-6" *ngIf="showField('postcode')">
+              <input class="form-control" name="postcode" placeholder="Postcode" [(ngModel)]="leadForm.postcode" />
+            </div>
+
+            <div class="col-md-12" *ngIf="showField('message')">
+              <textarea
+                class="form-control"
+                name="message"
+                rows="4"
+                placeholder="Tell us what service you need"
+                [(ngModel)]="leadForm.message"
+              ></textarea>
+            </div>
+
+            <div class="col-md-12">
+              <button class="primary-btn" type="button" (click)="submitLead()" [disabled]="submitting">
+                {{ submitting ? 'Submitting...' : formButtonText }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</ng-container>
+
+<section class="inner-page-section" *ngIf="isAboutPage">
+  <div class="template-container">
+    <div class="inner-page-card">
+      <h2>About {{ site?.siteName }}</h2>
+      <p>{{ activePage?.heroSubtitle }}</p>
+      <p>
+        We provide reliable, professional and customer-focused home service solutions with a strong commitment
+        to quality, speed and customer satisfaction.
+      </p>
+
+      <div class="service-grid">
+        <div class="service-card" *ngFor="let item of features">
+          <div class="icon" [innerHTML]="item.icon"></div>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.desc }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="inner-page-section" *ngIf="isServicesPage">
+  <div class="template-container">
+    <div class="inner-page-card">
+      <h2>Our Services</h2>
+      <p>{{ activePage?.heroSubtitle }}</p>
+
+      <div class="service-grid">
+        <div class="service-card" *ngFor="let item of features">
+          <div class="icon" [innerHTML]="item.icon"></div>
+          <h4>{{ item.title }}</h4>
+          <p>{{ item.desc }}</p>
+          <button class="read-more-btn" type="button" (click)="setActivePage('contact')">Read More</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact-section" *ngIf="isContactPage">
+  <div class="template-container contact-wrapper">
+    <div class="contact-info">
+      <p class="tag">Contact Our Team</p>
+      <h2 class="title">Get In Touch With Us</h2>
+      <p class="desc">Have questions or need support? Fill out the form and our team will respond quickly.</p>
+    </div>
+
+    <div class="contact-form">
+      <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+      <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <div class="form-grid">
+        <input *ngIf="showField('fullName')" type="text" placeholder="Full Name" name="fullName" [(ngModel)]="leadForm.fullName" />
+        <input *ngIf="showField('phone')" type="text" placeholder="Phone Number" name="phone" [(ngModel)]="leadForm.phone" />
+        <input *ngIf="showField('email')" type="email" placeholder="Email Address" name="email" [(ngModel)]="leadForm.email" />
+        <input *ngIf="showField('postcode')" type="text" placeholder="Postcode" name="postcode" [(ngModel)]="leadForm.postcode" />
+      </div>
+
+      <textarea
+        *ngIf="showField('message')"
+        placeholder="Comments"
+        name="message"
+        [(ngModel)]="leadForm.message"
+      ></textarea>
+
+      <button class="quote-btn" type="button" (click)="submitLead()" [disabled]="submitting">
+        <span>{{ submitting ? 'SUBMITTING...' : formButtonText }}</span>
+        <i class="corner top-left"></i>
+        <i class="corner bottom-right"></i>
       </button>
     </div>
   </div>
-</section>
 
-<section class="about-section">
-  <div class="container">
-    <div class="left">
-      <img src="/assets/templates/template-modern/images/home/about1.jpg" alt="Worker" />
-    </div>
-
-    <div class="right">
-      <span class="tag">ABOUT US</span>
-      <h2 class="title">Reliable Home Repairs And Renovations</h2>
-
-      <p class="desc">
-        Expert services you can trust for every repair and renovation project,
-        ensuring lasting results, exceptional quality, and peace of mind for you
-        and your home, every time we visit.
-      </p>
-
-      <div class="features">
-        <div class="feature">
-          <div class="icon">
-            <i class="fa-solid fa-trophy"></i>
-          </div>
-          <div>
-            <h4>Experienced, Skilled Team</h4>
-            <p>Our experienced team provides expert solutions tailored to your renovation.</p>
-          </div>
-        </div>
-
-        <div class="feature">
-          <div class="icon">
-            <i class="fa-solid fa-headset"></i>
-          </div>
-          <div>
-            <h4>Support 24/7</h4>
-            <p>Emergency services are available 24/7 for urgent repairs.</p>
-          </div>
-        </div>
+  <div class="template-container">
+    <div class="contact-grid">
+      <div class="contact-item">
+        <div class="icon-wrap"><i class="fa-solid fa-location-dot"></i></div>
+        <h3>Office Location</h3>
+        <p>{{ addressLine1 }}<br />{{ addressLine2 }}</p>
       </div>
 
-      <div class="actions">
-        <button class="primary-btn" type="button">About Us</button>
-        <div class="call">
-          <div class="call-icon"><i class="fa-solid fa-phone-volume"></i></div>
-          <div class="call-text">
-            Call Us Now:<strong>1-555-678-888</strong>
-          </div>
-        </div>
+      <div class="contact-item">
+        <div class="icon-wrap"><i class="fa-solid fa-phone-volume"></i></div>
+        <h3>Phone Number</h3>
+        <p>{{ phoneNumber }}</p>
       </div>
-    </div>
-  </div>
-</section>
 
-<section class="stats">
-  <div class="stat">
-    <div class="stats-box">
-      <h2>20K+</h2>
-      <p>Services Completed</p>
-    </div>
-  </div>
-
-  <div class="stat">
-    <div class="stats-box">
-      <h2>4.8/5</h2>
-      <p>Average Rating</p>
-    </div>
-  </div>
-
-  <div class="stat">
-    <div class="stats-box">
-      <h2>10K+</h2>
-      <p>Satisfied Customers</p>
-    </div>
-  </div>
-
-  <div class="stat">
-    <div class="stats-box">
-      <h2>10K+</h2>
-      <p>Years Of Experience</p>
-    </div>
-  </div>
-</section>
-
-<section class="quote">
-  <div class="container">
-    <div class="left">
-      <img src="/assets/templates/template-modern/images/home/counter1.jpg" alt="quote" />
-
-      <div class="call-box">
-        <div class="icon">
-          <i class="fa-solid fa-phone-volume"></i>
-        </div>
-        <div class="info">
-          <span>Call Us Now:</span>
-          <h3>1-555-678-888</h3>
-        </div>
+      <div class="contact-item">
+        <div class="icon-wrap"><i class="fa-solid fa-envelope"></i></div>
+        <h3>Send Message</h3>
+        <p>{{ emailAddress }}</p>
       </div>
     </div>
 
-    <div class="right">
-      <span class="tag">GET A QUOTE</span>
-      <h2 class="title">Book Our Expert <br />Quote Today!</h2>
-      <p class="desc">
-        From plumbing to electrical and HVAC, our skilled experts are ready to handle all your
-        home repair & maintenance needs. Schedule your service today!
-      </p>
-      <button class="primary-btn" type="button">Contact Us</button>
+    <div class="hours">
+      <strong>Our Showroom Hours Are:</strong> {{ businessHours }}
     </div>
   </div>
 </section>
 
-<section class="why">
-  <div class="container">
-    <div class="left">
-      <span class="tag">WHY CHOOSE US</span>
-
-      <h2 class="title">
-        Expert HVAC Solutions You <br />
-        Can Rely On For Year-Round <br />
-        Comfort
-      </h2>
-
-      <p class="desc">
-        Our skilled team provides top-notch air conditioning services, from installation
-        to repair and maintenance, ensuring your system runs efficiently for year-round comfort.
-      </p>
-
-      <button class="primary-btn" type="button">About Us</button>
+<section class="inner-page-section" *ngIf="isThankYouPage">
+  <div class="template-container">
+    <div class="inner-page-card thank-you-box">
+      <h2>Thank You</h2>
+      <p>{{ formSuccessMessage }}</p>
+      <button class="primary-btn" type="button" (click)="setActivePage('home')">Back To Home</button>
     </div>
+  </div>
+</section>
 
-    <div class="right">
-      <div class="card" *ngFor="let item of features">
-        <div class="icon" [innerHTML]="item.icon"></div>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.desc }}</p>
+<section class="dynamic-page-content" *ngIf="!isHomePage && activePage?.htmlContent">
+  <div class="template-container">
+    <div [innerHTML]="activePage.htmlContent"></div>
+  </div>
+</section>
+
+<section class="dynamic-sections" *ngIf="!isHomePage && activeSections.length > 0">
+  <div class="template-container">
+    <div class="dynamic-section-card" *ngFor="let section of activeSections" [ngClass]="'section-' + section.sectionKey">
+      <div class="dynamic-section-image" *ngIf="section.imageUrl">
+        <img [src]="section.imageUrl" [alt]="section.sectionTitle || 'Section image'" />
       </div>
-    </div>
-  </div>
-</section>
 
-<div class="marquee-container">
-  <div class="marquee-track">
-    <div class="marquee-content">
-      <span class="item" *ngFor="let s of marquee">
-        <i class="icon fa-solid fa-screwdriver-wrench"></i>
-        <span>{{ s.title }}</span>
-      </span>
+      <div class="dynamic-section-content">
+        <span class="tag">{{ section.sectionKey }}</span>
+        <h2 *ngIf="section.sectionTitle">{{ section.sectionTitle }}</h2>
+        <p *ngIf="section.sectionSubtitle">{{ section.sectionSubtitle }}</p>
+        <div class="cms-html-content" *ngIf="section.htmlContent" [innerHTML]="section.htmlContent"></div>
 
-      <span class="item" *ngFor="let s of marquee">
-        <i class="icon fa-solid fa-screwdriver-wrench"></i>
-        <span>{{ s.title }}</span>
-      </span>
-    </div>
-  </div>
-</div>
-
-<section class="project">
-  <div class="container">
-    <span class="tag">Our Projects</span>
-
-    <h2 class="title">Amazing Work Results</h2>
-
-    <p class="desc">
-      We pride ourselves on delivering consistent, high-quality services that you can depend on.
-      Whether it’s a small fix or a large-scale renovation.
-    </p>
-
-    <div class="compare-grid">
-      <div class="stats-box">
-        <h2>Project Gallery</h2>
-        <p>Before/after image compare section will be added here later.</p>
+        <button
+          class="primary-btn"
+          type="button"
+          *ngIf="section.buttonText"
+          (click)="section.buttonUrl ? setActivePage(section.buttonUrl) : setActivePage('contact')"
+        >
+          {{ section.buttonText }}
+        </button>
       </div>
     </div>
   </div>
 </section>
 
 <footer class="footer-section">
-  <div class="container">
+  <div class="template-container">
     <div class="footer-top">
       <div class="footer-left">
-        <img src="/assets/templates/template-modern/images/logo.png" class="logo" alt="Logo" />
-
-        <h2>
-          Sunt culpa qui officia deslys mollit ipsum est dolor se laborum. Sed perspiciatis un
-          iste natus error sit voluptatem.
-        </h2>
+        <img [src]="logoUrl" class="logo" alt="Logo" />
+        <h2>Reliable home service experts for repair, renovation, maintenance and emergency support.</h2>
       </div>
 
       <div class="footer-right">
         <div class="footer-col">
           <h4>Company</h4>
           <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Services</a></li>
-            <li><a href="#">Blogs</a></li>
+            <li><button type="button" (click)="setActivePage('about')">About Us</button></li>
+            <li><button type="button" (click)="setActivePage('services')">Services</button></li>
+            <li><button type="button" (click)="setActivePage('contact')">Contact</button></li>
           </ul>
         </div>
 
         <div class="footer-col">
-          <h4>Solutions</h4>
+          <h4>Pages</h4>
           <ul>
-            <li><a href="#">Blogs</a></li>
-            <li><a href="#">Contact Us</a></li>
+            <li *ngFor="let item of navItems">
+              <button type="button" (click)="setActivePage(item.slug)">
+                {{ item.label }}
+              </button>
+            </li>
           </ul>
         </div>
 
         <div class="footer-col">
           <h4>Address:</h4>
-          <p>
-            15 Corporate Pl S Suite # 210,<br />
-            Piscataway, NJ, United States
-          </p>
+          <p>{{ addressLine1 }}<br />{{ addressLine2 }}</p>
 
           <h4 class="mt">Contact:</h4>
-          <p style="text-decoration: underline;">+1 (712) 724-8001</p>
-          <p style="text-decoration: underline;">info&#64;bcgnj.com</p>
+          <p style="text-decoration: underline;">{{ phoneNumber }}</p>
+          <p style="text-decoration: underline;">{{ emailAddress }}</p>
         </div>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>
-        Copyright © 2026 | All rights Reserved by {{ site?.siteName || 'HVAC Master' }}
-      </p>
+      <p>Copyright © 2026 | All rights Reserved by {{ site?.siteName || 'HVAC Master' }}</p>
 
       <div class="social-icons">
-        <span><i class="fa-brands fa-twitter"></i></span>
-        <span><i class="fa-brands fa-facebook-f"></i></span>
-        <span><i class="fa-brands fa-youtube"></i></span>
-        <span><i class="fa-brands fa-linkedin"></i></span>
-        <span><i class="fa-brands fa-github"></i></span>
+        <a *ngIf="twitterUrl" [href]="twitterUrl" target="_blank"><i class="fa-brands fa-twitter"></i></a>
+        <a *ngIf="facebookUrl" [href]="facebookUrl" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+        <a *ngIf="youtubeUrl" [href]="youtubeUrl" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+        <a *ngIf="linkedinUrl" [href]="linkedinUrl" target="_blank"><i class="fa-brands fa-linkedin"></i></a>
       </div>
     </div>
   </div>
 </footer>
+ 

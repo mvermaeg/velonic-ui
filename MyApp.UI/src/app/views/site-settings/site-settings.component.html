@@ -1,0 +1,168 @@
+<app-page-title
+  title="Site Settings"
+  subtitle="Sites"
+  header="Manage website contact, logo and social settings"
+/>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <select
+          class="form-select"
+          name="selectedSiteId"
+          [(ngModel)]="selectedSiteId"
+          (change)="onSiteChange()"
+        >
+          <option [ngValue]="null">Select Site</option>
+          <option *ngFor="let site of sites" [ngValue]="site.id">
+            {{ site.siteName }} /{{ site.slug }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-8 text-md-end">
+        <button class="btn btn-outline-primary" type="button" (click)="loadSettings()">
+          <i class="ri-refresh-line"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">
+  {{ successMessage }}
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card" *ngIf="selectedSiteId">
+  <div class="card-header">
+    <h5 class="mb-0">Website Settings</h5>
+  </div>
+
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading settings...
+    </div>
+
+    <div class="row g-3" *ngIf="!loading">
+      <div class="col-md-8">
+        <label class="form-label">Logo URL</label>
+        <input
+          class="form-control"
+          name="logoUrl"
+          placeholder="/assets/templates/template-modern/images/logo.png"
+          [(ngModel)]="form.logoUrl"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Logo Preview</label>
+        <div class="logo-preview">
+          <img *ngIf="form.logoUrl" [src]="form.logoUrl" alt="Logo" />
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Phone Number</label>
+        <input
+          class="form-control"
+          name="phoneNumber"
+          placeholder="+1 (712) 724-8001"
+          [(ngModel)]="form.phoneNumber"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Email Address</label>
+        <input
+          class="form-control"
+          name="emailAddress"
+          placeholder="info@domain.com"
+          [(ngModel)]="form.emailAddress"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Business Hours</label>
+        <input
+          class="form-control"
+          name="businessHours"
+          placeholder="Mon - Sat : 9am to 7pm"
+          [(ngModel)]="form.businessHours"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Address Line 1</label>
+        <input
+          class="form-control"
+          name="addressLine1"
+          placeholder="15 Corporate Pl S Suite #210"
+          [(ngModel)]="form.addressLine1"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Address Line 2</label>
+        <input
+          class="form-control"
+          name="addressLine2"
+          placeholder="Piscataway, NJ, United States"
+          [(ngModel)]="form.addressLine2"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Facebook URL</label>
+        <input class="form-control" name="facebookUrl" [(ngModel)]="form.facebookUrl" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">LinkedIn URL</label>
+        <input class="form-control" name="linkedinUrl" [(ngModel)]="form.linkedinUrl" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Instagram URL</label>
+        <input class="form-control" name="instagramUrl" [(ngModel)]="form.instagramUrl" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Twitter URL</label>
+        <input class="form-control" name="twitterUrl" [(ngModel)]="form.twitterUrl" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">YouTube URL</label>
+        <input class="form-control" name="youtubeUrl" [(ngModel)]="form.youtubeUrl" />
+      </div>
+
+      <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            name="isActive"
+            [(ngModel)]="form.isActive"
+          />
+          <label class="form-check-label">Active</label>
+        </div>
+      </div>
+
+      <div class="col-md-12 text-end">
+        <button
+          class="btn btn-primary"
+          type="button"
+          (click)="saveSettings()"
+          [disabled]="saving"
+        >
+          {{ saving ? 'Saving...' : 'Save Settings' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

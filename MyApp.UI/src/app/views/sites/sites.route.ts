@@ -8,9 +8,10 @@ export const SITES_ROUTES: Route[] = [
     data: { title: 'Sites' },
   },
   {
-    path: 'pages',
-    loadComponent: () =>
-      import('./pages/pages.component').then((m) => m.PagesComponent),
-    data: { title: 'Sites Pages' },
-  },
+  path: 'pages',
+  loadComponent: () =>
+    import('../site-pages/site-pages.component').then(
+      (m) => m.SitePagesComponent
+    ),
+},
 ]

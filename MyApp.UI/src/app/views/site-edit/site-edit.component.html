@@ -1,0 +1,59 @@
+<app-page-title
+  title="Edit Site"
+  subtitle="Sites"
+  header="Update website basic details"
+/>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading site...
+    </div>
+
+    <div class="row g-3" *ngIf="!loading">
+      <div class="col-md-6">
+        <label class="form-label">Site Name</label>
+        <input class="form-control" name="siteName" [(ngModel)]="form.siteName" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Slug</label>
+        <input class="form-control" name="slug" [(ngModel)]="form.slug" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Domain Name</label>
+        <input class="form-control" name="domainName" [(ngModel)]="form.domainName" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Theme Key</label>
+        <input class="form-control" name="themeKey" [(ngModel)]="form.themeKey" />
+      </div>
+
+      <div class="col-md-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="isActive" [(ngModel)]="form.isActive" />
+          <label class="form-check-label">Active</label>
+        </div>
+      </div>
+
+      <div class="col-md-12 text-end">
+        <button class="btn btn-outline-secondary me-2" type="button" (click)="goBack()">
+          Back
+        </button>
+
+        <button class="btn btn-outline-success me-2" type="button" (click)="openPreview()">
+          Preview
+        </button>
+
+        <button class="btn btn-primary" type="button" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save Site' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

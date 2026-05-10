@@ -51,11 +51,51 @@ export const routes: Routes = [
       .then(m => m.WebsiteTemplatesComponent)
 },
 {
+  path: 'w/:slug/:pageSlug',
+  loadComponent: () =>
+    import('./website-engine/public-site-renderer/public-site-renderer.component')
+      .then(m => m.PublicSiteRendererComponent),
+},
+{
   path: 'w/:slug',
   loadComponent: () =>
     import('./website-engine/public-site-renderer/public-site-renderer.component')
       .then(m => m.PublicSiteRendererComponent),
-}
+},
+{
+  path: 'w/:slug',
+  loadComponent: () =>
+    import('./website-engine/public-site-renderer/public-site-renderer.component')
+      .then(m => m.PublicSiteRendererComponent),
+},
+{
+  path: 'w/:slug/:pageSlug',
+  loadComponent: () =>
+    import('./website-engine/public-site-renderer/public-site-renderer.component')
+      .then(m => m.PublicSiteRendererComponent),
+},
+{
+  path: 'sites/sections',
+  loadComponent: () =>
+    import('./views/site-page-sections/site-page-sections.component').then(
+      (m) => m.SitePageSectionsComponent
+    ),
+},
+{
+  path: 'sites/settings',
+  loadComponent: () =>
+    import('./views/site-settings/site-settings.component').then(
+      (m) => m.SiteSettingsComponent
+    ),
+},
+{
+  path: 'site-preview/:domain',
+  loadComponent: () =>
+    import('./website-engine/public-site-renderer/public-site-renderer.component')
+      .then(m => m.PublicSiteRendererComponent),
+},
+ 
+
   // {
   //   path: 'error',
   //   loadChildren: () =>

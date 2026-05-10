@@ -87,6 +87,11 @@ export const MENU: MenuItem[] = [
         parentKey: 'sites'
       },
       {
+  key: 'sites-domains',
+  label: 'Domains',
+  link: '/sites/domains',
+},
+      {
         key: 'sites-forms',
         label: 'Forms',
         link: '/sites/forms',
@@ -115,7 +120,12 @@ export const MENU: MenuItem[] = [
         label: 'Pixels',
         link: '/sites/pixels',
         parentKey: 'sites'
-      }
+      },
+      {
+  key: 'sites-forms',
+  label: 'Forms',
+  link: '/sites/forms',
+},
     ]
   },
 

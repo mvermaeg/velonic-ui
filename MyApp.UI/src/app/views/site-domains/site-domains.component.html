@@ -1,0 +1,189 @@
+<app-page-title
+  title="Site Domains"
+  subtitle="Sites"
+  header="Manage website domains and SSL status"
+/>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1">Domains</h5>
+        <p class="text-muted mb-0">Attach custom domains to websites.</p>
+      </div>
+
+      <button class="btn btn-primary" type="button" (click)="startAdd()">
+        <i class="ri-add-line"></i> Add Domain
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="card mb-3" *ngIf="showForm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">{{ editingId ? 'Edit Domain' : 'Add Domain' }}</h5>
+    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cancel()">Close</button>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Site</label>
+        <select class="form-select" name="siteId" [(ngModel)]="form.siteId">
+          <option [ngValue]="null">Select Site</option>
+          <option *ngFor="let site of sites" [ngValue]="site.id">
+            {{ site.siteName }} /{{ site.slug }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-5">
+        <label class="form-label">Domain Name</label>
+        <input
+          class="form-control"
+          name="domainName"
+          placeholder="roofing.example.com"
+          [(ngModel)]="form.domainName"
+        />
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="isPrimary" [(ngModel)]="form.isPrimary" />
+          <label class="form-check-label">Primary</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="isActive" [(ngModel)]="form.isActive" />
+          <label class="form-check-label">Active</label>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="sslEnabled" [(ngModel)]="form.sslEnabled" />
+          <label class="form-check-label">SSL Enabled</label>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="cloudflareEnabled" [(ngModel)]="form.cloudflareEnabled" />
+          <label class="form-check-label">Cloudflare Enabled</label>
+        </div>
+      </div>
+
+      <div class="col-md-12 text-end">
+        <button class="btn btn-outline-secondary me-2" type="button" (click)="cancel()">Cancel</button>
+        <button class="btn btn-primary" type="button" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Saving...' : editingId ? 'Update Domain' : 'Save Domain' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">Loading domains...</div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Site</th>
+            <th>Domain</th>
+            <th>Primary</th>
+            <th>SSL</th>
+            <th>Cloudflare</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of domains">
+            <td>{{ item.siteName }}</td>
+            <td>
+              <strong>{{ item.domainName }}</strong>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="item.isPrimary ? 'bg-primary' : 'bg-secondary'">
+                {{ item.isPrimary ? 'Yes' : 'No' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="item.sslEnabled ? 'bg-success' : 'bg-warning'">
+                {{ item.sslEnabled ? 'Enabled' : 'Pending' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="item.cloudflareEnabled ? 'bg-success' : 'bg-secondary'">
+                {{ item.cloudflareEnabled ? 'Yes' : 'No' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'">
+                {{ item.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>{{ item.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <!-- <td class="text-end">
+                
+              <button class="btn btn-sm btn-outline-primary me-2" type="button" (click)="edit(item)">
+                Edit
+              </button>
+
+              <button
+                class="btn btn-sm"
+                type="button"
+                [ngClass]="item.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                (click)="toggleStatus(item)"
+              >
+                {{ item.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td> -->
+
+
+            <td class="text-end">
+  <button
+    class="btn btn-sm btn-outline-success me-2"
+    type="button"
+    (click)="openPreview(item)"
+  >
+    Preview
+  </button>
+
+  <button
+    class="btn btn-sm btn-outline-primary me-2"
+    type="button"
+    (click)="edit(item)"
+  >
+    Edit
+  </button>
+
+  <button
+    class="btn btn-sm"
+    type="button"
+    [ngClass]="item.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+    (click)="toggleStatus(item)"
+  >
+    {{ item.isActive ? 'Deactivate' : 'Activate' }}
+  </button>
+</td>
+          </tr>
+
+          <tr *ngIf="domains.length === 0">
+            <td colspan="8" class="text-center text-muted py-4">
+              No domains found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

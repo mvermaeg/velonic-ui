@@ -1,0 +1,19 @@
+.card {
+  border-radius: 14px;
+}
+
+.logo-preview {
+  height: 46px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+.logo-preview img {
+  max-height: 32px;
+  max-width: 180px;
+  object-fit: contain;
+}

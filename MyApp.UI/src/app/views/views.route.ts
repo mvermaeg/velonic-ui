@@ -62,5 +62,47 @@ export const VIEW_ROUTES: Route[] = [
   loadComponent: () =>
     import('./website-themes/website-themes.component')
       .then(m => m.WebsiteThemesComponent),
-}
+},
+{
+  path: 'sites/pages',
+  loadComponent: () =>
+    import('./site-pages/site-pages.component').then(
+      (m) => m.SitePagesComponent
+    ),
+},
+{
+  path: 'sites/settings',
+  loadComponent: () =>
+    import('./site-settings/site-settings.component').then(
+      (m) => m.SiteSettingsComponent
+    ),
+},
+{
+  path: 'sites/domains',
+  loadComponent: () =>
+    import('./site-domains/site-domains.component').then(
+      (m) => m.SiteDomainsComponent
+    ),
+},
+{
+  path: 'sites/pixels',
+  loadComponent: () =>
+    import('./site-pixels/site-pixels.component').then(
+      (m) => m.SitePixelsComponent
+    ),
+},
+{
+  path: 'sites/forms',
+  loadComponent: () =>
+    import('./site-forms/site-forms.component').then(
+      (m) => m.SiteFormsComponent
+    ),
+},
+{
+  path: 'sites/edit/:id',
+  loadComponent: () =>
+    import('./site-edit/site-edit.component').then(
+      (m) => m.SiteEditComponent
+    ),
+},
 ]

@@ -1,0 +1,301 @@
+<app-page-title
+  title="Site Pages"
+  subtitle="Sites"
+  header="Manage dynamic website pages"
+/>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <select class="form-select" name="selectedSiteId" [(ngModel)]="selectedSiteId">
+          <option [ngValue]="null">All Sites</option>
+          <option *ngFor="let site of sites" [ngValue]="site.id">
+            {{ site.siteName }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <input
+          type="text"
+          class="form-control"
+          name="search"
+          placeholder="Search pages..."
+          [(ngModel)]="search"
+        />
+      </div>
+
+      <div class="col-md-5 text-md-end">
+        <button class="btn btn-primary me-2" type="button" (click)="startAdd()">
+          <i class="ri-add-line"></i> Add Page
+        </button>
+
+        <button class="btn btn-outline-primary" type="button" (click)="loadPages()">
+          <i class="ri-refresh-line"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-success" *ngIf="successMessage">
+  {{ successMessage }}
+</div>
+
+<div class="alert alert-danger" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<div class="card mb-3" *ngIf="showForm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      {{ editingId ? 'Edit Site Page' : 'Add Site Page' }}
+    </h5>
+
+    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="cancelForm()">
+      Close
+    </button>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Site</label>
+        <select class="form-select" name="siteId" [(ngModel)]="form.siteId">
+          <option [ngValue]="null">Select Site</option>
+          <option *ngFor="let site of sites" [ngValue]="site.id">
+            {{ site.siteName }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Page Name</label>
+        <input
+          class="form-control"
+          name="pageName"
+          placeholder="About Us"
+          [(ngModel)]="form.pageName"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Page Slug</label>
+        <input
+          class="form-control"
+          name="pageSlug"
+          placeholder="about"
+          [(ngModel)]="form.pageSlug"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Page Title</label>
+        <input
+          class="form-control"
+          name="pageTitle"
+          placeholder="About Us"
+          [(ngModel)]="form.pageTitle"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Meta Title</label>
+        <input
+          class="form-control"
+          name="metaTitle"
+          placeholder="SEO title"
+          [(ngModel)]="form.metaTitle"
+        />
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">Meta Description</label>
+        <textarea
+          class="form-control"
+          name="metaDescription"
+          rows="2"
+          placeholder="SEO meta description"
+          [(ngModel)]="form.metaDescription"
+        ></textarea>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Hero Title</label>
+        <input
+          class="form-control"
+          name="heroTitle"
+          placeholder="Reliable Home Repairs"
+          [(ngModel)]="form.heroTitle"
+        />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Hero Subtitle</label>
+        <input
+          class="form-control"
+          name="heroSubtitle"
+          placeholder="Short hero subtitle"
+          [(ngModel)]="form.heroSubtitle"
+        />
+      </div>
+
+      <div class="col-md-12">
+        <label class="form-label">HTML Content</label>
+        <textarea
+          class="form-control code-box"
+          name="htmlContent"
+          rows="7"
+          placeholder="<h2>About our company</h2><p>...</p>"
+          [(ngModel)]="form.htmlContent"
+        ></textarea>
+      </div>
+
+      <div class="col-md-8">
+        <label class="form-label">JSON Content</label>
+        <textarea
+          class="form-control code-box"
+          name="jsonContent"
+          rows="4"
+          placeholder='{"sections":[]}'
+          [(ngModel)]="form.jsonContent"
+        ></textarea>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Sort Order</label>
+        <input
+          type="number"
+          class="form-control"
+          name="sortOrder"
+          [(ngModel)]="form.sortOrder"
+        />
+      </div>
+
+      <div class="col-md-2 d-flex align-items-end">
+        <div>
+          <div class="form-check mb-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              name="isHomePage"
+              [(ngModel)]="form.isHomePage"
+            />
+            <label class="form-check-label">Home Page</label>
+          </div>
+
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              name="isActive"
+              [(ngModel)]="form.isActive"
+            />
+            <label class="form-check-label">Active</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-12 text-end">
+        <button class="btn btn-outline-secondary me-2" type="button" (click)="cancelForm()">
+          Cancel
+        </button>
+
+        <button class="btn btn-primary" type="button" (click)="savePage()" [disabled]="saving">
+          {{ saving ? 'Saving...' : editingId ? 'Update Page' : 'Save Page' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading pages...
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Site</th>
+            <th>Page</th>
+            <th>Slug</th>
+            <th>Hero Title</th>
+            <th>Sort</th>
+            <th>Home</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let page of filteredPages">
+            <td>{{ page.siteName || '-' }}</td>
+
+            <td>
+              <strong>{{ page.pageName }}</strong>
+              <div class="small text-muted">{{ page.pageTitle }}</div>
+            </td>
+
+            <td>
+              <span class="badge bg-light text-dark border">
+                /{{ page.pageSlug }}
+              </span>
+            </td>
+
+            <td>{{ page.heroTitle || '-' }}</td>
+
+            <td>{{ page.sortOrder }}</td>
+
+            <td>
+              <span class="badge" [ngClass]="page.isHomePage ? 'bg-primary' : 'bg-secondary'">
+                {{ page.isHomePage ? 'Yes' : 'No' }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge" [ngClass]="page.isActive ? 'bg-success' : 'bg-danger'">
+                {{ page.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <td>{{ page.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+
+            <td class="text-end">
+
+                <button
+  class="btn btn-sm btn-outline-secondary me-2"
+  type="button"
+  (click)="openLivePage(page)"
+>
+  Preview
+</button>
+              <button class="btn btn-sm btn-outline-primary me-2" type="button" (click)="editPage(page)">
+                Edit
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-sm"
+                [ngClass]="page.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                (click)="toggleStatus(page)"
+              >
+                {{ page.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredPages.length === 0">
+            <td colspan="9" class="text-center text-muted py-4">
+              No site pages found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
