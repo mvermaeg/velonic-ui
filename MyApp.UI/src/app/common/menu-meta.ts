@@ -68,7 +68,18 @@ export const MENU: MenuItem[] = [
         label: 'Appointment & Sales',
         link: '/leads/appointment-sales',
         parentKey: 'leads'
-      }
+      },
+      {
+        key: 'leads-appointment-sales',
+        label: 'Alead test',
+        link: '/leads/test',
+        parentKey: 'leads'
+      },
+      {
+  key: 'sites-media',
+  label: 'Media',
+  link: '/sites/media',
+},
     ]
   },
 
@@ -137,10 +148,11 @@ export const MENU: MenuItem[] = [
     link: '/clients/crm',
     collapsed: true,
     subMenu: [
+      
       {
         key: 'clients-crm',
-        label: 'CRM',
-        link: '/clients/crm',
+        label: 'Dashboard',
+        link: '/clients',
         parentKey: 'clients'
       },
       {
@@ -165,6 +177,13 @@ export const MENU: MenuItem[] = [
         key: 'clients-bidding',
         label: 'Bidding',
         link: '/clients/bidding',
+        parentKey: 'clients'
+      },
+
+       {
+        key: 'bidding-settings',
+        label: 'Bidding Settings',
+        link: '/clients/bidding-settings',
         parentKey: 'clients'
       },
       {

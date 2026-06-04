@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms'
 import { PageTitleComponent } from '@common/page-title.component'
 import { HttpClient } from '@angular/common/http'
 import { environment } from '../../../environments/environment'
+import { Router } from '@angular/router'
+
 
 @Component({
   selector: 'app-sites',
@@ -151,6 +153,17 @@ export class SitesComponent implements OnInit {
       },
     })
   }
+
+
+  private router = inject(Router)
+
+editSite(site: any) {
+  this.router.navigateByUrl(`/sites/edit/${site.id}`)
+}
+
+previewSite(site: any) {
+  this.router.navigateByUrl(`/w/${site.slug}`)
+}
 
   toggleStatus(site: any) {
     this.http

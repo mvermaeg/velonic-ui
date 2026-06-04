@@ -60,9 +60,29 @@ public partial class MyAppDbContext : DbContext
 
     public virtual DbSet<LeadStatusHistory> LeadStatusHistories { get; set; }
 
+    public virtual DbSet<LeadType> LeadTypes { get; set; }
+
     public virtual DbSet<Organization> Organizations { get; set; }
 
+    public virtual DbSet<PostalCodeLocation> PostalCodeLocations { get; set; }
+
     public virtual DbSet<Site> Sites { get; set; }
+
+    public virtual DbSet<SiteDomain> SiteDomains { get; set; }
+
+    public virtual DbSet<SiteForm> SiteForms { get; set; }
+
+    public virtual DbSet<SiteMediaFile> SiteMediaFiles { get; set; }
+
+    public virtual DbSet<SitePage> SitePages { get; set; }
+
+    public virtual DbSet<SitePageSection> SitePageSections { get; set; }
+
+    public virtual DbSet<SitePixel> SitePixels { get; set; }
+
+    public virtual DbSet<SitePixelEvent> SitePixelEvents { get; set; }
+
+    public virtual DbSet<SiteSetting> SiteSettings { get; set; }
 
     public virtual DbSet<WebsiteTemplate> WebsiteTemplates { get; set; }
 
@@ -236,28 +256,42 @@ public partial class MyAppDbContext : DbContext
             entity.HasIndex(e => e.LeadStatus, "IX_Leads_Status");
 
             entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.AddressValidationStatus).HasMaxLength(50);
             entity.Property(e => e.AffiliateName).HasMaxLength(300);
             entity.Property(e => e.AffiliateSubId).HasMaxLength(250);
             entity.Property(e => e.CampaignName).HasMaxLength(300);
             entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.Country).HasMaxLength(100);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.CreatedByUserId).HasMaxLength(450);
             entity.Property(e => e.Email).HasMaxLength(256);
+            entity.Property(e => e.EmailDomain).HasMaxLength(200);
+            entity.Property(e => e.FingerprintHash).HasMaxLength(200);
+            entity.Property(e => e.FraudLevel).HasMaxLength(50);
             entity.Property(e => e.FullName).HasMaxLength(200);
             entity.Property(e => e.IpAddress).HasMaxLength(100);
+            entity.Property(e => e.LeadQualityScore).HasDefaultValue(100);
             entity.Property(e => e.LeadStatus)
                 .HasMaxLength(50)
                 .HasDefaultValue("New");
             entity.Property(e => e.PageName).HasMaxLength(300);
             entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.PostalAddressCheckReason).HasMaxLength(500);
             entity.Property(e => e.Postcode).HasMaxLength(50);
             entity.Property(e => e.Profit).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ReceivedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.RiskCheckedOn).HasColumnType("datetime");
             entity.Property(e => e.Sales).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Source).HasMaxLength(100);
             entity.Property(e => e.SourceReference).HasMaxLength(200);
             entity.Property(e => e.State).HasMaxLength(100);
             entity.Property(e => e.UpdatedByUserId).HasMaxLength(450);
+            entity.Property(e => e.UserAgent).HasMaxLength(500);
+            entity.Property(e => e.VisitorCountry).HasMaxLength(100);
+
+            entity.HasOne(d => d.LeadType).WithMany(p => p.Leads)
+                .HasForeignKey(d => d.LeadTypeId)
+                .HasConstraintName("FK_Leads_LeadTypes");
         });
 
         modelBuilder.Entity<LeadAttempt>(entity =>
@@ -366,6 +400,14 @@ public partial class MyAppDbContext : DbContext
             entity.Property(e => e.OldStatus).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<LeadType>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__LeadType__3214EC079887D8BB");
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<Organization>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Organiza__3214EC0781DFB462");
@@ -375,6 +417,20 @@ public partial class MyAppDbContext : DbContext
             entity.Property(e => e.CreatedOn).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.OrganizationName).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<PostalCodeLocation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__PostalCo__3214EC073A080DD3");
+
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.Country).HasMaxLength(50);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Latitude).HasColumnType("decimal(10, 6)");
+            entity.Property(e => e.Longitude).HasColumnType("decimal(10, 6)");
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            entity.Property(e => e.StateCode).HasMaxLength(50);
+            entity.Property(e => e.StateName).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Site>(entity =>
@@ -397,6 +453,182 @@ public partial class MyAppDbContext : DbContext
             entity.HasOne(d => d.WebsiteTheme).WithMany(p => p.Sites)
                 .HasForeignKey(d => d.WebsiteThemeId)
                 .HasConstraintName("FK_Sites_WebsiteThemes");
+        });
+
+        modelBuilder.Entity<SiteDomain>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SiteDoma__3214EC07246F3423");
+
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DomainName).HasMaxLength(300);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SiteDomains)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SiteDomains_Sites");
+        });
+
+        modelBuilder.Entity<SiteForm>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SiteForm__3214EC07E14A0D28");
+
+            entity.Property(e => e.CampaignName).HasMaxLength(200);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DisplayName).HasMaxLength(200);
+            entity.Property(e => e.FormKey).HasMaxLength(100);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.SourceName).HasMaxLength(200);
+            entity.Property(e => e.SubmitButtonText).HasMaxLength(100);
+            entity.Property(e => e.SuccessMessage).HasMaxLength(500);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SiteForms)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SiteForms_Sites");
+
+            entity.HasOne(d => d.SitePage).WithMany(p => p.SiteForms)
+                .HasForeignKey(d => d.SitePageId)
+                .HasConstraintName("FK_SiteForms_SitePages");
+        });
+
+        modelBuilder.Entity<SiteMediaFile>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SiteMedi__3214EC07CEA9340E");
+
+            entity.Property(e => e.AltText).HasMaxLength(300);
+            entity.Property(e => e.Caption).HasMaxLength(500);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FileName).HasMaxLength(300);
+            entity.Property(e => e.FileType).HasMaxLength(100);
+            entity.Property(e => e.FileUrl).HasMaxLength(700);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MimeType).HasMaxLength(150);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SiteMediaFiles)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SiteMediaFiles_Sites");
+        });
+
+        modelBuilder.Entity<SitePage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SitePage__3214EC07DBF335EA");
+
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.HeroSubtitle).HasMaxLength(1000);
+            entity.Property(e => e.HeroTitle).HasMaxLength(300);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MetaDescription).HasMaxLength(1000);
+            entity.Property(e => e.MetaTitle).HasMaxLength(300);
+            entity.Property(e => e.PageName).HasMaxLength(200);
+            entity.Property(e => e.PageSlug).HasMaxLength(150);
+            entity.Property(e => e.PageTitle).HasMaxLength(300);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SitePages)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SitePages_Sites");
+        });
+
+        modelBuilder.Entity<SitePageSection>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SitePage__3214EC07850B2076");
+
+            entity.Property(e => e.ButtonText).HasMaxLength(200);
+            entity.Property(e => e.ButtonUrl).HasMaxLength(500);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.SectionKey).HasMaxLength(100);
+            entity.Property(e => e.SectionTitle).HasMaxLength(500);
+
+            entity.HasOne(d => d.SitePage).WithMany(p => p.SitePageSections)
+                .HasForeignKey(d => d.SitePageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SitePageSections_SitePages");
+        });
+
+        modelBuilder.Entity<SitePixel>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SitePixe__3214EC07C8E74AD9");
+
+            entity.Property(e => e.CampaignName).HasMaxLength(200);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FireOnPageSlug).HasMaxLength(150);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.PixelName).HasMaxLength(200);
+            entity.Property(e => e.PixelType).HasMaxLength(100);
+            entity.Property(e => e.Placement)
+                .HasMaxLength(100)
+                .HasDefaultValue("head");
+            entity.Property(e => e.SourceName).HasMaxLength(200);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SitePixels)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SitePixels_Sites");
+        });
+
+        modelBuilder.Entity<SitePixelEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SitePixe__3214EC07F4315332");
+
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.EventName).HasMaxLength(100);
+            entity.Property(e => e.PageSlug).HasMaxLength(150);
+            entity.Property(e => e.Referrer).HasMaxLength(1000);
+            entity.Property(e => e.Url).HasMaxLength(1000);
+            entity.Property(e => e.UserAgent).HasMaxLength(1000);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SitePixelEvents)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SitePixelEvents_Sites");
+
+            entity.HasOne(d => d.SitePixel).WithMany(p => p.SitePixelEvents)
+                .HasForeignKey(d => d.SitePixelId)
+                .HasConstraintName("FK_SitePixelEvents_SitePixels");
+        });
+
+        modelBuilder.Entity<SiteSetting>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SiteSett__3214EC074974042C");
+
+            entity.Property(e => e.AddressLine1).HasMaxLength(500);
+            entity.Property(e => e.AddressLine2).HasMaxLength(500);
+            entity.Property(e => e.BusinessHours).HasMaxLength(500);
+            entity.Property(e => e.CreatedOn)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.EmailAddress).HasMaxLength(200);
+            entity.Property(e => e.FacebookUrl).HasMaxLength(500);
+            entity.Property(e => e.InstagramUrl).HasMaxLength(500);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.LinkedinUrl).HasMaxLength(500);
+            entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(100);
+            entity.Property(e => e.TwitterUrl).HasMaxLength(500);
+            entity.Property(e => e.YoutubeUrl).HasMaxLength(500);
+
+            entity.HasOne(d => d.Site).WithMany(p => p.SiteSettings)
+                .HasForeignKey(d => d.SiteId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SiteSettings_Sites");
         });
 
         modelBuilder.Entity<WebsiteTemplate>(entity =>

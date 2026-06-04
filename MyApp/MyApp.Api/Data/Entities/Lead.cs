@@ -74,4 +74,50 @@ public partial class Lead
     public long? AffiliateClickId { get; set; }
 
     public Guid? AffiliateClickUuid { get; set; }
+
+    public string? EmailDomain { get; set; }
+
+    public bool IsInvalidEmail { get; set; }
+
+    public bool IsDisposableEmail { get; set; }
+
+    public bool IsDuplicateLead { get; set; }
+
+    public bool IsSuspicious { get; set; }
+
+    public int FraudScore { get; set; }
+
+    public string? FraudLevel { get; set; }
+
+    public string? FraudReasons { get; set; }
+
+    public int LeadQualityScore { get; set; }
+
+    public string? UserAgent { get; set; }
+
+    public string? Country { get; set; }
+
+    public DateTime? RiskCheckedOn { get; set; }
+
+    public bool IsPostcodeCountryMismatch { get; set; }
+
+    public int DuplicateLeadCount { get; set; }
+
+    public long? LastDuplicateLeadId { get; set; }
+
+    public bool IsPostalAddressMismatch { get; set; }
+
+    public string? PostalAddressCheckReason { get; set; }
+
+    public bool IsVoipNumber { get; set; }
+
+    public string? VisitorCountry { get; set; }
+
+    public string? FingerprintHash { get; set; }
+
+    public string? AddressValidationStatus { get; set; }
+
+    public int? LeadTypeId { get; set; }
+
+    public virtual LeadType? LeadType { get; set; }
 }

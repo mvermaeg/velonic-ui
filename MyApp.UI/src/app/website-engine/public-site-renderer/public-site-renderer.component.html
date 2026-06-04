@@ -1,34 +1,31 @@
-<div class="container py-5" *ngIf="loading">
+<div class="text-center py-5" *ngIf="loading">
   Loading website...
 </div>
 
-<div class="container py-5" *ngIf="errorMessage">
-  <div class="alert alert-danger">
-    {{ errorMessage }}
+<div class="alert alert-danger m-4" *ngIf="errorMessage">
+  {{ errorMessage }}
+</div>
+
+<ng-container *ngIf="!loading && site">
+  <app-modern-template
+    *ngIf="
+      site?.template?.templateKey === 'template-modern' ||
+      site?.template?.templateKey === 'modern' ||
+      site?.template?.templateKey === 'template-classic' ||
+      site?.template?.templateKey === 'classic'
+    "
+    [site]="site"
+  ></app-modern-template>
+
+  <div
+    class="alert alert-warning m-4"
+    *ngIf="
+      site?.template?.templateKey !== 'template-modern' &&
+      site?.template?.templateKey !== 'modern' &&
+      site?.template?.templateKey !== 'template-classic' &&
+      site?.template?.templateKey !== 'classic'
+    "
+  >
+    No matching template found.
   </div>
-</div>
-
-<div
-  *ngIf="site"
-  [style.--primary-color]="site.theme?.primaryColor"
-  [style.--secondary-color]="site.theme?.secondaryColor"
-  [style.font-family]="site.theme?.fontFamily"
->
-  <ng-container [ngSwitch]="site.template?.templateKey">
-    <app-modern-template
-      *ngSwitchCase="'template-modern'"
-      [site]="site">
-    </app-modern-template>
-
-    <div *ngSwitchCase="'template-classic'" class="container py-5">
-      <h1>{{ site.siteName }}</h1>
-      <p>Classic template connected successfully.</p>
-    </div>
-
-    <div *ngSwitchDefault class="container py-5">
-      <div class="alert alert-warning">
-        No matching template found.
-      </div>
-    </div>
-  </ng-container>
-</div>
+</ng-container>

@@ -1,54 +1,48 @@
-<app-page-title title="Reports-General" subtitle="Reports" header=" " />
+<app-page-title title="Reports-General" subtitle="Reports" header="Business overview" />
 
-<app-search></app-search>
+<div class="text-center py-4" *ngIf="loading">Loading report...</div>
 
-<div class="card">
-    <div class="card-body">
-        <div class="export_btn mb-2">
-            <button class="btn btn-primary" (click)="exportToCSV()"><i class=" ri-download-2-line"></i>
-                Export</button>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        @for (field of selectedFields; track field) {<th>{{ formatHeader(field)}}
-                        </th>}
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (item of records$ | async; track item) {
-                    <tr>
-                        @for (field of selectedFields; track field) {
-                        <td>
-                            <ng-container [ngSwitch]="field">
-                                <span *ngSwitchDefault> {{ getValue(item, field) }} </span>
-                            </ng-container>
-                        </td>
-                        }
-                    </tr>
-                    } @empty {
-                    <tr>
-                        <td [attr.colspan]="selectedFields.length" class="text-center">
-                            No Data Found
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+<div class="stats-container mb-3" *ngIf="!loading">
+  <div class="card card_hover gradient-blue">
+    <h4>Total Leads</h4>
+    <h2>{{ report.totalLeads || 0 }}</h2>
+    <p>All received leads</p>
+  </div>
 
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-2">
+  <div class="card card_hover gradient-purple">
+    <h4>Sold Leads</h4>
+    <h2>{{ report.soldLeads || 0 }}</h2>
+    <p>Converted leads</p>
+  </div>
 
-            <div> Showing {{ (table_data.page - 1) * table_data.pageSize + 1 }} to {{(table_data.page - 1) *
-                table_data.pageSize +
-                (recordsLength || 0) }} of {{ total$ | async }} products </div>
+  <div class="card card_hover gradient-green">
+    <h4>Delivered Leads</h4>
+    <h2>{{ report.deliveredLeads || 0 }}</h2>
+    <p>Sent to clients</p>
+  </div>
 
-            <ngb-pagination [collectionSize]="(total$ | async)!" [(page)]="table_data.page"
-                [pageSize]="table_data.pageSize">
-            </ngb-pagination>
+  <div class="card card_hover gradient-orange">
+    <h4>Total Clients</h4>
+    <h2>{{ report.totalClients || 0 }}</h2>
+    <p>Active client records</p>
+  </div>
+</div>
 
-        </div>
-    </div>
+<div class="card" *ngIf="!loading">
+  <div class="card-body">
+    <h5 class="mb-3">Financial Summary</h5>
+
+    <table class="table table-hover">
+      <tbody>
+        <tr>
+          <th>Total Sales</th>
+          <td>{{ report.totalSales || 0 | number: '1.2-2' }}</td>
+        </tr>
+        <tr>
+          <th>Total Profit</th>
+          <td>{{ report.totalProfit || 0 | number: '1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

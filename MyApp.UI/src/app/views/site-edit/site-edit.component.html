@@ -1,7 +1,7 @@
 <app-page-title
   title="Edit Site"
   subtitle="Sites"
-  header="Update website basic details"
+  header="Update website basic details, template and theme"
 />
 
 <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
@@ -32,6 +32,35 @@
       <div class="col-md-6">
         <label class="form-label">Theme Key</label>
         <input class="form-control" name="themeKey" [(ngModel)]="form.themeKey" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Website Template</label>
+        <select
+          class="form-select"
+          name="websiteTemplateId"
+          [(ngModel)]="form.websiteTemplateId"
+        >
+          <option [ngValue]="null">Select Template</option>
+          <option *ngFor="let template of templates" [ngValue]="template.id">
+            {{ template.templateName }} - {{ template.templateKey }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Website Theme</label>
+        <select
+          class="form-select"
+          name="websiteThemeId"
+          [(ngModel)]="form.websiteThemeId"
+          (change)="onThemeChange()"
+        >
+          <option [ngValue]="null">Select Theme</option>
+          <option *ngFor="let theme of themes" [ngValue]="theme.id">
+            {{ theme.themeName }} - {{ theme.themeKey }}
+          </option>
+        </select>
       </div>
 
       <div class="col-md-12">

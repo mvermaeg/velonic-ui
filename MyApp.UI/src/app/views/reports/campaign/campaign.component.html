@@ -1,54 +1,42 @@
-<app-page-title title="Reports-Campaign" subtitle="Reports" header=" " />
-
-<app-search></app-search>
+<app-page-title title="Reports-Campaign" subtitle="Reports" header="Campaign performance" />
 
 <div class="card">
-    <div class="card-body">
-        <div class="export_btn mb-2">
-            <button class="btn btn-primary" (click)="exportToCSV()"><i class=" ri-download-2-line"></i>
-                Export</button>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        @for (field of selectedFields; track field) {<th>{{ formatHeader(field)}}
-                        </th>}
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (item of records$ | async; track item) {
-                    <tr>
-                        @for (field of selectedFields; track field) {
-                        <td>
-                            <ng-container [ngSwitch]="field">
-                                <span *ngSwitchDefault> {{ getValue(item, field) }} </span>
-                            </ng-container>
-                        </td>
-                        }
-                    </tr>
-                    } @empty {
-                    <tr>
-                        <td [attr.colspan]="selectedFields.length" class="text-center">
-                            No Data Found
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-2">
-
-            <div> Showing {{ (table_data.page - 1) * table_data.pageSize + 1 }} to {{(table_data.page - 1) *
-                table_data.pageSize +
-                (recordsLength || 0) }} of {{ total$ | async }} products </div>
-
-            <ngb-pagination [collectionSize]="(total$ | async)!" [(page)]="table_data.page"
-                [pageSize]="table_data.pageSize">
-            </ngb-pagination>
-
-        </div>
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Campaign Report</h5>
+      <button class="btn btn-primary btn-sm" type="button" (click)="loadReport()">Refresh</button>
     </div>
+
+    <div class="text-center py-4" *ngIf="loading">Loading...</div>
+
+    <div class="table-responsive" *ngIf="!loading">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Campaign</th>
+            <th>Leads</th>
+            <th>Sold</th>
+            <th>Conversion %</th>
+            <th>Sales</th>
+            <th>Profit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>{{ row.campaign || 'No Campaign' }}</td>
+            <td>{{ row.leads || 0 }}</td>
+            <td>{{ row.sold || 0 }}</td>
+            <td>{{ getConversion(row) | number: '1.0-2' }}%</td>
+            <td>{{ row.sales || 0 | number: '1.2-2' }}</td>
+            <td>{{ row.profit || 0 | number: '1.2-2' }}</td>
+          </tr>
+
+          <tr *ngIf="rows.length === 0">
+            <td colspan="6" class="text-center text-muted py-4">No data found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

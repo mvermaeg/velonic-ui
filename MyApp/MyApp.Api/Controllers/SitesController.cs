@@ -97,5 +97,37 @@ namespace MyApp.Api.Controllers
 
             return Ok(new { message = "Site template/theme updated successfully." });
         }
+
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateSite(long id, CreateSiteDto model)
+        {
+            var site = await _db.Sites.FindAsync(id);
+
+            if (site == null)
+                return NotFound(new { message = "Site not found." });
+
+            site.SiteName = model.SiteName;
+            site.DomainName = model.DomainName;
+            site.Slug = model.Slug;
+            site.ThemeKey = string.IsNullOrWhiteSpace(model.ThemeKey)
+                ? site.ThemeKey
+                : model.ThemeKey;
+
+            site.IsActive = model.IsActive;
+
+            if (model.WebsiteTemplateId.HasValue && model.WebsiteTemplateId.Value > 0)
+                site.WebsiteTemplateId = model.WebsiteTemplateId.Value;
+
+            if (model.WebsiteThemeId.HasValue && model.WebsiteThemeId.Value > 0)
+                site.WebsiteThemeId = model.WebsiteThemeId.Value;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = "Site updated successfully." });
+        }
+
+
+      
     }
 }

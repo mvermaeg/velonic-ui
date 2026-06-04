@@ -1,4 +1,125 @@
-<app-page-title title="Lead-Form" subtitle="Leads" header="Manage and track lead capture forms" />
+<app-page-title title="Lead Form" subtitle="Leads" header="Test lead capture form with postcode validation" />
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Submit Test Lead</h5>
+    <small class="text-muted">This form validates postcode before submitting lead.</small>
+  </div>
+
+  <div class="card-body">
+    <div class="alert alert-success" *ngIf="successMessage">
+      {{ successMessage }}
+    </div>
+
+    <div class="alert alert-danger" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <form (ngSubmit)="submitLead()">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control" name="fullName" [(ngModel)]="form.fullName" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" name="email" [(ngModel)]="form.email" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Phone</label>
+          <input type="text" class="form-control" name="phone" [(ngModel)]="form.phone" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Postcode</label>
+          <input
+            type="text"
+            class="form-control"
+            name="postcode"
+            [(ngModel)]="form.postcode"
+            (blur)="checkPostcode()"
+            placeholder="50801"
+          />
+
+          <div class="text-danger small mt-1" *ngIf="postcodeError">
+            {{ postcodeError }}
+          </div>
+
+          <div class="text-success small mt-1" *ngIf="postcodeVerified">
+            Verified: {{ expectedLocation?.city }}, {{ expectedLocation?.stateCode }}
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">City</label>
+          <input type="text" class="form-control" name="city" [(ngModel)]="form.city" readonly />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">State</label>
+          <input type="text" class="form-control" name="state" [(ngModel)]="form.state" readonly />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Country</label>
+          <input type="text" class="form-control" name="country" [(ngModel)]="form.country" readonly />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Campaign Name</label>
+          <input type="text" class="form-control" name="campaignName" [(ngModel)]="form.campaignName" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Affiliate Name</label>
+          <input type="text" class="form-control" name="affiliateName" [(ngModel)]="form.affiliateName" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Page Name</label>
+          <input type="text" class="form-control" name="pageName" [(ngModel)]="form.pageName" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Affiliate Sub ID</label>
+          <input type="text" class="form-control" name="affiliateSubId" [(ngModel)]="form.affiliateSubId" />
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Step</label>
+          <input type="number" class="form-control" name="step" [(ngModel)]="form.step" />
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="isCompleted" [(ngModel)]="form.isCompleted" />
+            <label class="form-check-label">Completed</label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Address</label>
+          <textarea class="form-control" name="address" rows="2" [(ngModel)]="form.address"></textarea>
+        </div>
+
+        <div class="col-12">
+          <button class="btn btn-primary" type="submit" [disabled]="submitting || !postcodeVerified">
+            {{ submitting ? 'Submitting...' : 'Submit Lead' }}
+          </button>
+
+          <button class="btn btn-outline-secondary ms-2" type="button" (click)="resetForm()">
+            Reset
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- <app-page-title title="Lead-Form" subtitle="Leads" header="Manage and track lead capture forms" />
 
 <app-search></app-search>
 
@@ -38,8 +159,7 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination -->
+ 
         <div class="d-flex justify-content-between align-items-center mt-2">
 
             <div> Showing {{ (table_data.page - 1) * table_data.pageSize + 1 }} to {{(table_data.page - 1) *
@@ -52,4 +172,4 @@
 
         </div>
     </div>
-</div>
+</div> -->

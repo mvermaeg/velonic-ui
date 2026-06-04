@@ -151,54 +151,70 @@
           </tr>
         </thead>
 
-        <tbody>
-          <tr *ngFor="let site of filteredSites">
-            <td>
-              <span class="site-code">S-{{ site.id }}</span>
-            </td>
+       <tbody>
+  <tr *ngFor="let site of filteredSites">
+    <td>
+      <span class="site-code">S-{{ site.id }}</span>
+    </td>
 
-            <td>
-              <strong>{{ site.siteName }}</strong>
-            </td>
+    <td>
+      <strong>{{ site.siteName }}</strong>
+    </td>
 
-            <td>{{ site.domainName || '-' }}</td>
+    <td>{{ site.domainName || '-' }}</td>
 
-            <td>
-              <span class="text-muted">/{{ site.slug }}</span>
-            </td>
+    <td>
+      <span class="text-muted">/{{ site.slug }}</span>
+    </td>
 
-            <td>{{ site.templateName || '-' }}</td>
+    <td>{{ site.templateName || '-' }}</td>
 
-            <td>{{ site.themeName || '-' }}</td>
+    <td>{{ site.themeName || '-' }}</td>
 
-            <td>{{ site.themeKey || '-' }}</td>
+    <td>{{ site.themeKey || '-' }}</td>
 
-            <td>{{ site.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+    <td>{{ site.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
 
-            <td>
-              <span class="badge" [ngClass]="site.isActive ? 'bg-success' : 'bg-danger'">
-                {{ site.isActive ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
+    <td>
+      <span class="badge" [ngClass]="site.isActive ? 'bg-success' : 'bg-danger'">
+        {{ site.isActive ? 'Active' : 'Inactive' }}
+      </span>
+    </td>
 
-            <td class="text-end">
-              <button
-                type="button"
-                class="btn btn-sm"
-                [ngClass]="site.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
-                (click)="toggleStatus(site)"
-              >
-                {{ site.isActive ? 'Deactivate' : 'Activate' }}
-              </button>
-            </td>
-          </tr>
+    <td class="text-end">
+      <button
+        class="btn btn-sm btn-outline-primary me-2"
+        type="button"
+        (click)="editSite(site)"
+      >
+        Edit
+      </button>
 
-          <tr *ngIf="filteredSites.length === 0">
-            <td colspan="10" class="text-center text-muted py-4">
-              No sites found.
-            </td>
-          </tr>
-        </tbody>
+      <button
+        class="btn btn-sm btn-outline-success me-2"
+        type="button"
+        (click)="previewSite(site)"
+      >
+        Preview
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-sm"
+        [ngClass]="site.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+        (click)="toggleStatus(site)"
+      >
+        {{ site.isActive ? 'Deactivate' : 'Activate' }}
+      </button>
+    </td>
+  </tr>
+
+  <tr *ngIf="filteredSites.length === 0">
+    <td colspan="10" class="text-center text-muted py-4">
+      No sites found.
+    </td>
+  </tr>
+</tbody>
       </table>
     </div>
   </div>

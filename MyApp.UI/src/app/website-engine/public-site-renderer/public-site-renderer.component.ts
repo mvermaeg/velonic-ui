@@ -37,8 +37,14 @@ export class PublicSiteRendererComponent implements OnInit {
         return
       }
 
-      this.errorMessage = 'Invalid website URL.'
-    })
+const host = window.location.hostname
+
+if (host === 'localhost' || host === '127.0.0.1') {
+  window.location.href = '/dashboard'
+  return
+}
+
+this.loadSiteByDomain(host, null)    })
   }
 
   loadSiteBySlug(slug: string, pageSlug: string | null) {

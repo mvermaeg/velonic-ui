@@ -1,0 +1,124 @@
+<app-page-title
+  title="Site Media"
+  subtitle="Sites"
+  header="Upload and manage website images, videos and documents"
+/>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Select Site</label>
+        <select
+          class="form-select"
+          name="selectedSiteId"
+          [(ngModel)]="selectedSiteId"
+          (change)="onSiteChange()"
+        >
+          <option [ngValue]="null">Select Site</option>
+          <option *ngFor="let site of sites" [ngValue]="site.id">
+            {{ site.siteName }} /{{ site.slug }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Choose File</label>
+        <input
+          id="mediaFileInput"
+          type="file"
+          class="form-control"
+          accept="image/*,video/mp4,application/pdf"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <div class="col-md-4">
+        <button
+          class="btn btn-primary w-100"
+          type="button"
+          (click)="uploadFile()"
+          [disabled]="uploading"
+        >
+          {{ uploading ? 'Uploading...' : 'Upload Media' }}
+        </button>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Alt Text</label>
+        <input class="form-control" name="altText" [(ngModel)]="altText" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Caption</label>
+        <input class="form-control" name="caption" [(ngModel)]="caption" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="text-center py-4" *ngIf="loading">
+      Loading media...
+    </div>
+
+    <div class="row g-3" *ngIf="!loading">
+      <div class="col-md-3" *ngFor="let item of mediaFiles">
+        <div class="media-card">
+          <div class="media-preview">
+            <img
+              *ngIf="isImage(item)"
+              [src]="getFullUrl(item.fileUrl)"
+              [alt]="item.altText || item.fileName"
+            />
+
+            <video
+              *ngIf="isVideo(item)"
+              [src]="getFullUrl(item.fileUrl)"
+              controls
+            ></video>
+
+            <div class="file-placeholder" *ngIf="!isImage(item) && !isVideo(item)">
+              <i class="ri-file-text-line"></i>
+              <span>{{ item.fileType || 'file' }}</span>
+            </div>
+          </div>
+
+          <div class="media-info">
+            <strong>{{ item.fileName }}</strong>
+            <small>{{ item.mimeType }}</small>
+            <small>{{ item.createdOn | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+
+          <div class="media-actions">
+            <button
+              class="btn btn-sm btn-outline-primary"
+              type="button"
+              (click)="copyUrl(item.fileUrl)"
+            >
+              Copy URL
+            </button>
+
+            <button
+              class="btn btn-sm btn-outline-danger"
+              type="button"
+              (click)="deactivate(item)"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-12" *ngIf="mediaFiles.length === 0">
+        <div class="text-center text-muted py-5">
+          No media uploaded yet.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

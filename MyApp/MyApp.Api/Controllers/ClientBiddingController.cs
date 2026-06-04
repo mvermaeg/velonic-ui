@@ -22,8 +22,69 @@ namespace MyApp.Api.Controllers
             _deliveryService = deliveryService;
         }
 
-        [HttpPost("results/{id}/deliver")]
-        public async Task<IActionResult> DeliverResult(long id)
+
+        [HttpGet("settings/{clientId:long}")]
+        public async Task<IActionResult> GetSettings(long clientId)
+        {
+            var data = await _db.ClientBiddingSettings
+                .Where(x => x.ClientId == clientId)
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+
+            return Ok(data);
+        }
+
+        [HttpPost("settings")]
+        public async Task<IActionResult> CreateSetting(
+    [FromBody] CreateClientBiddingSettingDto model)
+        {
+            var setting = new ClientBiddingSetting
+            {
+                ClientId = model.ClientId,
+                LeadType = model.LeadType,
+                State = model.State,
+                Postcode = model.Postcode,
+                BidAmount = model.BidAmount,
+                DailyCap = model.DailyCap,
+                MonthlyCap = model.MonthlyCap,
+                IsExclusive = model.IsExclusive,
+                IsActive = model.IsActive,
+                CreatedOn = DateTime.UtcNow
+            };
+
+            _db.ClientBiddingSettings.Add(setting);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Bidding setting created.",
+                setting.Id
+            });
+        }
+
+        [HttpPut("settings/{id:long}/status")]
+        public async Task<IActionResult> ChangeStatus(
+    long id,
+    [FromQuery] bool isActive)
+        {
+            var setting = await _db.ClientBiddingSettings
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (setting == null)
+                return NotFound();
+
+            setting.IsActive = isActive;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Status updated."
+            });
+        }
+
+        [HttpPost("results/{id:long}/deliver")]
+        public async Task<IActionResult> DeliverResult([FromRoute] long id)
         {
             try
             {
@@ -195,5 +256,74 @@ namespace MyApp.Api.Controllers
                 data
             });
         }
+
+
+        [HttpGet("settings")]
+        public async Task<IActionResult> GetAllSettings(
+    [FromQuery] string? search,
+    [FromQuery] bool? isActive,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 20;
+
+            var query =
+                from setting in _db.ClientBiddingSettings
+                join client in _db.Clients
+                    on setting.ClientId equals client.Id
+                where client.IsDeleted == false
+                select new
+                {
+                    setting,
+                    client
+                };
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(x =>
+                    x.client.ClientName.Contains(search) ||
+                    x.setting.LeadType.Contains(search) ||
+                    x.setting.Postcode.Contains(search));
+            }
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(x => x.setting.IsActive == isActive.Value);
+            }
+
+            var total = await query.CountAsync();
+
+            var data = await query
+                .OrderByDescending(x => x.setting.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new
+                {
+                    x.setting.Id,
+                    x.setting.ClientId,
+                    ClientName = x.client.ClientName,
+                    x.setting.LeadType,
+                    x.setting.State,
+                    x.setting.Postcode,
+                    x.setting.BidAmount,
+                    x.setting.DailyCap,
+                    x.setting.MonthlyCap,
+                    x.setting.IsExclusive,
+                    x.setting.IsActive,
+                    x.setting.CreatedOn,
+                    x.setting.UpdatedOn
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                total,
+                page,
+                pageSize,
+                data
+            });
+        }
+
     }
 }

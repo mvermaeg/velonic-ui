@@ -33,4 +33,10 @@ export const LEADS_ROUTES: Route[] = [
     import('./rejections/rejections.component').then((m) => m.RejectionsComponent),
   data: { title: 'Lead Rejections' },
 },
+{
+  path: 'test',
+  loadComponent: () =>
+    import('./rejections/rejections.component').then((m) => m.RejectionsComponent),
+  data: { title: 'test' },
+},
 ]

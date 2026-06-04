@@ -1,0 +1,147 @@
+<app-page-title
+  title="Edit Page"
+  subtitle="Sites"
+  header="Update website page content"
+/>
+
+<div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+<div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-center py-4" *ngIf="loading">
+          Loading page...
+        </div>
+
+        <div class="row g-3" *ngIf="!loading">
+          <div class="col-md-6">
+            <label class="form-label">Page Name</label>
+            <input class="form-control" name="pageName" [(ngModel)]="form.pageName" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Page Slug</label>
+            <input class="form-control" name="pageSlug" [(ngModel)]="form.pageSlug" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Page Title</label>
+            <input class="form-control" name="pageTitle" [(ngModel)]="form.pageTitle" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Sort Order</label>
+            <input type="number" class="form-control" name="sortOrder" [(ngModel)]="form.sortOrder" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Meta Title</label>
+            <input class="form-control" name="metaTitle" [(ngModel)]="form.metaTitle" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Meta Description</label>
+            <input class="form-control" name="metaDescription" [(ngModel)]="form.metaDescription" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Hero Title</label>
+            <input class="form-control" name="heroTitle" [(ngModel)]="form.heroTitle" />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Hero Subtitle</label>
+            <input class="form-control" name="heroSubtitle" [(ngModel)]="form.heroSubtitle" />
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">HTML Content</label>
+            <textarea
+              class="form-control code-box"
+              rows="10"
+              name="htmlContent"
+              [(ngModel)]="form.htmlContent"
+            ></textarea>
+          </div>
+
+          <div class="col-md-12 d-flex gap-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="isHomePage" [(ngModel)]="form.isHomePage" />
+              <label class="form-check-label">Home Page</label>
+            </div>
+
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="isActive" [(ngModel)]="form.isActive" />
+              <label class="form-check-label">Active</label>
+            </div>
+          </div>
+
+          <div class="col-md-12 text-end">
+            <button class="btn btn-outline-secondary me-2" type="button" (click)="goBack()">Back</button>
+<button class="btn btn-outline-success me-2" type="button" (click)="openPreview()">
+  Preview
+</button>
+            <button class="btn btn-primary" type="button" (click)="save()" [disabled]="saving">
+              {{ saving ? 'Saving...' : 'Save Page' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card media-panel">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Media Library</h5>
+        <button class="btn btn-sm btn-outline-primary" type="button" (click)="loadMedia()">
+          Refresh
+        </button>
+      </div>
+
+      <div class="card-body">
+        <div class="text-center text-muted py-4" *ngIf="mediaLoading">
+          Loading media...
+        </div>
+
+        <div class="media-list" *ngIf="!mediaLoading">
+          <div class="media-item" *ngFor="let item of mediaFiles">
+            <div class="thumb">
+              <img *ngIf="isImage(item)" [src]="getFullUrl(item.fileUrl)" [alt]="item.altText || item.fileName" />
+
+              <div class="file-box" *ngIf="!isImage(item)">
+                <i class="ri-file-text-line"></i>
+              </div>
+            </div>
+
+            <div class="media-text">
+              <strong>{{ item.fileName }}</strong>
+              <small>{{ item.mimeType }}</small>
+
+              <div class="mt-2">
+                <button class="btn btn-xs btn-outline-primary me-1" type="button" (click)="copyUrl(item.fileUrl)">
+                  Copy URL
+                </button>
+
+                <button
+                  class="btn btn-xs btn-outline-success"
+                  type="button"
+                  *ngIf="isImage(item)"
+                  (click)="insertImageHtml(item.fileUrl)"
+                >
+                  Insert
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center text-muted py-4" *ngIf="mediaFiles.length === 0">
+            No media uploaded for this site.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

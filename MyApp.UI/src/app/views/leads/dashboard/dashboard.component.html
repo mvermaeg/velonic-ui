@@ -94,6 +94,13 @@
             <th>Postcode</th>
             <th>State</th>
             <th>City</th>
+            <th>Country</th>
+<th>Visitor Country</th>
+<th>IP</th>
+            <th>Risk</th>
+
+
+<th>Quality</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -117,12 +124,66 @@
             </td>
             <td>{{ lead.postcode }}</td>
             <td>{{ lead.state }}</td>
-            <td>{{ lead.city }}</td>
+            <!-- <td>{{ lead.city }}</td>
             <td>
               <span class="badge bg-primary-subtle text-primary">
                 {{ lead.leadStatus }}
               </span>
-            </td>
+            </td> -->
+
+            <td>{{ lead.city }}</td>
+<td>{{ lead.country || '-' }}</td>
+
+<td>
+  <span
+    class="badge"
+    [ngClass]="{
+      'bg-success': lead.country && lead.visitorCountry && lead.country === lead.visitorCountry,
+      'bg-warning text-dark': lead.country && lead.visitorCountry && lead.country !== lead.visitorCountry,
+      'bg-secondary': !lead.visitorCountry
+    }"
+  >
+    {{ lead.visitorCountry || 'Unknown' }}
+  </span>
+</td>
+
+<td class="text-nowrap">
+  {{ lead.ipAddress || '-' }}
+</td>
+<td>
+  <span class="badge"
+        [ngClass]="{
+          'bg-danger': lead.fraudLevel === 'High',
+          'bg-warning text-dark': lead.fraudLevel === 'Medium',
+          'bg-info text-dark': lead.fraudLevel === 'Low',
+          'bg-success': lead.fraudLevel === 'Clean',
+          'bg-secondary': !lead.fraudLevel
+        }">
+    {{ lead.fraudLevel || 'Not Checked' }}
+  </span>
+
+
+  <span class="badge bg-dark mt-1" *ngIf="lead.isDuplicateLead">
+  Duplicate {{ lead.duplicateLeadCount || '' }}
+</span>
+</td>
+
+<td>
+  <span class="badge"
+        [ngClass]="{
+          'bg-success': lead.leadQualityScore >= 80,
+          'bg-warning text-dark': lead.leadQualityScore >= 50 && lead.leadQualityScore < 80,
+          'bg-danger': lead.leadQualityScore < 50
+        }">
+    {{ lead.leadQualityScore || 0 }}
+  </span>
+</td>
+
+<td>
+  <span class="badge bg-primary-subtle text-primary">
+    {{ lead.leadStatus }}
+  </span>
+</td>
           </tr>
 
           <tr *ngIf="filteredLeads.length === 0">

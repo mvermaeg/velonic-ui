@@ -1,57 +1,42 @@
-
-import { Component, inject, OnInit } from '@angular/core'
+import { Component, OnInit, inject } from '@angular/core'
+import { CommonModule } from '@angular/common'
 import { PageTitleComponent } from '@common/page-title.component'
-import { CommonModule, DecimalPipe } from '@angular/common'
-import { FormsModule } from '@angular/forms'
-import { SearchComponent } from '@/app/tables/search/search.component'
-import { Observable } from 'rxjs'
-import { NgbPagination } from '@ng-bootstrap/ng-bootstrap';
-import { DataTableItems, DataTableItemsType } from './dailydata'
-import { TableService } from '@/app/tables/table.service'
+import { ReportsService } from '@/app/core/service/reports.service'
+
 @Component({
   selector: 'app-report-vendors-daily',
   standalone: true,
   imports: [
-    PageTitleComponent,
     CommonModule,
-    FormsModule,
-    SearchComponent,
-    NgbPagination
+    PageTitleComponent
   ],
   templateUrl: './daily.component.html',
   styleUrl: './daily.component.scss'
 })
-
 export class DailyComponent implements OnInit {
-  selectedFields: (keyof DataTableItemsType)[] = ["Vendor_Name", "Campaign_Name", "Leads", "Revenue", "Adj_Revenue", "Cost", "Profit", "Adj_Profit"]
 
-  table_data = inject(TableService<DataTableItemsType>);
-  records$: Observable<DataTableItemsType[]> = this.table_data.items$;
-  total$!: Observable<number>;
-  recordsLength = 0;
-  pageSize = 8
+  private reportsService = inject(ReportsService)
 
-  constructor(public pipe: DecimalPipe) {
-  }
+  loading = false
+
+  rows: any[] = []
 
   ngOnInit(): void {
-    this.table_data.setItems(DataTableItems, 8);
-    this.total$ = this.table_data.total$;
-
-    this.records$ = this.table_data.items$;
-    this.records$.subscribe(data => { this.recordsLength = data.length; });
+    this.loadReport()
   }
 
-  getValue(item: DataTableItemsType, field: keyof DataTableItemsType): any {
-    return item[field];
+  loadReport() {
+    this.loading = true
+
+    this.reportsService.getVendorDaily()
+      .subscribe({
+        next: (res: any) => {
+          this.rows = res || []
+          this.loading = false
+        },
+        error: () => {
+          this.loading = false
+        }
+      })
   }
-
-  formatHeader(key: string): string {
-    return key.replace(/_/g, ' ');
-  }
-
-  exportToCSV() {
-
-  }
-
 }

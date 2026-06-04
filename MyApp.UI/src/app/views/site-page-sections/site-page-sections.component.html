@@ -126,6 +126,32 @@
         ></textarea>
       </div>
 
+
+
+      <div class="col-md-12">
+  <label class="form-label">Image URL</label>
+  <input class="form-control" name="imageUrl" [(ngModel)]="form.imageUrl" />
+</div>
+
+<div class="col-md-12" *ngIf="mediaFiles.length > 0">
+  <label class="form-label">Select From Media Library</label>
+
+  <div class="section-media-picker">
+    <button
+      class="media-pick-item"
+      type="button"
+      *ngFor="let item of mediaFiles"
+      [class.d-none]="!isImage(item)"
+      (click)="selectSectionImage(item.fileUrl)"
+    >
+      <img [src]="getFullUrl(item.fileUrl)" [alt]="item.altText || item.fileName" />
+      <span>{{ item.fileName }}</span>
+    </button>
+  </div>
+</div>
+
+
+
       <div class="col-md-6">
         <label class="form-label">Image URL</label>
         <input

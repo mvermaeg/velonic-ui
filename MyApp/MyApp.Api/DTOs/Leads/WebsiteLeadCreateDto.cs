@@ -28,5 +28,10 @@
 
         public bool IsCompleted { get; set; } = true;
         public string? AffiliateSubId { get; set; }
+        public string? FingerprintHash { get; set; }
+        public string? Country { get; set; }
+        public string? CountryCode { get; set; }
+        public int? LeadTypeId { get; set; }
+
     }
 }

@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common'
 import { Component, OnInit, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { HttpClient } from '@angular/common/http'
+import { RouterModule } from '@angular/router'
 import { PageTitleComponent } from '@common/page-title.component'
 import { environment } from '../../../environments/environment'
 
 @Component({
   selector: 'app-site-pages',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageTitleComponent],
+  imports: [CommonModule, FormsModule, PageTitleComponent, RouterModule],
   templateUrl: './site-pages.component.html',
   styleUrl: './site-pages.component.scss',
 })
@@ -151,23 +152,22 @@ export class SitePagesComponent implements OnInit {
     this.editingId = null
   }
 
-
-
   openLivePage(page: any) {
-  const site = this.sites.find((x) => Number(x.id) === Number(page.siteId))
+    const site = this.sites.find((x) => Number(x.id) === Number(page.siteId))
 
-  if (!site) {
-    this.errorMessage = 'Site not found for this page.'
-    return
+    if (!site) {
+      this.errorMessage = 'Site not found for this page.'
+      return
+    }
+
+    const url =
+      page.pageSlug === 'home'
+        ? `/w/${site.slug}`
+        : `/w/${site.slug}/${page.pageSlug}`
+
+    window.open(url, '_blank')
   }
 
-  const url =
-    page.pageSlug === 'home'
-      ? `/w/${site.slug}`
-      : `/w/${site.slug}/${page.pageSlug}`
-
-  window.open(url, '_blank')
-}
   savePage() {
     this.errorMessage = ''
     this.successMessage = ''

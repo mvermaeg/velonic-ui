@@ -105,4 +105,25 @@ export const VIEW_ROUTES: Route[] = [
       (m) => m.SiteEditComponent
     ),
 },
+{
+  path: 'sites/pages/edit/:id',
+  loadComponent: () =>
+    import('./site-page-edit/site-page-edit.component').then(
+      (m) => m.SitePageEditComponent
+    ),
+},
+{
+  path: 'sites/media',
+  loadComponent: () =>
+    import('./site-media/site-media.component').then(
+      (m) => m.SiteMediaComponent
+    ),
+},
+{
+  path: 'clients/bidding-settings',
+  loadComponent: () =>
+    import('./clients/bidding-settings/bidding-settings.component').then(
+      (m) => m.BiddingSettingsComponent
+    ),
+}
 ]

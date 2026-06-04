@@ -19,9 +19,14 @@ export class SiteEditComponent implements OnInit {
   private http = inject(HttpClient)
 
   private sitesApi = `${environment.apiUrl}/sites`
+  private templatesApi = `${environment.apiUrl}/websitetemplates`
+  private themesApi = `${environment.apiUrl}/websitethemes`
 
   siteId: number | null = null
   site: any = null
+
+  templates: any[] = []
+  themes: any[] = []
 
   loading = false
   saving = false
@@ -32,7 +37,9 @@ export class SiteEditComponent implements OnInit {
     siteName: '',
     domainName: '',
     slug: '',
-    themeKey: 'theme-1',
+    themeKey: '',
+    websiteTemplateId: null,
+    websiteThemeId: null,
     isActive: true,
   }
 
@@ -44,11 +51,33 @@ export class SiteEditComponent implements OnInit {
       return
     }
 
+    this.loadLookups()
     this.loadSite()
+  }
+
+  loadLookups() {
+    this.http.get<any[]>(this.templatesApi).subscribe({
+      next: (res) => {
+        this.templates = res || []
+      },
+      error: () => {
+        this.errorMessage = 'Unable to load templates.'
+      },
+    })
+
+    this.http.get<any[]>(this.themesApi).subscribe({
+      next: (res) => {
+        this.themes = res || []
+      },
+      error: () => {
+        this.errorMessage = 'Unable to load themes.'
+      },
+    })
   }
 
   loadSite() {
     this.loading = true
+    this.errorMessage = ''
 
     this.http.get<any[]>(this.sitesApi).subscribe({
       next: (res) => {
@@ -61,10 +90,12 @@ export class SiteEditComponent implements OnInit {
         }
 
         this.form = {
-          siteName: this.site.siteName,
-          domainName: this.site.domainName,
-          slug: this.site.slug,
-          themeKey: this.site.themeKey,
+          siteName: this.site.siteName || '',
+          domainName: this.site.domainName || '',
+          slug: this.site.slug || '',
+          themeKey: this.site.themeKey || '',
+          websiteTemplateId: this.site.websiteTemplateId || null,
+          websiteThemeId: this.site.websiteThemeId || null,
           isActive: this.site.isActive,
         }
 
@@ -77,18 +108,59 @@ export class SiteEditComponent implements OnInit {
     })
   }
 
+  onThemeChange() {
+    const selectedTheme = this.themes.find(
+      (x) => Number(x.id) === Number(this.form.websiteThemeId)
+    )
+
+    if (selectedTheme?.themeKey) {
+      this.form.themeKey = selectedTheme.themeKey
+    }
+  }
+
   save() {
     this.successMessage = ''
     this.errorMessage = ''
 
     if (!this.siteId) return
 
+    if (!this.form.siteName?.trim()) {
+      this.errorMessage = 'Site name is required.'
+      return
+    }
+
+    if (!this.form.slug?.trim()) {
+      this.errorMessage = 'Slug is required.'
+      return
+    }
+
+    if (!this.form.websiteTemplateId) {
+      this.errorMessage = 'Please select website template.'
+      return
+    }
+
+    if (!this.form.websiteThemeId) {
+      this.errorMessage = 'Please select website theme.'
+      return
+    }
+
     this.saving = true
 
-    this.http.put(`${this.sitesApi}/${this.siteId}`, this.form).subscribe({
+    const payload = {
+      siteName: this.form.siteName,
+      domainName: this.form.domainName,
+      slug: this.form.slug,
+      themeKey: this.form.themeKey,
+      websiteTemplateId: Number(this.form.websiteTemplateId),
+      websiteThemeId: Number(this.form.websiteThemeId),
+      isActive: this.form.isActive,
+    }
+
+    this.http.put(`${this.sitesApi}/${this.siteId}`, payload).subscribe({
       next: () => {
         this.saving = false
         this.successMessage = 'Site updated successfully.'
+        this.loadSite()
       },
       error: (err) => {
         this.saving = false

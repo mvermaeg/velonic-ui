@@ -99,8 +99,8 @@ namespace MyApp.Api.Controllers
             });
         }
 
-        [HttpPost("from-bidding/{biddingResultId}")]
-        public async Task<IActionResult> CreateFromBidding(long biddingResultId)
+        [HttpPost("from-bidding/{biddingResultId:long}")]
+        public async Task<IActionResult> CreateFromBidding([FromRoute] long biddingResultId)
         {
             try
             {

@@ -11,6 +11,12 @@ export class ClientBiddingService {
     return this.http.get<any[]>(`${this.apiUrl}/${clientId}`)
   }
 
+  getAllSettings(page = 1, pageSize = 20) {
+  return this.http.get<any>(
+    `${environment.apiUrl}/client-bidding/settings?page=${page}&pageSize=${pageSize}`
+  )
+}
+
   create(model: any) {
     return this.http.post<any>(this.apiUrl, model)
   }

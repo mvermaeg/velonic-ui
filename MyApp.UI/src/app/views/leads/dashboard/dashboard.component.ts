@@ -53,21 +53,27 @@ export class DashboardComponent implements OnInit {
 
     const s = this.search.toLowerCase()
 
-    return this.leads.filter((x) =>
-      [
-        x.fullName,
-        x.email,
-        x.phone,
-        x.campaignName,
-        x.affiliateName,
-        x.pageName,
-        x.postcode,
-        x.state,
-        x.city,
-        x.leadStatus,
-      ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(s))
-    )
+  return this.leads.filter((x) =>
+  [
+    x.fullName,
+    x.email,
+    x.phone,
+    x.campaignName,
+    x.affiliateName,
+    x.pageName,
+    x.postcode,
+    x.state,
+    x.city,
+    x.country,
+    x.visitorCountry,
+    x.ipAddress,
+    x.fraudLevel,
+    x.fraudReasons,
+    x.leadStatus,
+  ]
+    .filter(Boolean)
+    .some((v) => String(v).toLowerCase().includes(s))
+)
+
   }
 }

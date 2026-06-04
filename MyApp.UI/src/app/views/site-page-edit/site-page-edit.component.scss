@@ -1,0 +1,82 @@
+.card {
+  border-radius: 14px;
+}
+
+.code-box {
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+}.card {
+  border-radius: 14px;
+}
+
+.code-box {
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.media-panel {
+  position: sticky;
+  top: 90px;
+}
+
+.media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 720px;
+  overflow-y: auto;
+}
+
+.media-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.thumb {
+  width: 78px;
+  height: 62px;
+  background: #f3f6fb;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-box {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #6b7280;
+  font-size: 26px;
+}
+
+.media-text {
+  min-width: 0;
+}
+
+.media-text strong {
+  display: block;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.media-text small {
+  display: block;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 11px;
+}

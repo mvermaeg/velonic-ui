@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment'
 })
 export class SitePageSectionsComponent implements OnInit {
   private http = inject(HttpClient)
-
+private mediaApi = `${environment.apiUrl}/sitemediafiles`
   private sitesApi = `${environment.apiUrl}/sites`
   private pagesApi = `${environment.apiUrl}/sitepages`
   private sectionsApi = `${environment.apiUrl}/sitepagesections`
@@ -22,6 +22,9 @@ export class SitePageSectionsComponent implements OnInit {
   sites: any[] = []
   pages: any[] = []
   sections: any[] = []
+
+  mediaFiles: any[] = []
+mediaLoading = false
 
   selectedSiteId: number | null = null
   selectedPageId: number | null = null
@@ -70,7 +73,41 @@ export class SitePageSectionsComponent implements OnInit {
       error: () => (this.errorMessage = 'Unable to load pages.'),
     })
   }
+loadMediaForPage() {
+  this.mediaFiles = []
 
+  const page = this.pages.find((x) => Number(x.id) === Number(this.selectedPageId))
+  if (!page?.siteId) return
+
+  this.mediaLoading = true
+
+  this.http.get<any[]>(`${this.mediaApi}/by-site/${page.siteId}`).subscribe({
+    next: (res) => {
+      this.mediaFiles = res || []
+      this.mediaLoading = false
+    },
+    error: () => {
+      this.mediaLoading = false
+    },
+  })
+}
+
+getFullUrl(fileUrl: string) {
+  if (!fileUrl) return ''
+  if (fileUrl.startsWith('http')) return fileUrl
+
+  const apiRoot = environment.apiUrl.replace('/api', '')
+  return `${apiRoot}${fileUrl}`
+}
+
+selectSectionImage(fileUrl: string) {
+  this.form.imageUrl = this.getFullUrl(fileUrl)
+  this.successMessage = 'Image selected for section.'
+}
+
+isImage(item: any) {
+  return item.fileType === 'image' || item.mimeType?.startsWith('image/')
+}
   onSiteChange() {
     this.selectedPageId = null
     this.sections = []

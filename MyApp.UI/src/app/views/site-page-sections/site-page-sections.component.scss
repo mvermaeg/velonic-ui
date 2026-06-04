@@ -38,3 +38,38 @@
 .badge {
   font-weight: 500;
 }
+.section-media-picker {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.media-pick-item {
+  width: 130px;
+  min-width: 130px;
+  border: 1px solid #dbe3ef;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.media-pick-item img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.media-pick-item span {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  word-break: break-all;
+}

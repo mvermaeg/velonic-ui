@@ -23,16 +23,36 @@ export class ModernTemplateComponent implements OnChanges {
   successMessage = ''
   errorMessage = ''
 
+  addressPostcodeError = ''
+  addressPostcodeVerified = false
+  addressPostcodeChecking = false
+  expectedLocation: any = null
+
   activePage: any = null
   navItems: any[] = []
 
-  leadForm: any = {
-    fullName: '',
-    phone: '',
-    email: '',
-    postcode: '',
-    message: '',
-  }
+leadForm: any = {
+  fullName: '',
+  phone: '',
+  email: '',
+  leadTypeId: null,
+  postcode: '',
+  address: '',
+  city: '',
+  state: '',
+  country: '',
+  countryCode: 'IN',
+  message: '',
+}
+
+
+leadTypes = [
+  { id: 1, name: 'Roofing' },
+  { id: 2, name: 'Windows' },
+  { id: 3, name: 'Siding' },
+  { id: 4, name: 'HVAC' },
+  { id: 5, name: 'Bathroom' },
+]
 
   features = [
     {
@@ -58,6 +78,7 @@ export class ModernTemplateComponent implements OnChanges {
     }
   }
 
+  
   preparePages() {
     const pages = this.site?.pages || []
 
@@ -79,9 +100,10 @@ export class ModernTemplateComponent implements OnChanges {
       null
   }
 
+
+  
   setActivePage(pageSlug: string) {
     const page = this.site?.pages?.find((p: any) => p.pageSlug === pageSlug)
-
     if (!page) return
 
     this.activePage = page
@@ -102,6 +124,10 @@ export class ModernTemplateComponent implements OnChanges {
 
   get isHomePage() {
     return this.activePage?.pageSlug === 'home'
+  }
+
+  get hasCustomHtmlContent() {
+    return !!this.activePage?.htmlContent?.trim()
   }
 
   get isAboutPage() {
@@ -208,7 +234,7 @@ export class ModernTemplateComponent implements OnChanges {
       const raw = this.activeForm?.settingsJson
 
       if (!raw) {
-        return ['fullName', 'phone', 'email', 'postcode', 'message']
+        return ['fullName', 'phone', 'email', 'address', 'postcode', 'message']
       }
 
       const parsed = JSON.parse(raw)
@@ -217,9 +243,9 @@ export class ModernTemplateComponent implements OnChanges {
         return parsed.fields
       }
 
-      return ['fullName', 'phone', 'email', 'postcode', 'message']
+      return ['fullName', 'phone', 'email', 'address', 'postcode', 'message']
     } catch {
-      return ['fullName', 'phone', 'email', 'postcode', 'message']
+      return ['fullName', 'phone', 'email', 'address', 'postcode', 'message']
     }
   }
 
@@ -227,20 +253,140 @@ export class ModernTemplateComponent implements OnChanges {
     return this.formFields.includes(fieldName)
   }
 
+
+  
+  resetAddressPostcodeState() {
+    this.addressPostcodeError = ''
+    this.addressPostcodeVerified = false
+    this.addressPostcodeChecking = false
+    this.expectedLocation = null
+
+    this.leadForm.city = ''
+    this.leadForm.state = ''
+    this.leadForm.country = ''
+  }
+
+
+
+  
+  checkAddressPostcode() {
+    this.addressPostcodeError = ''
+    this.addressPostcodeVerified = false
+    this.expectedLocation = null
+
+    const address = this.leadForm?.address?.trim()
+    const postcode = this.leadForm?.postcode?.trim()
+
+    if (!address || !postcode) {
+      this.addressPostcodeError = 'Address and postcode are required.'
+      return
+    }
+
+    this.addressPostcodeChecking = true
+
+    const payload = {
+      address,
+      postcode,
+      countryCode: this.leadForm.countryCode || 'IN',
+    }
+
+    this.http
+      .post<any>(`${environment.apiUrl}/location/verify-address-postcode`, payload)
+      .subscribe({
+        next: (res) => {
+          this.addressPostcodeChecking = false
+
+          if (res?.isValid) {
+            this.addressPostcodeVerified = true
+            this.expectedLocation = res
+
+            this.leadForm.city = res.city || ''
+            this.leadForm.state = res.state || ''
+            this.leadForm.country = res.country || ''
+            this.leadForm.postcode = res.postalCode || this.leadForm.postcode
+          } else {
+            this.addressPostcodeVerified = false
+            this.addressPostcodeError = res?.message || 'Address and postcode do not match.'
+          }
+        },
+        error: (err) => {
+          this.addressPostcodeChecking = false
+          this.addressPostcodeVerified = false
+          this.addressPostcodeError =
+            err?.error?.message ||
+            err?.error?.addressCheck?.message ||
+            'Unable to verify address and postcode.'
+        },
+      })
+  }
+
+ private generateFingerprint(): string {
+
+  const data =
+    navigator.userAgent +
+    navigator.language +
+    screen.width +
+    screen.height +
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  let hash = 0
+
+  for (let i = 0; i < data.length; i++) {
+    const chr = data.charCodeAt(i)
+    hash = ((hash << 5) - hash) + chr
+    hash |= 0
+  }
+
+  return Math.abs(hash).toString()
+}
+allowOnlyNumbers(event: KeyboardEvent) {
+  const key = event.key
+  if (!/^[0-9]$/.test(key)) {
+    event.preventDefault()
+  }
+}
+
   submitLead() {
     this.successMessage = ''
     this.errorMessage = ''
 
+
+    const phoneOnlyDigits = /^[0-9]{7,15}$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+if (!phoneOnlyDigits.test(this.leadForm.phone || '')) {
+  this.errorMessage = 'Phone number must contain numbers only, 7 to 15 digits.'
+  return
+}
+
+if (this.leadForm.email && !emailPattern.test(this.leadForm.email)) {
+  this.errorMessage = 'Please enter a valid email address.'
+  return
+}
+
+ 
     if (!this.leadForm.fullName || !this.leadForm.phone) {
       this.errorMessage = 'Name and phone are required.'
       return
     }
+
+   if (!this.leadForm.leadTypeId) {
+  this.errorMessage = 'Please select a service.'
+  return
+}
 
     const payload = {
       fullName: this.leadForm.fullName,
       phone: this.leadForm.phone,
       email: this.leadForm.email,
       postcode: this.leadForm.postcode,
+      address: this.leadForm.address,
+      fingerprintHash: this.generateFingerprint(),
+      city: this.leadForm.city,
+      state: this.leadForm.state,
+      leadTypeId: this.leadForm.leadTypeId,
+      country: this.leadForm.country,
+      countryCode: this.leadForm.countryCode || 'IN',
       message: this.leadForm.message,
       pageName: this.activePage?.pageName || 'Home',
       pageSlug: this.activePage?.pageSlug || this.site?.slug,
@@ -261,17 +407,34 @@ export class ModernTemplateComponent implements OnChanges {
           phone: '',
           email: '',
           postcode: '',
+          address: '',
+          city: '',
+          state: '',
+          country: '',
+          countryCode: 'IN',
           message: '',
         }
 
+        this.resetAddressPostcodeState()
         this.setActivePage('thank-you')
       },
-      error: (err) => {
-        this.submitting = false
-        this.errorMessage = err?.error?.message || 'Unable to submit enquiry.'
-      },
+   error: (err) => {
+  this.submitting = false
+
+  const apiError = err?.error
+
+  if (apiError) {
+    this.errorMessage =
+      apiError?.innerMessage ||
+      apiError?.message ||
+      apiError?.addressCheck?.message ||
+      JSON.stringify(apiError)
+  } else {
+    this.errorMessage = err?.message || 'Unable to submit enquiry.'
+  }
+
+  console.error('Lead submit API error:', err)
+}
     })
   }
 }
-
- 

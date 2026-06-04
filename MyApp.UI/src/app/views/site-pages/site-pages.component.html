@@ -226,7 +226,8 @@
             <th>Hero Title</th>
             <th>Sort</th>
             <th>Home</th>
-            <th>Status</th>
+<th>Status</th>
+<th class="text-end">Action</th>
             <th>Created</th>
             <th class="text-end">Action</th>
           </tr>
@@ -257,11 +258,23 @@
               </span>
             </td>
 
-            <td>
-              <span class="badge" [ngClass]="page.isActive ? 'bg-success' : 'bg-danger'">
-                {{ page.isActive ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
+           <td>
+  <span class="badge" [ngClass]="page.isActive ? 'bg-success' : 'bg-danger'">
+    {{ page.isActive ? 'Active' : 'Inactive' }}
+  </span>
+</td>
+
+<td class="text-end">
+  <button
+    class="btn btn-sm btn-outline-primary"
+    type="button"
+    [routerLink]="['/sites/pages/edit', page.id]"
+  >
+    Edit
+  </button>
+
+  
+</td>
 
             <td>{{ page.createdOn | date: 'dd/MM/yyyy HH:mm' }}</td>
 
