@@ -119,5 +119,11 @@ public partial class Lead
 
     public int? LeadTypeId { get; set; }
 
+    public string? EmailVerificationStatus { get; set; }
+
+    public string? EmailVerificationReason { get; set; }
+
+    public bool? IsEmailDeliverable { get; set; }
+
     public virtual LeadType? LeadType { get; set; }
 }

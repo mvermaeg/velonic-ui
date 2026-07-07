@@ -7,6 +7,7 @@ using MyApp.Api.Data.Seeders;
 using MyApp.Api.Models.Identity;
 using MyApp.Api.Services.Bidding;
 using MyApp.Api.Services.Deliveries;
+using MyApp.Api.Services.EmailValidation;
 using MyApp.Api.Services.Fraud;
 using MyApp.Api.Services.Location;
 using System.Text;
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers + Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -25,7 +27,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6Ijg5NWNkZWU4LWQ1YjgtNDFmZi05ZGFiLWY0NzJiNWNkYmNjNyIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFkbWluQHZlbG9uaWMuY29tIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6ImFkbWluQHZlbG9uaWMuY29tIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiU3VwZXJBZG1pbiIsImV4cCI6MTc4MDQ2ODI4MSwiaXNzIjoiTXlBcHAuQXBpIiwiYXVkIjoiTXlBcHAuQ2xpZW50In0.9w93ZDGpicuX02fxLkGfAypMy0UBFNsmjLGZnvOqZ9c"
+        Description = "Enter JWT token only. Do not add Bearer manually."
     });
 
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -51,7 +53,7 @@ builder.Services.AddDbContext<MyAppDbContext>(options =>
 // Identity context
 builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<LeadBiddingService>();
+
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -75,8 +77,7 @@ if (string.IsNullOrWhiteSpace(jwtKey))
 {
     throw new Exception("Jwt:Key is missing in appsettings.json");
 }
-builder.Services.AddScoped<LeadDeliveryService>();
-builder.Services.AddScoped<ILeadFraudService, LeadFraudService>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -100,50 +101,41 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddHttpClient(); 
-builder.Services.AddHttpClient<IpLocationService>();
-builder.Services.AddScoped<IAddressValidationService, GoogleAddressValidationService>();
 
+// App services
+builder.Services.AddScoped<LeadBiddingService>();
+builder.Services.AddScoped<LeadDeliveryService>();
+builder.Services.AddScoped<ILeadFraudService, LeadFraudService>();
+
+builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<BouncerEmailValidationService>();
+builder.Services.AddHttpClient<IpLocationService>();
+builder.Services.AddHttpClient<IAddressValidationService, GoogleGeocodingAddressValidationService>();
 
 // CORS for Angular
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200",
-                "http://localhost:49976",
-                "http://localhost:64881")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.WithOrigins(
+                "https://marketing.homeyy.com",
+                "http://marketing.homeyy.com",
+                "http://localhost:4200"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowAngular", policy =>
-//    {
-//        policy.WithOrigins(
-//                "https://www.homeyy.com",
-//                "http://homeyy.com"
-//            )
-//            .AllowAnyHeader()
-//            .AllowAnyMethod();
-//    });
-//});
-
-
 var app = builder.Build();
 
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
+app.UseSwagger();
 
- 
-    app.UseSwagger();
-    app.UseSwaggerUI();
- 
+app.UseSwaggerUI(c =>
+{
+    c.RoutePrefix = string.Empty;
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyApp.Api v1");
+});
 
 app.UseHttpsRedirection();
 
@@ -155,5 +147,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 await IdentitySeeder.SeedAsync(app.Services);
+
 app.Run();
+
+ 

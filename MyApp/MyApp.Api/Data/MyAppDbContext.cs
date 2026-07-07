@@ -266,6 +266,8 @@ public partial class MyAppDbContext : DbContext
             entity.Property(e => e.CreatedByUserId).HasMaxLength(450);
             entity.Property(e => e.Email).HasMaxLength(256);
             entity.Property(e => e.EmailDomain).HasMaxLength(200);
+            entity.Property(e => e.EmailVerificationReason).HasMaxLength(500);
+            entity.Property(e => e.EmailVerificationStatus).HasMaxLength(50);
             entity.Property(e => e.FingerprintHash).HasMaxLength(200);
             entity.Property(e => e.FraudLevel).HasMaxLength(50);
             entity.Property(e => e.FullName).HasMaxLength(200);

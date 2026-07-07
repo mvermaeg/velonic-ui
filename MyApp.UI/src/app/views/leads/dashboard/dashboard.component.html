@@ -33,7 +33,7 @@
         <input
           type="text"
           class="form-control"
-          placeholder="Search..."
+          placeholder="Search by name, email, phone, city, risk..."
           [(ngModel)]="search"
         />
       </div>
@@ -82,26 +82,22 @@
           <tr>
             <th>ID</th>
             <th>Created</th>
-            <th>UUID</th>
-            <th>Full Name</th>
+            <th>Name</th>
             <th>Email</th>
+            <th>Email Status</th>
+            <th>Deliverable</th>
             <th>Phone</th>
             <th>Campaign</th>
-            <th>Affiliate</th>
-            <th>Page</th>
-            <th>Step</th>
-            <th>Completed</th>
             <th>Postcode</th>
             <th>State</th>
             <th>City</th>
             <th>Country</th>
-<th>Visitor Country</th>
-<th>IP</th>
+            <th>Visitor Country</th>
+            <th>IP</th>
             <th>Risk</th>
-
-
-<th>Quality</th>
+            <th>Quality</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
 
@@ -109,90 +105,189 @@
           <tr *ngFor="let lead of filteredLeads">
             <td>{{ lead.id }}</td>
             <td>{{ lead.createdAt | date: 'short' }}</td>
-            <td class="text-nowrap">{{ lead.leadUuid }}</td>
-            <td>{{ lead.fullName }}</td>
-            <td>{{ lead.email }}</td>
-            <td>{{ lead.phone }}</td>
-            <td>{{ lead.campaignName }}</td>
-            <td>{{ lead.affiliateName }}</td>
-            <td>{{ lead.pageName }}</td>
-            <td>{{ lead.step }}</td>
+            <td>{{ lead.fullName || '-' }}</td>
+            <td>{{ lead.email || '-' }}</td>
+
             <td>
-              <span class="badge" [ngClass]="lead.isCompleted ? 'bg-success' : 'bg-warning'">
-                {{ lead.isCompleted ? 'Yes' : 'No' }}
+              <span
+                class="badge"
+                [ngClass]="{
+                  'bg-success': lead.emailVerificationStatus === 'deliverable',
+                  'bg-warning text-dark': lead.emailVerificationStatus === 'risky',
+                  'bg-danger': lead.emailVerificationStatus === 'undeliverable',
+                  'bg-secondary': !lead.emailVerificationStatus
+                }"
+              >
+                {{ lead.emailVerificationStatus || 'Unknown' }}
               </span>
             </td>
-            <td>{{ lead.postcode }}</td>
-            <td>{{ lead.state }}</td>
-            <!-- <td>{{ lead.city }}</td>
+
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'bg-success': lead.isEmailDeliverable === true,
+                  'bg-danger': lead.isEmailDeliverable === false,
+                  'bg-secondary': lead.isEmailDeliverable === null || lead.isEmailDeliverable === undefined
+                }"
+              >
+                {{
+                  lead.isEmailDeliverable === true
+                    ? 'Yes'
+                    : lead.isEmailDeliverable === false
+                    ? 'No'
+                    : 'Unknown'
+                }}
+              </span>
+            </td>
+
+            <td>{{ lead.phone || '-' }}</td>
+            <td>{{ lead.campaignName || '-' }}</td>
+            <td>{{ lead.postcode || '-' }}</td>
+            <td>{{ lead.state || '-' }}</td>
+            <td>{{ lead.city || '-' }}</td>
+            <td>{{ lead.country || '-' }}</td>
+
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'bg-success': lead.country && lead.visitorCountry && lead.country === lead.visitorCountry,
+                  'bg-warning text-dark': lead.country && lead.visitorCountry && lead.country !== lead.visitorCountry,
+                  'bg-secondary': !lead.visitorCountry
+                }"
+              >
+                {{ lead.visitorCountry || 'Unknown' }}
+              </span>
+            </td>
+
+            <td class="text-nowrap">{{ lead.ipAddress || '-' }}</td>
+
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'bg-danger': lead.fraudLevel === 'High',
+                  'bg-warning text-dark': lead.fraudLevel === 'Medium',
+                  'bg-info text-dark': lead.fraudLevel === 'Low',
+                  'bg-success': lead.fraudLevel === 'Clean',
+                  'bg-secondary': !lead.fraudLevel
+                }"
+              >
+                {{ lead.fraudLevel || 'Not Checked' }}
+              </span>
+
+              <span class="badge bg-dark mt-1 d-block" *ngIf="lead.isDuplicateLead">
+                Duplicate {{ lead.duplicateLeadCount || '' }}
+              </span>
+            </td>
+
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'bg-success': lead.leadQualityScore >= 80,
+                  'bg-warning text-dark': lead.leadQualityScore >= 50 && lead.leadQualityScore < 80,
+                  'bg-danger': lead.leadQualityScore < 50
+                }"
+              >
+                {{ lead.leadQualityScore || 0 }}
+              </span>
+            </td>
+
             <td>
               <span class="badge bg-primary-subtle text-primary">
-                {{ lead.leadStatus }}
+                {{ lead.leadStatus || '-' }}
               </span>
-            </td> -->
-
-            <td>{{ lead.city }}</td>
-<td>{{ lead.country || '-' }}</td>
-
-<td>
-  <span
-    class="badge"
-    [ngClass]="{
-      'bg-success': lead.country && lead.visitorCountry && lead.country === lead.visitorCountry,
-      'bg-warning text-dark': lead.country && lead.visitorCountry && lead.country !== lead.visitorCountry,
-      'bg-secondary': !lead.visitorCountry
-    }"
+            </td>
+            <td>
+  <button
+    class="btn btn-sm btn-outline-primary"
+    type="button"
+    (click)="openManualDelivery(lead)"
   >
-    {{ lead.visitorCountry || 'Unknown' }}
-  </span>
-</td>
-
-<td class="text-nowrap">
-  {{ lead.ipAddress || '-' }}
-</td>
-<td>
-  <span class="badge"
-        [ngClass]="{
-          'bg-danger': lead.fraudLevel === 'High',
-          'bg-warning text-dark': lead.fraudLevel === 'Medium',
-          'bg-info text-dark': lead.fraudLevel === 'Low',
-          'bg-success': lead.fraudLevel === 'Clean',
-          'bg-secondary': !lead.fraudLevel
-        }">
-    {{ lead.fraudLevel || 'Not Checked' }}
-  </span>
-
-
-  <span class="badge bg-dark mt-1" *ngIf="lead.isDuplicateLead">
-  Duplicate {{ lead.duplicateLeadCount || '' }}
-</span>
-</td>
-
-<td>
-  <span class="badge"
-        [ngClass]="{
-          'bg-success': lead.leadQualityScore >= 80,
-          'bg-warning text-dark': lead.leadQualityScore >= 50 && lead.leadQualityScore < 80,
-          'bg-danger': lead.leadQualityScore < 50
-        }">
-    {{ lead.leadQualityScore || 0 }}
-  </span>
-</td>
-
-<td>
-  <span class="badge bg-primary-subtle text-primary">
-    {{ lead.leadStatus }}
-  </span>
+    Manual Deliver
+  </button>
 </td>
           </tr>
 
           <tr *ngIf="filteredLeads.length === 0">
-            <td colspan="15" class="text-center text-muted py-4">
+            <td colspan="17" class="text-center text-muted py-4">
               No leads found.
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="modal-backdrop fade show" *ngIf="selectedLead"></div>
+
+<div class="modal d-block" tabindex="-1" *ngIf="selectedLead">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Manual Lead Delivery</h5>
+        <button type="button" class="btn-close" (click)="closeManualDelivery()"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <strong>Lead:</strong> #{{ selectedLead.id }} - {{ selectedLead.fullName }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Client ID</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="manualClientId"
+            placeholder="Enter client id"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Bid Amount</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="manualBidAmount"
+            placeholder="0"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Note</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            [(ngModel)]="manualNote"
+            placeholder="Manual delivery note"
+          ></textarea>
+        </div>
+
+        <div class="alert alert-info" *ngIf="manualDeliveryMessage">
+          {{ manualDeliveryMessage }}
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-light" type="button" (click)="closeManualDelivery()">
+          Close
+        </button>
+
+        <button
+          class="btn btn-primary"
+          type="button"
+          (click)="manualDeliverLead()"
+          [disabled]="manualDelivering"
+        >
+          {{ manualDelivering ? 'Delivering...' : 'Deliver Lead' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

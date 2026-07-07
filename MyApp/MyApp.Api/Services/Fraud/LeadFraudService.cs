@@ -29,6 +29,7 @@ namespace MyApp.Api.Services.Fraud
             var result = new FraudCheckResult();
 
             CheckEmail(lead, result);
+            CheckBouncerEmailVerification(lead, result);
             CheckPostcodeCountryMismatch(lead, result);
             await CheckPostalAddressMatchAsync(lead, result);
             await CheckDuplicateAsync(lead, result);
@@ -54,6 +55,28 @@ namespace MyApp.Api.Services.Fraud
 
             lead.IsSuspicious = result.Score >= 40;
         }
+
+        private static void CheckBouncerEmailVerification(Lead lead, FraudCheckResult result)
+        {
+            if (lead.IsEmailDeliverable == false)
+            {
+                result.Add(35, "Bouncer: email is not deliverable");
+            }
+
+            if (!string.IsNullOrWhiteSpace(lead.EmailVerificationStatus) &&
+                lead.EmailVerificationStatus.Equals("risky", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Add(20, "Bouncer: email marked risky");
+            }
+
+            if (!string.IsNullOrWhiteSpace(lead.EmailVerificationStatus) &&
+                lead.EmailVerificationStatus.Equals("undeliverable", StringComparison.OrdinalIgnoreCase))
+            {
+                lead.IsInvalidEmail = true;
+                result.Add(35, "Bouncer: email undeliverable");
+            }
+        }
+
         private static void CheckVisitorCountryMismatch(Lead lead, FraudCheckResult result)
         {
             if (string.IsNullOrWhiteSpace(lead.Country) ||

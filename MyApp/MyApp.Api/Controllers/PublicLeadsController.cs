@@ -6,6 +6,7 @@ using MyApp.Api.DTOs.Leads;
 using MyApp.Api.DTOs.Location;
 using MyApp.Api.Services.Bidding;
 using MyApp.Api.Services.Deliveries;
+using MyApp.Api.Services.EmailValidation;
 using MyApp.Api.Services.Fraud;
 using MyApp.Api.Services.Location;
 using System.Text.Json;
@@ -16,6 +17,7 @@ namespace MyApp.Api.Controllers
     [Route("api/public/leads")]
     public class PublicLeadsController : ControllerBase
     {
+        private readonly BouncerEmailValidationService _emailValidation;
         private readonly LeadDeliveryService _leadDeliveryService;
         private readonly IpLocationService _ipLocationService;
         private readonly LeadBiddingService _leadBiddingService;
@@ -29,7 +31,8 @@ namespace MyApp.Api.Controllers
             ILeadFraudService leadFraudService,
             IpLocationService ipLocationService,
             IAddressValidationService addressValidationService,
-            LeadDeliveryService leadDeliveryService)
+            LeadDeliveryService leadDeliveryService,
+            BouncerEmailValidationService emailValidation)
         {
             _db = db;
             _leadBiddingService = leadBiddingService;
@@ -37,132 +40,8 @@ namespace MyApp.Api.Controllers
             _addressValidationService = addressValidationService;
             _ipLocationService = ipLocationService;
             _leadDeliveryService = leadDeliveryService;
+            _emailValidation = emailValidation;
         }
-
-        //[HttpPost("website")]
-        //public async Task<IActionResult> CreateWebsiteLead(WebsiteLeadCreateDto model)
-        //{
-        //    if (string.IsNullOrWhiteSpace(model.Email) && string.IsNullOrWhiteSpace(model.Phone))
-        //    {
-        //        return BadRequest(new
-        //        {
-        //            message = "Email or phone is required."
-        //        });
-        //    }
-
-        //    if (!string.IsNullOrWhiteSpace(model.Address) &&
-        //        !string.IsNullOrWhiteSpace(model.Postcode))
-        //    {
-        //        var addressCheck = await _addressValidationService.VerifyAsync(
-        //            new VerifyAddressPostcodeRequest
-        //            {
-        //                Address = model.Address,
-        //                Postcode = model.Postcode,
-        //                CountryCode = !string.IsNullOrWhiteSpace(model.CountryCode)
-        //                    ? model.CountryCode
-        //                    : "IN"
-        //            });
-
-        //        if (addressCheck.Status == "Mismatch")
-        //        {
-        //            return BadRequest(new
-        //            {
-        //                message = "Address and postal code do not match.",
-        //                addressCheck
-        //            });
-        //        }
-
-        //        model.City = addressCheck.City ?? model.City;
-        //        model.State = addressCheck.State ?? model.State;
-        //        model.Country = addressCheck.Country ?? model.Country;
-        //        model.Postcode = addressCheck.PostalCode ?? model.Postcode;
-        //    }
-
-        //    var ipAddress =
-        //        Request.Headers["CF-Connecting-IP"].FirstOrDefault()
-        //        ?? Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',').FirstOrDefault()?.Trim()
-        //        ?? HttpContext.Connection.RemoteIpAddress?.ToString();
-
-        //    var userAgent = Request.Headers.UserAgent.ToString();
-
-        //    var affiliateSubId = model.AffiliateSubId;
-
-        //    AffiliateClick? affiliateClick = null;
-
-        //    if (!string.IsNullOrWhiteSpace(affiliateSubId))
-        //    {
-        //        affiliateClick = await _db.AffiliateClicks
-        //            .Where(x => x.SubId == affiliateSubId)
-        //            .OrderByDescending(x => x.Id)
-        //            .FirstOrDefaultAsync();
-        //    }
-
-        //    var lead = new Lead
-        //    {
-        //        LeadUuid = Guid.NewGuid(),
-        //        CreatedAt = DateTime.UtcNow,
-        //        ReceivedAt = DateTime.UtcNow,
-
-        //        FullName = model.FullName,
-        //        Email = model.Email,
-        //        Phone = model.Phone,
-
-        //        IpAddress = ipAddress,
-        //        UserAgent = userAgent,
-
-        //        CampaignName = model.CampaignName,
-        //        AffiliateName = affiliateClick?.AffiliateName ?? model.AffiliateName,
-        //        PageName = model.PageName,
-
-        //        AffiliateId = affiliateClick?.AffiliateId,
-        //        AffiliateSubId = affiliateSubId,
-        //        AffiliateClickId = affiliateClick?.Id,
-        //        AffiliateClickUuid = affiliateClick?.ClickUuid,
-
-        //        Address = model.Address,
-        //        Postcode = model.Postcode,
-        //        State = model.State,
-        //        City = model.City,
-        //        Country = model.Country,
-
-        //        Step = model.Step,
-        //        IsTest = model.IsTest,
-        //        IsCompleted = model.IsCompleted,
-
-        //        LeadStatus = "New",
-        //        IsDeleted = false
-        //    };
-
-        //    _db.Leads.Add(lead);
-        //    await _db.SaveChangesAsync();
-
-        //    await _leadFraudService.CheckAndApplyAsync(lead);
-        //    await _db.SaveChangesAsync();
-
-        //    if (lead.FraudLevel != "High")
-        //    {
-        //        await _leadBiddingService.RunForLeadAsync(lead.Id);
-        //    }
-
-        //    var rawPayload = new LeadRawPayload
-        //    {
-        //        LeadId = lead.Id,
-        //        SourceName = "Website",
-        //        ExternalLeadId = null,
-        //        RawJson = JsonSerializer.Serialize(model),
-        //        ReceivedOn = DateTime.UtcNow
-        //    };
-
-        //    _db.LeadRawPayloads.Add(rawPayload);
-        //    await _db.SaveChangesAsync();
-
-        //    return Ok(new
-        //    {
-        //        message = "Lead received successfully.",
-        //        leadId = lead.Id,
-        //        leadUuid = lead.LeadUuid
-        //    });
-        //}
 
         [HttpPost("website")]
         public async Task<IActionResult> CreateWebsiteLead(WebsiteLeadCreateDto model)
@@ -170,12 +49,7 @@ namespace MyApp.Api.Controllers
             try
             {
                 if (model == null)
-                {
-                    return BadRequest(new
-                    {
-                        message = "Invalid lead data."
-                    });
-                }
+                    return BadRequest(new { message = "Invalid lead data." });
 
                 model.FullName = model.FullName?.Trim();
                 model.Email = model.Email?.Trim();
@@ -184,100 +58,96 @@ namespace MyApp.Api.Controllers
                 model.Postcode = model.Postcode?.Trim();
                 model.CountryCode = string.IsNullOrWhiteSpace(model.CountryCode)
                     ? "IN"
-                    : model.CountryCode.Trim().ToUpper();
+                    : model.CountryCode.Trim().ToUpperInvariant();
 
                 if (string.IsNullOrWhiteSpace(model.FullName))
+                    return BadRequest(new { message = "Full name is required." });
+
+                if (string.IsNullOrWhiteSpace(model.Phone))
+                    return BadRequest(new { message = "Phone number is required." });
+
+                if (string.IsNullOrWhiteSpace(model.Email))
+                    return BadRequest(new { message = "Email address is required." });
+
+                if (model.LeadTypeId == null || model.LeadTypeId <= 0)
+                    return BadRequest(new { message = "Please select a service." });
+
+                var emailFormatOk = System.Text.RegularExpressions.Regex.IsMatch(
+                    model.Email,
+                    @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+
+                if (!emailFormatOk)
+                    return BadRequest(new { message = "Please enter a valid email address." });
+
+                var emailCheck = await _emailValidation.VerifyAsync(model.Email);
+
+                if (emailCheck == null ||
+                    !string.Equals(emailCheck.Status, "deliverable", StringComparison.OrdinalIgnoreCase) ||
+                    emailCheck.Score < 80)
                 {
                     return BadRequest(new
                     {
-                        message = "Full name is required."
+                        message = $"Email verification failed. Status: {emailCheck?.Status ?? "No response"}, Score: {emailCheck?.Score?.ToString() ?? "N/A"}, Reason: {emailCheck?.Reason ?? "Email is not confirmed as deliverable."}"
                     });
                 }
+                 
 
-                if (string.IsNullOrWhiteSpace(model.Email) && string.IsNullOrWhiteSpace(model.Phone))
+                var phoneDigits = new string(model.Phone.Where(char.IsDigit).ToArray());
+
+                if (phoneDigits.Length != model.Phone.Length)
+                    return BadRequest(new { message = "Phone number should contain numbers only." });
+
+                if (phoneDigits.Length < 7 || phoneDigits.Length > 15)
+                    return BadRequest(new { message = "Phone number should be between 7 and 15 digits." });
+
+                model.Phone = phoneDigits;
+
+                if (string.IsNullOrWhiteSpace(model.Address))
+                    return BadRequest(new { message = "Full address is required." });
+
+                if (string.IsNullOrWhiteSpace(model.Postcode))
+                    return BadRequest(new { message = "Postcode is required." });
+
+                var addressCheck = await _addressValidationService.VerifyAsync(
+                    new VerifyAddressPostcodeRequest
+                    {
+                        Address = model.Address,
+                        Postcode = model.Postcode,
+                        CountryCode = model.CountryCode
+                    });
+
+                var addressAccepted =
+                    addressCheck.IsValid ||
+                    string.Equals(addressCheck.Status, "Valid", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(addressCheck.Status, "Review", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(addressCheck.PossibleNextAction, "ACCEPT", StringComparison.OrdinalIgnoreCase);
+
+                var addressRejected =
+                    string.Equals(addressCheck.Status, "Mismatch", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(addressCheck.Status, "ProviderError", StringComparison.OrdinalIgnoreCase);
+
+                if (!addressAccepted || addressRejected)
                 {
                     return BadRequest(new
                     {
-                        message = "Email or phone is required."
+                        message = addressCheck.Message ?? "Address and postcode could not be verified.",
+                        addressStatus = addressCheck.Status,
+                        addressCheck
                     });
                 }
 
-                if (!string.IsNullOrWhiteSpace(model.Email))
-                {
-                    var emailOk = System.Text.RegularExpressions.Regex.IsMatch(
-                        model.Email,
-                        @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-
-                    if (!emailOk)
-                    {
-                        return BadRequest(new
-                        {
-                            message = "Please enter a valid email address."
-                        });
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(model.Phone))
-                {
-                    var phoneDigits = new string(model.Phone.Where(char.IsDigit).ToArray());
-
-                    if (phoneDigits.Length != model.Phone.Length)
-                    {
-                        return BadRequest(new
-                        {
-                            message = "Phone number should contain numbers only."
-                        });
-                    }
-
-                    if (phoneDigits.Length < 7 || phoneDigits.Length > 15)
-                    {
-                        return BadRequest(new
-                        {
-                            message = "Phone number should be between 7 and 15 digits."
-                        });
-                    }
-
-                    model.Phone = phoneDigits;
-                }
-
-                if (!string.IsNullOrWhiteSpace(model.Postcode) &&
-                    string.IsNullOrWhiteSpace(model.Address))
-                {
-                    return BadRequest(new
-                    {
-                        message = "Full address is required with postcode."
-                    });
-                }
-
-                if (!string.IsNullOrWhiteSpace(model.Address) &&
-                    !string.IsNullOrWhiteSpace(model.Postcode))
-                {
-                    var addressCheck = await _addressValidationService.VerifyAsync(
-                        new VerifyAddressPostcodeRequest
-                        {
-                            Address = model.Address,
-                            Postcode = model.Postcode,
-                            CountryCode = model.CountryCode
-                        });
-
-                    bool addressVerified = addressCheck.IsValid;
-
-                    model.City = addressCheck.City ?? model.City;
-                    model.State = addressCheck.State ?? model.State;
-                    model.Country = addressCheck.Country ?? model.Country;
-                    model.Postcode = addressCheck.PostalCode ?? model.Postcode;
-                }
+                model.City = addressCheck.City ?? model.City;
+                model.State = addressCheck.State ?? model.State;
+                model.Country = addressCheck.Country ?? model.Country;
+                model.Postcode = addressCheck.PostalCode ?? model.Postcode;
 
                 var ipAddress =
                     Request.Headers["CF-Connecting-IP"].FirstOrDefault()
                     ?? Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',').FirstOrDefault()?.Trim()
                     ?? HttpContext.Connection.RemoteIpAddress?.ToString();
 
-
                 var visitorLocation = await _ipLocationService.GetAsync(ipAddress);
-
                 var userAgent = Request.Headers.UserAgent.ToString();
-
                 var affiliateSubId = model.AffiliateSubId;
 
                 AffiliateClick? affiliateClick = null;
@@ -299,31 +169,30 @@ namespace MyApp.Api.Controllers
                     FullName = model.FullName,
                     Email = model.Email,
                     Phone = model.Phone,
-
                     IpAddress = ipAddress,
                     UserAgent = userAgent,
                     VisitorCountry = visitorLocation?.CountryName,
                     CampaignName = model.CampaignName,
                     AffiliateName = affiliateClick?.AffiliateName ?? model.AffiliateName,
                     PageName = model.PageName,
-
                     AffiliateId = affiliateClick?.AffiliateId,
                     AffiliateSubId = affiliateSubId,
                     AffiliateClickId = affiliateClick?.Id,
                     AffiliateClickUuid = affiliateClick?.ClickUuid,
-
                     Address = model.Address,
                     Postcode = model.Postcode,
                     State = model.State,
                     City = model.City,
                     Country = model.Country,
-
                     Step = model.Step,
                     IsTest = model.IsTest,
                     IsCompleted = model.IsCompleted,
                     LeadTypeId = model.LeadTypeId,
                     LeadStatus = "New",
-                    IsDeleted = false
+                    IsDeleted = false,
+                    EmailVerificationStatus = emailCheck.Status,
+                    EmailVerificationReason = emailCheck.Reason,
+                    IsEmailDeliverable = emailCheck.Deliverable
                 };
 
                 _db.Leads.Add(lead);
@@ -332,20 +201,15 @@ namespace MyApp.Api.Controllers
                 await _leadFraudService.CheckAndApplyAsync(lead);
                 await _db.SaveChangesAsync();
 
-                //if (lead.FraudLevel != "High")
-                //{
-                    await _leadBiddingService.RunForLeadAsync(lead.Id);
+                await _leadBiddingService.RunForLeadAsync(lead.Id);
 
-                    var winningBid = await _db.LeadBiddingResults
-                        .Where(x => x.LeadId == lead.Id && x.IsWon && !x.IsSold)
-                        .OrderByDescending(x => x.BidAmount)
-                        .FirstOrDefaultAsync();
+                var winningBid = await _db.LeadBiddingResults
+                    .Where(x => x.LeadId == lead.Id && x.IsWon && !x.IsSold)
+                    .OrderByDescending(x => x.BidAmount)
+                    .FirstOrDefaultAsync();
 
-                    if (winningBid != null)
-                    {
-                        await _leadDeliveryService.CreateDeliveryFromBiddingResultAsync(winningBid.Id);
-                    }
-                //}
+                if (winningBid != null)
+                    await _leadDeliveryService.CreateDeliveryFromBiddingResultAsync(winningBid.Id);
 
                 var rawPayload = new LeadRawPayload
                 {
@@ -370,7 +234,8 @@ namespace MyApp.Api.Controllers
             {
                 return StatusCode(500, new
                 {
-                    message = ex.Message,
+                    message = "Lead submit failed.",
+                    error = ex.Message,
                     innerMessage = ex.InnerException?.Message
                 });
             }

@@ -91,6 +91,12 @@ export const MENU: MenuItem[] = [
     link: '/sites/pages',
     collapsed: true,
     subMenu: [
+       {
+        key: 'sites',
+        label: 'Dashboard',
+        link: '/sites',
+        parentKey: 'sites'
+      },
       {
         key: 'sites-pages',
         label: 'Pages',

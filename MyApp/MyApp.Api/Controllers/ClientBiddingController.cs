@@ -5,6 +5,8 @@ using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
 using MyApp.Api.DTOs.ClientBidding;
 using MyApp.Api.Services.Deliveries;
+using MyApp.Api.DTOs.LeadDelivery;
+
 
 namespace MyApp.Api.Controllers
 {
@@ -33,6 +35,59 @@ namespace MyApp.Api.Controllers
 
             return Ok(data);
         }
+
+        [HttpPost("manual-deliver")]
+        public async Task<IActionResult> ManualDeliver([FromBody] ManualLeadDeliveryDto model)
+        {
+            var lead = await _db.Leads.FirstOrDefaultAsync(x =>
+                x.Id == model.LeadId && x.IsDeleted == false);
+
+            if (lead == null)
+                return BadRequest(new { message = "Lead not found." });
+
+            var client = await _db.Clients.FirstOrDefaultAsync(x =>
+                x.Id == model.ClientId && x.IsDeleted == false);
+
+            if (client == null)
+                return BadRequest(new { message = "Client not found." });
+
+            var alreadyDelivered = await _db.LeadDeliveries.AnyAsync(x =>
+                x.LeadId == model.LeadId &&
+                x.ClientId == model.ClientId);
+
+            if (alreadyDelivered)
+                return BadRequest(new { message = "This lead is already delivered to this client." });
+
+            var biddingResult = new LeadBiddingResult
+            {
+                LeadId = model.LeadId,
+                ClientId = model.ClientId,
+                ClientBiddingSettingId = null,
+                BidAmount = model.BidAmount,
+                MatchReason = string.IsNullOrWhiteSpace(model.Note)
+                    ? "Manual delivery by admin"
+                    : $"Manual delivery by admin: {model.Note}",
+                IsWon = true,
+                IsSold = false,
+                SoldOn = null,
+                CreatedOn = DateTime.UtcNow
+            };
+
+            _db.LeadBiddingResults.Add(biddingResult);
+            await _db.SaveChangesAsync();
+
+            var deliveryId = await _deliveryService.CreateDeliveryFromBiddingResultAsync(biddingResult.Id);
+
+            return Ok(new
+            {
+                message = "Lead delivered manually.",
+                leadId = model.LeadId,
+                clientId = model.ClientId,
+                biddingResultId = biddingResult.Id,
+                deliveryId
+            });
+        }
+
 
         [HttpPost("settings")]
         public async Task<IActionResult> CreateSetting(

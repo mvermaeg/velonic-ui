@@ -83,9 +83,6 @@
   </div>
 </section>
 
-
- 
-
 <ng-container *ngIf="isHomePage">
   <section class="about-section">
     <div class="container">
@@ -195,99 +192,70 @@
 
           <div class="row g-3">
             <div class="col-md-6" *ngIf="showField('fullName')">
-              <input class="form-control" name="fullName" placeholder="Full Name" [(ngModel)]="leadForm.fullName" />
+              <input class="form-control" name="homeFullName" placeholder="Full Name" [(ngModel)]="leadForm.fullName" autocomplete="name" />
             </div>
 
-           <div class="col-md-6" *ngIf="showField('phone')">
-  <input
-    class="form-control"
-    type="tel"
-    placeholder="Phone Number"
-    name="phone"
-    [(ngModel)]="leadForm.phone"
-    inputmode="numeric"
-    pattern="[0-9]*"
-    maxlength="15"
-    autocomplete="tel"
-    (keypress)="allowOnlyNumbers($event)"
-  />
-</div>
-
-           <div class="col-md-6" *ngIf="showField('email')">
-  <input
-    class="form-control"
-    type="email"
-    placeholder="Email Address"
-    name="email"
-    [(ngModel)]="leadForm.email"
-    autocomplete="email"
-  />
-</div>
-
-
-<div class="col-md-6">
-  <select
-    class="form-control"
-    name="leadTypeId"
-    [(ngModel)]="leadForm.leadTypeId"
-  >
-    <option [ngValue]="null">Select Service</option>
-    <option *ngFor="let item of leadTypes" [ngValue]="item.id">
-      {{ item.name }}
-    </option>
-  </select>
-</div>
-
-            <div class="col-md-6" *ngIf="showField('postcode')">
+            <div class="col-md-6" *ngIf="showField('phone')">
               <input
                 class="form-control"
-                name="address"
+                type="tel"
+                name="homePhone"
+                placeholder="Phone Number"
+                [(ngModel)]="leadForm.phone"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="15"
+                autocomplete="tel"
+                (keypress)="allowOnlyNumbers($event)"
+              />
+            </div>
+
+            <div class="col-md-6" *ngIf="showField('email')">
+              <input class="form-control" type="email" name="homeEmail" placeholder="Email Address" [(ngModel)]="leadForm.email" autocomplete="email" />
+            </div>
+
+            <div class="col-md-6" *ngIf="showField('leadTypeId')">
+              <select class="form-control" name="homeLeadTypeId" [(ngModel)]="leadForm.leadTypeId">
+                <option [ngValue]="null">Select Service</option>
+                <option *ngFor="let item of leadTypes" [ngValue]="item.id">{{ item.name }}</option>
+              </select>
+            </div>
+
+            <div class="col-md-6" *ngIf="showField('address')">
+              <input
+                class="form-control"
+                name="homeAddress"
                 placeholder="Full Address"
                 [(ngModel)]="leadForm.address"
                 (ngModelChange)="resetAddressPostcodeState()"
+                autocomplete="street-address"
               />
             </div>
 
             <div class="col-md-6" *ngIf="showField('postcode')">
               <input
                 class="form-control"
-                name="postcode"
+                name="homePostcode"
                 placeholder="Postcode"
                 [(ngModel)]="leadForm.postcode"
                 (ngModelChange)="resetAddressPostcodeState()"
                 (blur)="checkAddressPostcode()"
+                autocomplete="postal-code"
               />
 
-              <div class="text-danger small mt-1" *ngIf="addressPostcodeError">
-                {{ addressPostcodeError }}
-              </div>
-
+              <div class="text-warning small mt-1" *ngIf="addressPostcodeError">{{ addressPostcodeError }}</div>
               <div class="text-success small mt-1" *ngIf="addressPostcodeVerified">
                 Verified: {{ expectedLocation?.city }}, {{ expectedLocation?.state }}, {{ expectedLocation?.postalCode }}
               </div>
-
-              <div class="text-muted small mt-1" *ngIf="addressPostcodeChecking">
-                Checking address and postcode...
-              </div>
+              <div class="text-muted small mt-1" *ngIf="addressPostcodeChecking">Checking address and postcode...</div>
             </div>
 
             <div class="col-md-12" *ngIf="showField('message')">
-              <textarea
-                class="form-control"
-                name="message"
-                rows="4"
-                placeholder="Tell us what service you need"
-                [(ngModel)]="leadForm.message"
-              ></textarea>
+              <textarea class="form-control" name="homeMessage" rows="4" placeholder="Tell us what service you need" [(ngModel)]="leadForm.message"></textarea>
             </div>
 
             <div class="col-md-12">
-              <button
-                class="primary-btn"
-                type="button"
-                (click)="submitLead()"
-                [disabled]="submitting || addressPostcodeChecking"
-              >
+              <button class="primary-btn" type="button" (click)="submitLead()" [disabled]="submitting">
                 {{ submitting ? 'Submitting...' : formButtonText }}
               </button>
             </div>
@@ -350,77 +318,63 @@
       <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
 
       <div class="form-grid">
-        <input *ngIf="showField('fullName')" type="text" placeholder="Full Name" name="fullName" [(ngModel)]="leadForm.fullName" />
-        <input
-  *ngIf="showField('phone')"
-  type="tel"
-  placeholder="Phone Number"
-  name="phone"
-  [(ngModel)]="leadForm.phone"
-  inputmode="numeric"
-  pattern="[0-9]*"
-  maxlength="15"
-  autocomplete="tel"
-  (keypress)="allowOnlyNumbers($event)"
-/>
-        <input *ngIf="showField('email')" type="email" placeholder="Email Address" name="email" [(ngModel)]="leadForm.email" />
-
-        <select
-  name="leadTypeId"
-  [(ngModel)]="leadForm.leadTypeId"
->
-  <option [ngValue]="null">Select Service</option>
-  <option *ngFor="let item of leadTypes" [ngValue]="item.id">
-    {{ item.name }}
-  </option>
-</select>
+        <input class="form-control" *ngIf="showField('fullName')" type="text" placeholder="Full Name" name="contactFullName" [(ngModel)]="leadForm.fullName" autocomplete="name" />
 
         <input
-          *ngIf="showField('postcode')"
+          class="form-control"
+          *ngIf="showField('phone')"
+          type="tel"
+          placeholder="Phone Number"
+          name="contactPhone"
+          [(ngModel)]="leadForm.phone"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="15"
+          autocomplete="tel"
+          (keypress)="allowOnlyNumbers($event)"
+        />
+
+        <input class="form-control" *ngIf="showField('email')" type="email" placeholder="Email Address" name="contactEmail" [(ngModel)]="leadForm.email" autocomplete="email" />
+
+        <select class="form-control" *ngIf="showField('leadTypeId')" name="contactLeadTypeId" [(ngModel)]="leadForm.leadTypeId">
+          <option [ngValue]="null">Select Service</option>
+          <option *ngFor="let item of leadTypes" [ngValue]="item.id">{{ item.name }}</option>
+        </select>
+
+        <input
+          class="form-control"
+          *ngIf="showField('address')"
           type="text"
           placeholder="Full Address"
-          name="address"
+          name="contactAddress"
           [(ngModel)]="leadForm.address"
           (ngModelChange)="resetAddressPostcodeState()"
+          autocomplete="street-address"
         />
 
         <div *ngIf="showField('postcode')">
           <input
+            class="form-control"
             type="text"
             placeholder="Postcode"
-            name="postcode"
+            name="contactPostcode"
             [(ngModel)]="leadForm.postcode"
             (ngModelChange)="resetAddressPostcodeState()"
             (blur)="checkAddressPostcode()"
+            autocomplete="postal-code"
           />
 
-          <div class="text-danger small mt-1" *ngIf="addressPostcodeError">
-            {{ addressPostcodeError }}
-          </div>
-
+          <div class="text-warning small mt-1" *ngIf="addressPostcodeError">{{ addressPostcodeError }}</div>
           <div class="text-success small mt-1" *ngIf="addressPostcodeVerified">
             Verified: {{ expectedLocation?.city }}, {{ expectedLocation?.state }}, {{ expectedLocation?.postalCode }}
           </div>
-
-          <div class="text-muted small mt-1" *ngIf="addressPostcodeChecking">
-            Checking address and postcode...
-          </div>
+          <div class="text-muted small mt-1" *ngIf="addressPostcodeChecking">Checking address and postcode...</div>
         </div>
       </div>
 
-      <textarea
-        *ngIf="showField('message')"
-        placeholder="Comments"
-        name="message"
-        [(ngModel)]="leadForm.message"
-      ></textarea>
+      <textarea class="form-control" *ngIf="showField('message')" placeholder="Comments" name="contactMessage" [(ngModel)]="leadForm.message"></textarea>
 
-      <button
-        class="quote-btn"
-        type="button"
-        (click)="submitLead()"
-        [disabled]="submitting || addressPostcodeChecking"
-      >
+      <button class="quote-btn" type="button" (click)="submitLead()" [disabled]="submitting">
         <span>{{ submitting ? 'SUBMITTING...' : formButtonText }}</span>
         <i class="corner top-left"></i>
         <i class="corner bottom-right"></i>
@@ -449,9 +403,7 @@
       </div>
     </div>
 
-    <div class="hours">
-      <strong>Our Showroom Hours Are:</strong> {{ businessHours }}
-    </div>
+    <div class="hours"><strong>Our Showroom Hours Are:</strong> {{ businessHours }}</div>
   </div>
 </section>
 
@@ -466,9 +418,7 @@
 </section>
 
 <section class="dynamic-page-content" *ngIf="!isHomePage && activePage?.htmlContent">
-  <div class="template-container">
-    <div [innerHTML]="activePage.htmlContent"></div>
-  </div>
+  <div class="template-container"><div [innerHTML]="activePage.htmlContent"></div></div>
 </section>
 
 <section class="dynamic-sections" *ngIf="!isHomePage && activeSections.length > 0">
@@ -484,12 +434,7 @@
         <p *ngIf="section.sectionSubtitle">{{ section.sectionSubtitle }}</p>
         <div class="cms-html-content" *ngIf="section.htmlContent" [innerHTML]="section.htmlContent"></div>
 
-        <button
-          class="primary-btn"
-          type="button"
-          *ngIf="section.buttonText"
-          (click)="section.buttonUrl ? setActivePage(section.buttonUrl) : setActivePage('contact')"
-        >
+        <button class="primary-btn" type="button" *ngIf="section.buttonText" (click)="section.buttonUrl ? setActivePage(section.buttonUrl) : setActivePage('contact')">
           {{ section.buttonText }}
         </button>
       </div>
@@ -518,18 +463,13 @@
         <div class="footer-col">
           <h4>Pages</h4>
           <ul>
-            <li *ngFor="let item of navItems">
-              <button type="button" (click)="setActivePage(item.slug)">
-                {{ item.label }}
-              </button>
-            </li>
+            <li *ngFor="let item of navItems"><button type="button" (click)="setActivePage(item.slug)">{{ item.label }}</button></li>
           </ul>
         </div>
 
         <div class="footer-col">
           <h4>Address:</h4>
           <p>{{ addressLine1 }}<br />{{ addressLine2 }}</p>
-
           <h4 class="mt">Contact:</h4>
           <p style="text-decoration: underline;">{{ phoneNumber }}</p>
           <p style="text-decoration: underline;">{{ emailAddress }}</p>
@@ -539,7 +479,6 @@
 
     <div class="footer-bottom">
       <p>Copyright © 2026 | All rights Reserved by {{ site?.siteName || 'HVAC Master' }}</p>
-
       <div class="social-icons">
         <a *ngIf="twitterUrl" [href]="twitterUrl" target="_blank"><i class="fa-brands fa-twitter"></i></a>
         <a *ngIf="facebookUrl" [href]="facebookUrl" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
@@ -549,4 +488,3 @@
     </div>
   </div>
 </footer>
- 

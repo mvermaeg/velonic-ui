@@ -17,6 +17,11 @@ export class ClientBiddingService {
   )
 }
 
+
+manualDeliver(model: any) {
+  return this.http.post<any>(`${this.apiUrl}/manual-deliver`, model)
+}
+
   create(model: any) {
     return this.http.post<any>(this.apiUrl, model)
   }
