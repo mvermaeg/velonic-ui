@@ -11,5 +11,7 @@ public partial class LeadType
 
     public bool IsActive { get; set; }
 
+    public virtual ICollection<ExternalPlatformTaskMapping> ExternalPlatformTaskMappings { get; set; } = new List<ExternalPlatformTaskMapping>();
+
     public virtual ICollection<Lead> Leads { get; set; } = new List<Lead>();
 }

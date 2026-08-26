@@ -1,0 +1,108 @@
+.count-up {
+  text-align: left;
+  padding: 10px 20px;
+}
+
+.number {
+  font-size: 4rem;
+  font-weight: 700;
+  display: block;
+  color: var(--color-white);
+  line-height: 1.1;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--color-white);
+  line-height: 1.5;
+}
+
+
+@media (min-width: 1600px) {
+  .number {
+    font-size: 5rem;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+}
+
+
+@media (max-width: 1399px) {
+  .number {
+    font-size: 3.5rem;
+  }
+}
+
+
+@media (max-width: 1199px) {
+  .count-up {
+    padding: 10px 15px;
+  }
+
+  .number {
+    font-size: 3rem;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+}
+
+
+@media (max-width: 991px) {
+  .count-up {
+    text-align: center;
+    padding: 10px;
+  }
+
+  .number {
+    font-size: 2.5rem;
+  }
+
+  .title {
+    font-size: 14px;
+  }
+}
+
+
+@media (max-width: 767px) {
+  .count-up {
+    text-align: center;
+    padding: 8px;
+  }
+
+
+
+  .number {
+    font-size: 2rem;
+  }
+
+  .title {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+
+@media (max-width: 575px) {
+  .count-up {
+    padding: 5px;
+  }
+
+    .stat {
+    text-align: center;
+    margin: 1rem auto !important;
+}
+
+  .number {
+    font-size: 1.8rem;
+  }
+
+  .title {
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,126 @@
+
+<section class="breadcrumb-hero">
+  <div class="content">
+    <h1>About Us</h1>
+    <p><span></span> <a routerLink="/home">Home</a> <span></span> About Us</p>
+  </div>
+</section>
+
+
+<!-- *\----------------------------- About us ------------------------------------\* -->
+
+<section class="about-section">
+  <div class="container">
+
+    <div class="left">
+      <img src="assets/images/home/about1.jpg" alt="Home improvement specialists at work" loading="lazy"
+        decoding="async">
+    </div>
+
+    <div class="right">
+      <span class="tag">About Us</span>
+      <h2 class="title"> Reliable Home Repairs And Renovations</h2>
+
+      <p class="desc">
+        Expert services you can trust for every repair and renovation project,
+        ensuring lasting results, exceptional quality, and peace of mind for you
+        and your home, every time we visit.
+      </p>
+
+      <div class="features">
+        <div class="feature">
+          <div class="icon">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <h4>Experienced, Skilled Team</h4>
+            <p>Our experienced team provides expert solutions tailored to your renovation.</p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="icon">
+            <i class="fa-award fa-solid"></i>
+          </div>
+          <div>
+            <h4>Find top contractors</h4>
+            <p>We make it easy to find top and prescreened contractors near you.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- *\------------------------------ Stats --------------------------\* -->
+
+<section class="stats">
+  <div class="stat">
+    <stats-form [target]="20 " suffix="K +">
+      <div title>Services completed</div>
+    </stats-form>
+  </div>
+
+  
+  <div class="stat">
+    <stats-form [target]="200" suffix=" +">
+      <div title>Contractors all around USA</div>
+    </stats-form>
+  </div>
+  
+  <div class="stat">
+    <stats-form [target]="10" suffix="+">
+      <div title>Years of experience</div>
+    </stats-form>
+  </div>
+
+  <div class="stat">
+    <stats-form [target]="0" suffix="$">
+      <div title>Hidden fees </div>
+    </stats-form>
+  </div>
+
+</section>
+
+<!-- *\------------------------------ Get a Qoute --------------------------\* -->
+
+<section class="quote">
+  <div class="container">
+
+    <div class="left">
+      <img src="assets/images/home/counter1.jpg" alt="Contractor on a home project" loading="lazy" decoding="async">
+
+      <div class="call-box">
+        <div class="icon">
+         <i class="fa-solid fa-phone-volume"></i>
+        </div>
+        <div class="info">
+          <span>Call Us Now:</span>
+          <h3><a href="tel:+1 (561) 665 0332">+1 (561) 665 0332</a></h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <span class="tag">Get A Quote</span>
+      <h2 class="title">Book Our Expert <br> Quote Today!</h2>
+      <p class="desc">
+        From plumbing to electrical and HVAC, our skilled experts are ready to handle all your
+        home repair & maintenance needs. Schedule your service today!
+      </p>
+   
+       <button class="quote-btn" (click)="redirect_two('/contact-us')">
+        <span>Contact Us</span>
+        <i class="corner top-left"></i>
+        <i class="corner bottom-right"></i>
+      </button>
+   
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================== -->
+
+<app-contact-form></app-contact-form>

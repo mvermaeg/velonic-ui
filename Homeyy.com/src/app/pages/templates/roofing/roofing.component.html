@@ -1,0 +1,229 @@
+<section id="hero" [style.background-image]="'url(' + heroData.backgroundImage + ')'">
+  <div class="overlay"></div>
+  <div class="container hero-content">
+    <div class="hero-copy">
+      <h1 [innerHTML]="heroData.title"></h1>
+      <h5 class="sub_tag">{{ heroData.description }}</h5>
+    </div>
+
+    <div class="hero-right">
+      <app-services-form class="hero-quote-card" [quoteSteps]="path_name"></app-services-form>
+    </div>
+
+  </div>
+</section>
+
+<!-- *\----------------------------- feature-strip ------------------------------------\* -->
+<section id="feature-strip">
+  <div class="container">
+    <div class="feature-wrapper">
+
+      <div class="feature-item" *ngFor="let item of features">
+        <div class="image">
+          <img [src]="item.img" [alt]="item.line1 + ' ' + item.line2" loading="lazy" decoding="async">
+        </div>
+
+        <div class="content">
+          <span>{{ item.line1 }}</span>
+          <span>{{ item.line2 }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- *\----------------------------- about-us ------------------------------------\* -->
+<section id="about-us">
+  <div class="container">
+    <div class="section-header">
+      <span class="tag">{{ aboutData.tag }}</span>
+      <h2 class="title">{{ aboutData.title }}</h2>
+      <p class="desc">{{ aboutData.description }}</p>
+    </div>
+
+    <div class="about-wrapper">
+      <div class="about-image">
+        <img [src]="aboutData.image" [alt]="aboutData.title" loading="lazy" decoding="async">
+
+        <div class="experience-box">
+          <h3>{{ aboutData.experience }}</h3><span [innerHTML]="aboutData.experienceText"></span>
+        </div>
+      </div>
+
+      <div class="about-content">
+        <div class="feature-box" *ngFor="let item of aboutData.features">
+          <div class="icon"><i [class]="item.icon"></i></div>
+
+          <div class="text">
+            <h4>{{ item.title }}</h4>
+            <p>{{ item.description }}</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+<!-- *\----------------------------- stats ------------------------------------\* -->
+<section class="stats">
+  <div class="stat" *ngFor="let stat of statsData">
+    <stats-form [target]="stat.target" [suffix]="stat.suffix">
+      <div title>{{ stat.title }}</div>
+    </stats-form>
+  </div>
+</section>
+
+<!-- *\----------------------------- services ------------------------------------\* -->
+
+<section id="services" *ngIf="servicesData">
+  <div class="container">
+    <div class="services-top">
+      <div class="left-content">
+        <span class="tag">{{ servicesData.tag }}</span>
+        <h2 class="title">{{ servicesData.title }}</h2>
+      </div>
+
+      <div class="right-content">
+        <p class="desc">
+          {{ servicesData.description }}
+        </p>
+      </div>
+    </div>
+
+    <div class="services-grid">
+      <div class="service-card" *ngFor="let item of servicesData.services">
+        <div class="service-image">
+          <img [src]="item.image" [alt]="item.title" loading="lazy" decoding="async">
+          <div class="service-icon">
+            <i [class]="item.icon"></i>
+          </div>
+        </div>
+        <div class="service-content">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- *\----------------------------- marquee-container ------------------------------------\* -->
+
+<div class="marquee-container">
+  <div class="marquee-track">
+    <div class="marquee-content">
+      <span class="item" *ngFor="let item of marqueeData">
+        <i [class]="item.icon"></i>
+        <span>{{ item.title }}</span>
+      </span>
+      <span class="item" *ngFor="let item of marqueeData">
+        <i [class]="item.icon"></i>
+        <span>{{ item.title }}</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- *\----------------------------- services-container ------------------------------------\* -->
+
+<section class="services-container">
+  <div class="container">
+    <div class="services-top">
+      <div class="left-content">
+        <span class="tag">{{ sliderData.tag }}</span>
+        <h2 class="title">{{ sliderData.title }}</h2>
+      </div>
+    </div>
+
+    <div class="slider-wrapper">
+      <div class="slider-track" [style.transform]="'translateX(-' + currentIndex * 25 + '%)'">
+        <div class="service-card" *ngFor="let service of sliderData.services">
+          <div class="image-wrapper">
+            <img [src]="service.img" [alt]="service.title" loading="lazy" decoding="async">
+          </div>
+
+          <div class="card-footer">
+            <div class="footer-main-row">
+              <span class="service-title">{{ service.title }}</span>
+              <button class="arrow-btn">
+                <span class="arrow-icon">↗</span>
+              </button>
+            </div>
+
+            <div class="footer-expanded-content">
+              <p class="description">{{ service.desc }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- *\----------------------------- table-wrapper ------------------------------------\* -->
+<div class="table-wrapper">
+  <div class="container">
+    <div class="services-top">
+      <div class="left-content">
+        <span class="tag">{{ comparisonData.tag }}</span>
+        <h2 class="title">{{ comparisonData.title }}</h2>
+      </div>
+    </div>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th class="blue">FEATURE</th>
+          <th class="red">✗ Other Companies</th>
+          <th class="green">✓ Homeyy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of comparisonData.features">
+          <td class="blue_check"><span>{{ item.feature }}</span></td>
+          <td class="cross"> <span>{{ item.others }}</span> </td>
+          <td class="check"><span>{{ item.homeyy }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<!-- *\----------------------------- testimonial-section ------------------------------------\* -->
+<section class="testimonial-section">
+  <div class="container">
+
+    <div class="testimonial-left">
+      <span class="tag">{{ testimonialData.tag }}</span>
+      <h2 class="title">{{ testimonialData.titleLine1 }} <br> {{ testimonialData.titleLine2 }}</h2>
+      <p class="desc"> {{ testimonialData.description }} </p>
+    </div>
+
+    <div class="testimonial-right">
+      <div class="testimonial-slider" [style.transform]="'translateX(-' + currentIndex * 100 + '%)'">
+        <div class="testimonial-card" *ngFor="let item of testimonialData.reviews">
+          <div class="stars">★★★★★</div>
+
+          <blockquote>"{{ item.review }}"</blockquote>
+
+          <div class="client-info">
+            <img [src]="item.image" [alt]="item.name" loading="lazy" decoding="async">
+            <div>
+              <h4>{{ item.name }}</h4>
+              <span>{{ item.location }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slider-dots">
+        <span *ngFor="let item of testimonialData.reviews; let i = index" class="dot"
+          [class.active]="i === currentIndex" (click)="currentIndex = i">
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

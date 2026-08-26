@@ -1,0 +1,277 @@
+<section id="hero">
+  <div class="overlay"></div>
+  <div class="container hero-content">
+    <p class="tagline">Welcome To Homeyy</p>
+    <h1>Every Home Upgrade.<br> One Trusted Team.</h1>
+    <h5 class="sub_tag">Same-day quotes, fixed pricing, and zero surprises. Your home deserves better. So do you.</h5>
+    <div class="cta-group">
+
+
+       <button class="quote-btn" (click)="redirect()">
+          <span>Book A Service <i class="fa-solid fa-arrow-right-long"></i></span>
+          <i class="corner top-left"></i>
+          <i class="corner bottom-right"></i>
+        </button>
+    </div>
+  </div>
+</section>
+
+<!-- *\----------------------------- About us ------------------------------------\* -->
+
+<section class="about-section">
+  <div class="container">
+
+    <div class="left">
+      <img src="assets/images/home/about1.jpg" alt="Home improvement specialists at work" loading="lazy"
+        decoding="async">
+    </div>
+
+    <div class="right">
+      <span class="tag">ABOUT US</span>
+      <h2 class="title"> Reliable Home Repairs And Renovations</h2>
+
+      <p class="desc">
+        Expert services you can trust for every repair and renovation project,
+        ensuring lasting results, exceptional quality, and peace of mind for you
+        and your home, every time we visit.
+      </p>
+
+      <div class="features">
+        <div class="feature">
+          <div class="icon">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <h4>Experienced, Skilled Team</h4>
+            <p>Our experienced team provides expert solutions tailored to your renovation.</p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="icon">
+            <i class="fa-award fa-solid"></i>
+          </div>
+          <div>
+            <h4>Find top contractors</h4>
+            <p>We make it easy to find top and prescreened contractors near you.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="quote-btn" (click)="redirect_two('/about-us')">
+          <span>About Us</span>
+          <i class="corner top-left"></i>
+          <i class="corner bottom-right"></i>
+        </button>
+        <div class="call">
+          <div class="call-icon"><i class="fa-solid fa-phone-volume"></i></div>
+          <div class="call-text">Call Us Now:<strong><a href="tel:+1 (561) 665 0332">+1 (561) 665 0332</a></strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- *\------------------------------ Stats --------------------------\* -->
+
+<section class="stats">
+  <div class="stat">
+    <stats-form [target]="20 " suffix="K +">
+      <div title>Services completed</div>
+    </stats-form>
+  </div>
+
+  
+  <div class="stat">
+    <stats-form [target]="200" suffix=" +">
+      <div title>Contractors all around USA</div>
+    </stats-form>
+  </div>
+  
+  <div class="stat">
+    <stats-form [target]="10" suffix="+">
+      <div title>Years of experience</div>
+    </stats-form>
+  </div>
+
+  <div class="stat">
+    <stats-form [target]="0" suffix="$">
+      <div title>Hidden fees </div>
+    </stats-form>
+  </div>
+
+</section>
+
+
+<!-- *\\-----------------------------------------\\* -->
+
+<section class="services">
+  <div class="container">
+
+    <span class="tag">List Of Services</span>
+
+    <h2>
+      Find <span>Home Improvement</span> Contractors for All Your Needs
+    </h2>
+
+    <p class="desc">
+      Choose a service and get tailored quotes for your home improvement needs.
+          </p>
+
+    <div class="tabs">
+      <button class="active">Interior</button>
+      <button>Exterior</button>
+    </div>
+
+    <div class="grid">
+      <div class="card" *ngFor="let item of services" (click)="redirect_to(item)">
+        <div class="icon">
+          <img [src]="item.icon" [alt]="item.title" loading="lazy" decoding="async">
+        </div>
+        <h4>{{ item.title }}</h4>
+      </div>
+    </div>
+
+  </div>
+</section>
+<!-- *\------------------------------ Get a Qoute --------------------------\* -->
+
+<section class="quote">
+  <div class="container">
+
+
+
+    <div class="right">
+      <span class="tag">GET A QUOTE</span>
+      <h2 class="title">Book Our Expert <br> Quote Today!</h2>
+      <p class="desc">
+        From plumbing to electrical and HVAC, our skilled experts are ready to handle all your
+        home repair & maintenance needs. Schedule your service today!
+      </p>
+
+      <button class="quote-btn" (click)="redirect_two('/contact-us')">
+        <span>Contact Us</span>
+        <i class="corner top-left"></i>
+        <i class="corner bottom-right"></i>
+      </button>
+    </div>
+
+
+    <div class="left">
+      <img src="assets/images/home/counter1.jpg" alt="Contractor on a home project" loading="lazy" decoding="async">
+
+      <div class="call-box">
+        <div class="icon">
+          <i class="fa-solid fa-phone-volume"></i>
+        </div>
+        <div class="info">
+          <span>Call Us Now:</span>
+          <h3><a href="tel:+1 (561) 665 0332">+1 (561) 665 0332</a></h3>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- *\------------------------------ Why choose --------------------------\* -->
+
+
+<section class="why">
+  <div class="container">
+
+    <div class="left">
+      <span class="tag">WHY CHOOSE US</span>
+
+      <h2 class="title">
+        Expert Contractors  You <br>Can Rely On For Year-Round <br> Requirements</h2>
+
+      <p class="desc">
+        Our skilled team provides top-notch services, from installation
+        to repair and maintenance, ensuring your home runs efficiently for year-round comfort.
+      </p>
+
+      <button class="quote-btn" (click)="redirect_two('/about-us')">
+         <span>About Us</span>
+         <i class="corner top-left"></i>
+         <i class="corner bottom-right"></i>
+      </button>
+    </div>
+
+    <div class="right">
+
+      <div class="card" *ngFor="let item of features">
+        <div class="icon" [innerHTML]="item.icon">
+        </div>
+
+        <h3>{{item.title}}</h3>
+        <p>{{item.desc}}</p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- *\--------------------------- Marquee------------------------------\* -->
+
+<div class="marquee-container">
+  <div class="marquee-track">
+    <!-- Duplicated so the track can loop seamlessly -->
+    <div class="marquee-content">
+      <span class="item" *ngFor="let s of services">
+        <i class="icon fa-solid fa-screwdriver-wrench"></i> <span>{{ s.title }}</span>
+      </span>
+
+      <span class="item" *ngFor="let s of services">
+        <i class="icon fa-solid fa-screwdriver-wrench"></i> <span>{{ s.title }}</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- *\----------------------  our project  ----------------------------\* -->
+
+<section class="project">
+  <div class="container">
+
+    <span class="tag">Our Projects</span>
+
+    <h2 class="title">
+      Amazing Work Results</h2>
+
+    <p class="desc">
+      We pride ourselves on delivering consistent, high-quality services that you can depend on.
+      Whether it’s a small fix or a large-scale renovation
+    </p>
+
+    <div class="compare-grid">
+
+      <app-image-compare [before]="'https://hadiman-next.vercel.app/images/projects/1-2.jpg'"
+        [after]="'https://hadiman-next.vercel.app/images/projects/1-1.jpg'">
+      </app-image-compare>
+
+      <app-image-compare [before]="'https://hadiman-next.vercel.app/images/projects/2-2.jpg'"
+        [after]="'https://hadiman-next.vercel.app/images/projects/2-1.jpg'">
+      </app-image-compare>
+
+      <app-image-compare [before]="'https://hadiman-next.vercel.app/images/projects/3-2.jpg'"
+        [after]="'https://hadiman-next.vercel.app/images/projects/3-1.jpg'">
+      </app-image-compare>
+
+      <app-image-compare [before]="'https://hadiman-next.vercel.app/images/projects/4-2.jpg'"
+        [after]="'https://hadiman-next.vercel.app/images/projects/4-1.jpg'">
+      </app-image-compare>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================== -->
+
+<app-contact-form id="contact"></app-contact-form>

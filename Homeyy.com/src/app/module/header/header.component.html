@@ -1,0 +1,38 @@
+<section id="Header">
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" [class.logo-only]="showLogoOnly">
+
+            <div class="nav-left">
+                <a [routerLink]="['/']" aria-label="Homeyy home">
+                    <img class="img_height" src="assets/images/logo.png" alt="Homeyy" width="190" height="50" />
+                </a>
+            </div>
+
+            <ng-container *ngIf="!showLogoOnly">
+                <button class="navbar-toggler" type="button" aria-label="Toggle navigation"
+                    [attr.aria-expanded]="isCollapsed" (click)="toggleNavbar()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" [ngClass]="{ show: isCollapsed }">
+                    <ul class="navbar-nav nav-center">
+                        <li class="nav-item" *ngFor="let item of navItems" routerLinkActive="active">
+                            <a class="nav-link" [routerLink]="item.link" (click)="closeNavbar()">
+                                <span>{{ item.label }}</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="nav-right">
+                        <button class="quote-btn" (click)="redirect()">
+                            <span>GET A QUOTE</span>
+                            <i class="corner top-left"></i>
+                            <i class="corner bottom-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </ng-container>
+
+        </nav>
+    </div>
+</section>

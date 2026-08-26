@@ -1,0 +1,250 @@
+.invalid_feedback,
+.field-error {
+  color        : orangered;
+  margin-left  : 12px;
+  margin-bottom: 5px;
+  font-size    : small;
+  margin-top   : 4px;
+}
+
+// ======================= Button =============================
+
+.quote-btn {
+  position      : relative;
+  padding       : 14px 34px;
+  background    : var(--color-secondary);
+  color         : #fff !important;
+  font-size     : 16px;
+  font-weight   : bold;
+  border        : none;
+  cursor        : pointer;
+  overflow      : hidden;
+  letter-spacing: 1px;
+  transition    : background 0.4s ease;
+}
+
+.quote-btn span {
+  position: relative;
+  z-index : 3;
+}
+
+.quote-btn::before,
+.quote-btn::after {
+  content   : "";
+  position  : absolute;
+  left      : 0;
+  width     : 100%;
+  height    : 50%;
+  background: var(--color-primary);
+  z-index   : 1;
+  transform : scaleY(0);
+  transition: transform 0.4s ease;
+}
+
+.quote-btn::before {
+  top             : 0;
+  transform-origin: top;
+}
+
+.quote-btn::after {
+  bottom          : 0;
+  transform-origin: bottom;
+}
+
+.corner {
+  position  : absolute;
+  width     : 8px;
+  height    : 8px;
+  background: rgba(255, 255, 255, 0.4);
+  z-index   : 2;
+  transition: all 0.4s ease;
+}
+
+.top-left {
+  top : 0;
+  left: 0;
+}
+
+.bottom-right {
+  bottom: 0;
+  right : 0;
+}
+
+.quote-btn:hover {
+  background: var(--color-primary);
+}
+
+.quote-btn:hover::before,
+.quote-btn:hover::after {
+  transform: scaleY(1);
+}
+
+.quote-btn:hover .top-left {
+  top      : 100%;
+  transform: translateY(-100%);
+}
+
+.quote-btn:hover .bottom-right {
+  bottom   : 100%;
+  transform: translateY(100%);
+}
+
+// ======================= STATS ======================================
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+  justify-content: center;
+  background: var(--color-primary);
+}
+
+.stat {
+  margin: 3rem auto;
+  text-align: center;
+}
+
+@media (max-width: 575px) {
+  .stats {
+    padding: 30px;
+    gap: 1rem;
+  }
+
+  .stat {
+    margin: 1rem auto;
+  }
+}
+
+// ======================= SECTION HEADINGS ===========================
+
+.tag {
+  display       : inline-block;
+  background    : #ffe9df;
+  color         : var(--color-secondary);
+  font-size     : 14px;
+  font-weight   : 600;
+  letter-spacing: 1px;
+  padding       : 6px 14px;
+}
+
+.title {
+  font-size  : 42px;
+  margin     : 15px 0;
+  font-weight: 600;
+  color      : #252522;
+}
+
+.desc {
+  margin     : 0 auto 20px;
+  max-width  : 800px;
+  font-size  : 18px;
+  color: #616265;
+  line-height: 30px;
+}
+
+@media (max-width: 992px) {
+  .title {
+    font-size     : 34px;
+    letter-spacing: -0.8px;
+  }
+
+  .desc {
+    font-size: 18px;
+    margin   : 0 auto 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .title {
+    font-size  : 34px;
+    line-height: 1.4;
+  }
+
+  .tag {
+    font-size: 12px;
+  }
+
+  .desc {
+    font-size    : 18px;
+    margin-bottom: 25px;
+    margin       : 0 auto 20px;
+  }
+}
+
+
+// -------------------  breadcrumb ---------------------
+
+
+.breadcrumb-hero {
+  height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-white);
+  background:
+    linear-gradient(rgba(0, 0, 0, .6), rgba(0, 0, 0, .6)),
+    url('../../assets/images/banners/banner-1.jpg') center/cover no-repeat;
+
+  .content {
+    h1 {
+      margin: 20px 0;
+      font-size: 66px;
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 1px;
+
+      a {
+        color: #fff;
+        transition: .3s;
+      }
+
+      a:hover {
+        color: var(--color-secondary);
+      }
+
+      span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin: 0 8px 0 20px;
+        background: #6de5f2;
+      }
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .breadcrumb-hero {
+    .content {
+      h1 {
+        font-size: 42px;
+      }
+
+      p {
+        font-size: 16px;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .breadcrumb-hero {
+    height: 280px;
+
+    .content {
+      h1 {
+        font-size: 34px;
+        padding: 0 10px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+    }
+  }
+}

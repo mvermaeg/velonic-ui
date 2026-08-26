@@ -37,24 +37,69 @@ export class DashboardComponent implements OnInit {
     this.loadLeads()
   }
 
+  // loadLeads() {
+  //   this.loading = true
+
+  //   this.leadsService.getLeads(1, 20).subscribe({
+  //     next: (res) => {
+  //       this.leads = res.data || []
+  //       this.totalLeads = res.total || this.leads.length
+  //       this.totalSales = this.leads.reduce((sum, x) => sum + Number(x.sales || 0), 0)
+  //       this.totalProfit = this.leads.reduce((sum, x) => sum + Number(x.profit || 0), 0)
+  //       this.avgSaleValue = this.totalLeads > 0 ? this.totalSales / this.totalLeads : 0
+  //       this.loading = false
+  //     },
+  //     error: () => {
+  //       this.loading = false
+  //     },
+  //   })
+  // }
+
   loadLeads() {
-    this.loading = true
+  this.loading = true
 
-    this.leadsService.getLeads(1, 20).subscribe({
-      next: (res) => {
-        this.leads = res.data || []
-        this.totalLeads = res.total || this.leads.length
-        this.totalSales = this.leads.reduce((sum, x) => sum + Number(x.sales || 0), 0)
-        this.totalProfit = this.leads.reduce((sum, x) => sum + Number(x.profit || 0), 0)
-        this.avgSaleValue = this.totalLeads > 0 ? this.totalSales / this.totalLeads : 0
-        this.loading = false
-      },
-      error: () => {
-        this.loading = false
-      },
-    })
-  }
+  this.leadsService.getLeads(1, 20).subscribe({
+    next: (res) => {
 
+      console.log('LEADS API RESPONSE:', res)
+
+      this.leads = res?.data || []
+      this.totalLeads = res?.total ?? this.leads.length
+
+      this.totalSales = this.leads.reduce(
+        (sum, x) => sum + Number(x.sales || 0),
+        0
+      )
+
+      this.totalProfit = this.leads.reduce(
+        (sum, x) => sum + Number(x.profit || 0),
+        0
+      )
+
+      this.avgSaleValue =
+        this.totalLeads > 0
+          ? this.totalSales / this.totalLeads
+          : 0
+
+      console.log('TOTAL LEADS:', this.totalLeads)
+      console.log('LEADS:', this.leads)
+
+      this.loading = false
+    },
+
+    error: (err) => {
+
+      console.error('LEADS API ERROR:', err)
+      console.error('STATUS:', err?.status)
+      console.error('ERROR BODY:', err?.error)
+      console.error('URL:', err?.url)
+
+      this.leads = []
+      this.totalLeads = 0
+      this.loading = false
+    },
+  })
+}
   openManualDelivery(lead: any) {
     this.selectedLead = lead
     this.manualClientId = null

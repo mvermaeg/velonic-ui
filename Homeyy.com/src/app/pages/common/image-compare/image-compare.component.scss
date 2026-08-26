@@ -1,0 +1,65 @@
+.compare-container {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  overflow: hidden;
+  user-select: none;
+
+  .image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  .before {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .after-wrapper {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    clip-path: inset(0 50% 0 0);
+    will-change: clip-path;
+  }
+
+  .slider {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: #fff;
+    z-index: 3;
+    cursor: ew-resize;
+
+    .handle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 40px;
+      background: var(--color-secondary);
+      border-radius: 50%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      transition: transform 0.2s ease;
+      cursor: grabbing;
+    }
+
+    &:hover .handle {
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .compare-container {
+    height: 220px;
+  }
+}

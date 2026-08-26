@@ -1,0 +1,350 @@
+<section class="contact-section">
+
+  <div class="container contact-wrapper">
+
+    <div class="contact-info">
+
+      <p class="tag">
+        Contact Our Team
+      </p>
+
+      <h2 class="title">
+        Get In Touch With Us
+      </h2>
+
+      <p class="desc">
+        Have questions or need support? Fill out
+        the form and our team will respond quickly
+        to assist you with your home improvement
+        needs.
+      </p>
+    </div>
+
+    <div class="contact-form">
+
+      <div
+        class="invalid_feedback"
+        *ngIf="submitError">
+        {{ submitError }}
+      </div>
+
+      <form
+        [formGroup]="contact_Form"
+        (ngSubmit)="Submit()"
+        novalidate>
+
+        <div class="form-grid">
+
+          <!-- NAME -->
+          <div>
+
+            <input
+              type="text"
+              placeholder="Name here"
+              aria-label="Name"
+              autocomplete="name"
+              formControlName="Name">
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Name', 'required')">
+              Name is required.
+            </div>
+          </div>
+
+          <!-- PHONE -->
+          <div>
+
+            <input
+              type="tel"
+              placeholder="Mobile number"
+              aria-label="Mobile number"
+              autocomplete="tel"
+              formControlName="Mobile"
+              maxlength="14">
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Mobile', 'required')">
+              Mobile number is required.
+            </div>
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Mobile', 'pattern')">
+              Enter a valid US phone number.
+            </div>
+          </div>
+
+          <!-- EMAIL -->
+          <div>
+
+            <input
+              type="email"
+              placeholder="Email address"
+              aria-label="Email address"
+              autocomplete="email"
+              formControlName="Email">
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Email', 'required')">
+              Email is required.
+            </div>
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Email', 'email')">
+              Enter a valid email address.
+            </div>
+
+            <div
+              class="invalid_feedback"
+              *ngIf="emailVerificationError">
+              {{ emailVerificationError }}
+            </div>
+
+            <div
+              class="address-checking"
+              *ngIf="emailChecking">
+              Verifying email...
+            </div>
+          </div>
+
+          <!-- SERVICE -->
+          <div>
+
+            <select
+              formControlName="Service"
+              aria-label="Service">
+
+              <option
+                value=""
+                disabled>
+                Select a service
+              </option>
+
+              <option
+                *ngFor="let service of services"
+                [value]="service">
+                {{ service }}
+              </option>
+            </select>
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Service', 'required')">
+              Please select a service.
+            </div>
+          </div>
+
+          <!-- ADDRESS -->
+          <div>
+
+            <input
+              type="text"
+              placeholder="Full address"
+              aria-label="Address"
+              autocomplete="street-address"
+              formControlName="Address"
+              (input)="resetAddressPostcodeState()">
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Address', 'required')">
+              Address is required.
+            </div>
+          </div>
+
+          <!-- ZIP -->
+          <div>
+
+            <input
+              type="text"
+              placeholder="ZIP code"
+              aria-label="ZIP code"
+              autocomplete="postal-code"
+              inputmode="numeric"
+              formControlName="Zipcode"
+              maxlength="5"
+              (input)="resetAddressPostcodeState()"
+              (blur)="checkAddressPostcode()">
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Zipcode', 'required')">
+              ZIP code is required.
+            </div>
+
+            <div
+              class="invalid_feedback"
+              *ngIf="hasError('Zipcode', 'pattern')">
+              Enter a valid 5-digit US ZIP code.
+            </div>
+
+            <div
+              class="invalid_feedback"
+              *ngIf="addressPostcodeError">
+              {{ addressPostcodeError }}
+            </div>
+
+            <div
+              class="address-verified"
+              *ngIf="addressPostcodeVerified">
+
+              Verified:
+              {{ expectedLocation?.city }},
+              {{ expectedLocation?.state }},
+              {{ expectedLocation?.postalCode }}
+            </div>
+
+            <div
+              class="address-checking"
+              *ngIf="addressPostcodeChecking">
+              Checking address and ZIP code...
+            </div>
+          </div>
+
+        </div>
+
+        <textarea
+          placeholder="Comments"
+          aria-label="Comments"
+          formControlName="Msg">
+        </textarea>
+
+        <button
+          class="quote-btn"
+          type="submit"
+          [disabled]="
+            isSubmitting ||
+            addressPostcodeChecking ||
+            emailChecking
+          ">
+
+          <span *ngIf="addressPostcodeChecking">
+            CHECKING ADDRESS...
+          </span>
+
+          <span
+            *ngIf="
+              !addressPostcodeChecking &&
+              emailChecking
+            ">
+            VERIFYING EMAIL...
+          </span>
+
+          <span
+            *ngIf="
+              !addressPostcodeChecking &&
+              !emailChecking &&
+              isSubmitting
+            ">
+            SUBMITTING...
+          </span>
+
+          <span
+            *ngIf="
+              !addressPostcodeChecking &&
+              !emailChecking &&
+              !isSubmitting
+            ">
+            GET A QUOTE
+          </span>
+
+          <i class="corner top-left"></i>
+          <i class="corner bottom-right"></i>
+        </button>
+
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<!-- <section class="contact-section">
+    <div class="container contact-wrapper">
+
+        <div class="contact-info">
+            <p class="tag">Contact Our Team</p>
+            <h2 class="title">Get In Touch With Us</h2>
+            <p class="desc">Have questions or need support? Fill out the form and our team will respond quickly to
+                assist you with your home improvement solutions needs.</p>
+        </div>
+
+        <div class="contact-form">
+
+            <div class="invalid_feedback" *ngIf="submitError">
+  {{ submitError }}
+</div>
+
+            <form [formGroup]="contact_Form" (ngSubmit)="Submit()" novalidate>
+
+                <div class="form-grid">
+
+                    <div>
+                        <input type="text" placeholder="Name here" aria-label="Name" autocomplete="name"
+                            formControlName="Name">
+                        <div class="invalid_feedback" *ngIf="hasError('Name', 'required')">Name is required.</div>
+                    </div>
+
+                    <div>
+                        <input type="tel" placeholder="Mobile no" aria-label="Mobile number" autocomplete="tel"
+                            formControlName="Mobile" maxlength="10">
+                        <div class="invalid_feedback" *ngIf="hasError('Mobile', 'required')">Mobile no is required.</div>
+                    </div>
+
+                    <div>
+                        <input type="email" placeholder="Add email id" aria-label="Email address" autocomplete="email"
+                            formControlName="Email">
+                        <div class="invalid_feedback" *ngIf="hasError('Email', 'required')">Email is required.</div>
+                        <div class="invalid_feedback" *ngIf="hasError('Email', 'pattern')">Email must be a valid email
+                            address</div>
+                    </div>
+
+                    <div>
+                        <select formControlName="Service" aria-label="Service">
+                            <option value="" disabled selected>Select a service</option>
+                            <option *ngFor="let service of services" [value]="service">{{ service }}</option>
+                        </select>
+                        <div class="invalid_feedback" *ngIf="hasError('Service', 'required')">Please select a service.
+                        </div>
+                    </div>
+
+                    <div>
+                        <input type="text" placeholder="Address" aria-label="Address" autocomplete="street-address"
+                            formControlName="Address">
+                        <div class="invalid_feedback" *ngIf="hasError('Address', 'required')">Address is required.</div>
+                    </div>
+
+                    <div>
+                        <input type="text" placeholder="Zipcode" aria-label="Zip code" autocomplete="postal-code"
+                            formControlName="Zipcode" maxlength="5">
+                        <div class="invalid_feedback" *ngIf="hasError('Zipcode', 'required')">Zipcode is required.</div>
+                    </div>
+
+                </div>
+
+                <textarea placeholder="Comments" aria-label="Comments" formControlName="Msg"></textarea>
+
+                 
+
+
+                <button
+  class="quote-btn"
+  type="submit"
+  [disabled]="isSubmitting">
+
+  <span>
+    {{ isSubmitting ? 'SUBMITTING...' : 'GET A QUOTE' }}
+  </span>
+
+  <i class="corner top-left"></i>
+  <i class="corner bottom-right"></i>
+</button>
+
+            </form>
+
+        </div>
+    </div>
+</section> -->

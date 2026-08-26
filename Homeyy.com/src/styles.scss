@@ -1,0 +1,52 @@
+$color-primary  : #20445a;
+$color-secondary: #f36827;
+$color-white    : #fff;
+$color-black    : #000;
+
+:root {
+  --color-primary  : #{$color-primary};
+  --color-secondary: #{$color-secondary};
+  --color-white    : #{$color-white};
+  --color-black    : #{$color-black};
+}
+
+body {
+  font-family: 'Oxygen', sans-serif !important;
+}
+
+a {
+  text-decoration: none !important;
+}
+
+.swal2-styled.swal2-confirm {
+  padding   : 11px 24px !important;
+  background: linear-gradient(146deg, var(--color-primary), var(--color-secondary)) !important;
+}
+
+.swal2-styled.swal2-confirm:focus {
+  box-shadow: none !important;
+}
+
+// *\------------------ Button -------------------------\*
+
+.primary-btn {
+  background : var(--color-secondary);
+  padding    : 14px 36px;
+  color      : var(--color-white);
+  cursor     : pointer;
+  font-size  : 16px;
+  transition : 0.3s;
+  font-weight: 600;
+  border     : none;
+
+  i {
+    margin-left: 5px;
+    transform  : rotate(310deg);
+    font-size  : 22px;
+  }
+}
+
+.primary-btn:hover {
+  transform : translateY(-.6px);
+  background: var(--color-primary);
+}

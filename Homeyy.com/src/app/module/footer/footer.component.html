@@ -1,0 +1,84 @@
+<footer class="footer-section">
+
+    <div class="container" *ngIf="!showFooterBottomOnly; else bottomOnly">
+
+        <div class="footer-top">
+
+            <div class="footer-left">
+                <img src="assets/images/logo.png" class="logo" alt="Homeyy" width="220" height="58"
+                    loading="lazy" decoding="async" />
+
+                <h2>
+                    Same-day quotes, fixed pricing, and zero surprises.
+                    Your home deserves better. So do you.
+                </h2>
+            </div>
+
+            <div class="footer-right">
+
+                <div class="footer-col">
+                    <h4>Company</h4>
+
+                    <ul>
+                        <li><a routerLink="/about-us">About Us</a></li>
+                        <li><a routerLink="/services">Services</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Solutions</h4>
+
+                    <ul>
+                        <li><a routerLink="/blogs">Blogs</a></li>
+                        <li><a routerLink="/contact-us">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Address:</h4>
+
+                    <p>
+                        15 Corporate Pl S Suite #210,<br>
+                        Piscataway, NJ, United States
+                    </p>
+
+                    <h4 class="mt">Contact:</h4>
+
+                    <p>
+                        <a href="tel:+15616650332">+1 (561) 665 0332</a>
+                    </p>
+
+                    <p>
+                        <a href="mailto:support@homeyy.com">support@homeyy.com</a>
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            <ng-container *ngTemplateOutlet="bottomContent"></ng-container>
+        </div>
+
+    </div>
+
+    <!-- Landing pages: copyright strip only -->
+    <ng-template #bottomOnly>
+        <div class="footer-bottom footer-bottom-only">
+            <ng-container *ngTemplateOutlet="bottomContent"></ng-container>
+        </div>
+    </ng-template>
+
+    <ng-template #bottomContent>
+        <p>
+            Copyright © {{ YEAR }} | All rights Reserved by Homeyy
+        </p>
+
+        <ul class="legal-links">
+            <li><a routerLink="/privacy-policy">Privacy Policy</a></li>
+            <li><a routerLink="/terms-conditions">Terms and Conditions</a></li>
+        </ul>
+    </ng-template>
+
+</footer>

@@ -1,0 +1,467 @@
+<div class="quote-wizard">
+  <div class="wizard-card">
+
+    <div class="wizard-header">
+
+      <div
+        class="stepper"
+        *ngIf="
+          currentStep > 0 &&
+          currentStep < steps.length - 1
+        ">
+
+        <div
+          class="step"
+          *ngFor="
+            let step of steps.slice(1, steps.length - 1);
+            let i = index
+          "
+          [ngClass]="{
+            active: currentStep === i + 1,
+            completed: currentStep > i + 1
+          }">
+          {{ i + 1 }}
+        </div>
+      </div>
+
+      <h2 class="capatilize">
+        {{ activeStep?.title }}
+      </h2>
+
+      <p *ngIf="activeStep?.subtitle">
+        {{ activeStep?.subtitle }}
+      </p>
+    </div>
+
+    <div class="wizard-body">
+
+      <form
+        [formGroup]="form"
+        class="quote-form">
+
+        <ng-container
+          [ngSwitch]="activeStep?.type">
+
+          <!-- ZIP STEP -->
+          <ng-container *ngSwitchCase="'intro'">
+            <div class="intro-page">
+              <div class="zip-section">
+                <label class="zip-label" for="sf-zipCode">
+                  ZIP Code
+                </label>
+
+                <div class="zip-row">
+                  <input
+                    type="text"
+                    id="sf-zipCode"
+                    class="zip-input"
+                    placeholder="08820"
+                    formControlName="zipCode"
+                    maxlength="5"
+                    inputmode="numeric"
+                    autocomplete="postal-code"
+                    (input)="
+                      zipCodeError = '';
+                      zipCodeVerified = false;
+                      resetAddressPostcodeState()
+                    ">
+
+                  <button
+                    class="zip-btn"
+                    type="button"
+                    aria-label="Continue"
+                    [disabled]="zipCodeChecking"
+                    (click)="next()">
+                    <span *ngIf="!zipCodeChecking">➤</span>
+                    <span *ngIf="zipCodeChecking">...</span>
+                  </button>
+                </div>
+
+                <div
+                  class="field-error"
+                  *ngIf="isFieldInvalid('zipCode')">
+                  Enter a valid 5-digit US ZIP code.
+                </div>
+
+                <div class="field-error" *ngIf="zipCodeError">
+                  {{ zipCodeError }}
+                </div>
+
+                <div class="address-checking" *ngIf="zipCodeChecking">
+                  Checking ZIP code...
+                </div>
+
+                <div class="address-verified" *ngIf="zipCodeVerified">
+                  ZIP code verified.
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- DYNAMIC BUTTON STEPS -->
+          <ng-container
+            *ngSwitchCase="'buttons'">
+
+            <button
+              *ngFor="
+                let option of activeStep?.options;
+                let last = last
+              "
+              class="primary-btn"
+              type="button"
+              [class.mb-15]="!last"
+              [class.selected]="
+                form.get(activeStep?.field || '')?.value === option
+              "
+              (click)="
+                selectOption(
+                  activeStep?.field,
+                  option
+                )
+              ">
+              {{ option }}
+            </button>
+
+            <div
+              class="field-error"
+              *ngIf="
+                activeStep?.field &&
+                isFieldInvalid(activeStep?.field!)
+              ">
+              Please choose an option to continue.
+            </div>
+          </ng-container>
+
+          <!-- NAME STEP -->
+          <ng-container
+            *ngSwitchCase="'inputs'">
+
+            <div
+              class="form-group"
+              *ngFor="let field of activeStep?.fields">
+
+              <label [for]="'sf-' + field.key">
+                {{ field.label }}
+              </label>
+
+              <input
+                [type]="field.inputType"
+                [id]="'sf-' + field.key"
+                [placeholder]="field.placeholder"
+                [formControlName]="field.key">
+
+              <div
+                class="field-error"
+                *ngIf="isFieldInvalid(field.key)">
+                {{ field.label }} is required.
+              </div>
+            </div>
+
+            <button
+              class="primary-btn"
+              type="button"
+              (click)="next()">
+              Continue
+            </button>
+          </ng-container>
+
+          <!-- ADDRESS STEP -->
+          <ng-container
+            *ngSwitchCase="'location'">
+
+            <div
+              class="form-group"
+              *ngFor="let field of activeStep?.fields">
+
+              <label [for]="'sf-' + field.key">
+                {{ field.label }}
+              </label>
+
+              <input
+                [type]="field.inputType"
+                [id]="'sf-' + field.key"
+                [placeholder]="field.placeholder"
+                [formControlName]="field.key"
+                autocomplete="street-address"
+                (input)="resetAddressPostcodeState()">
+
+              <div
+                class="field-error"
+                *ngIf="isFieldInvalid(field.key)">
+                {{ field.label }} is required.
+              </div>
+            </div>
+
+            <div
+              class="field-error"
+              *ngIf="addressPostcodeError">
+              {{ addressPostcodeError }}
+            </div>
+
+            <div
+              class="address-verified"
+              *ngIf="addressPostcodeVerified">
+
+              Verified:
+              {{ expectedLocation?.city }},
+              {{ expectedLocation?.state }},
+              {{ expectedLocation?.postalCode }}
+            </div>
+
+            <div
+              class="address-checking"
+              *ngIf="addressPostcodeChecking">
+              Checking address and ZIP code...
+            </div>
+
+            <div class="form-group">
+
+              <label>
+                Purchase Time Frame
+                <span class="optional">
+                  (optional)
+                </span>
+              </label>
+
+              <div class="option-grid">
+
+                <button
+                  type="button"
+                  class="option-btn"
+                  *ngFor="let option of activeStep?.options"
+                  [class.selected]="
+                    form.get('purchaseTimeFrame')?.value === option
+                  "
+                  (click)="
+                    setValue(
+                      'purchaseTimeFrame',
+                      option
+                    )
+                  ">
+                  {{ option }}
+                </button>
+              </div>
+            </div>
+
+            <button
+              class="primary-btn mt-2"
+              type="button"
+              [disabled]="addressPostcodeChecking"
+              (click)="next()">
+
+              {{
+                addressPostcodeChecking
+                  ? 'Checking address...'
+                  : 'Continue'
+              }}
+            </button>
+          </ng-container>
+
+          <!-- CONTACT STEP -->
+          <ng-container
+            *ngSwitchCase="'contact'">
+
+            <div class="form-group">
+
+              <label for="sf-phone">
+                Mobile Number
+              </label>
+
+              <input
+                type="tel"
+                id="sf-phone"
+                placeholder="(XXX) XXX-XXXX"
+                formControlName="phone"
+                autocomplete="tel">
+
+              <div
+                class="field-error"
+                *ngIf="isFieldInvalid('phone')">
+                Enter a valid US phone number.
+              </div>
+            </div>
+
+            <div class="form-group">
+
+              <label>
+                Best time to call
+              </label>
+
+              <div class="option-grid">
+
+                <button
+                  type="button"
+                  class="option-btn"
+                  *ngFor="let option of activeStep?.options"
+                  [class.selected]="
+                    form.get('bestTimeToCall')?.value === option
+                  "
+                  (click)="
+                    selectOption(
+                      'bestTimeToCall',
+                      option
+                    )
+                  ">
+                  {{ option }}
+                </button>
+              </div>
+
+              <div
+                class="field-error"
+                *ngIf="
+                  isFieldInvalid('bestTimeToCall')
+                ">
+                Please select the best time to call.
+              </div>
+            </div>
+
+            <div class="form-group">
+
+              <label for="sf-email">
+                Email
+              </label>
+
+              <input
+                type="email"
+                id="sf-email"
+                placeholder="Email"
+                formControlName="email"
+                autocomplete="email">
+
+              <div
+                class="field-error"
+                *ngIf="isFieldInvalid('email')">
+                Enter a valid email address.
+              </div>
+            </div>
+
+            <p class="disclaimer">
+              By clicking Get a Quote Today, you agree
+              to Homeyy's Terms of Service and Privacy
+              Policy. You authorize Homeyy, its partners,
+              and its service professionals to call and
+              send text messages to the phone number
+              provided, including through automated
+              technology and prerecorded messages, for
+              marketing purposes. Reply STOP to opt out.
+              Message and data rates may apply. Consent
+              is not a condition of purchasing any
+              product or service.
+            </p>
+
+            <div
+              class="field-error"
+              *ngIf="emailVerificationError">
+              {{ emailVerificationError }}
+            </div>
+
+            <div
+              class="field-error"
+              *ngIf="submitError">
+              {{ submitError }}
+            </div>
+
+            <button
+              class="primary-btn"
+              type="button"
+              [disabled]="
+                emailChecking ||
+                isSubmitting
+              "
+              (click)="submitForm()">
+
+              <span *ngIf="emailChecking">
+                Verifying email...
+              </span>
+
+              <span
+                *ngIf="
+                  !emailChecking &&
+                  isSubmitting
+                ">
+                Submitting...
+              </span>
+
+              <span
+                *ngIf="
+                  !emailChecking &&
+                  !isSubmitting
+                ">
+                Get A Quote Today
+              </span>
+            </button>
+          </ng-container>
+
+          <!-- SUCCESS STEP -->
+          <ng-container
+            *ngSwitchCase="'success'">
+
+            <div class="success-page">
+
+              <h3>
+                Keep an eye out for new phone numbers.
+                It is probably us trying to contact you.
+              </h3>
+
+              <h4>
+                1. One of our local professionals
+              </h4>
+
+              <p>
+                Will be in touch with you very soon.
+              </p>
+
+              <p>
+                If you are available to discuss your
+                request immediately, please call
+                +1 (561) 665-0332.
+              </p>
+
+              <h4>
+                2. Please keep your phone available
+              </h4>
+
+              <p>
+                Our professionals may contact you shortly.
+              </p>
+
+              <h4>
+                3. During the call
+              </h4>
+
+              <p>
+                Confirm that the professional has
+                accurately understood your request.
+              </p>
+
+              <h4>
+                4. Ask any questions you have
+              </h4>
+
+              <p>
+                Take your time. We are here to help.
+              </p>
+            </div>
+          </ng-container>
+
+        </ng-container>
+      </form>
+    </div>
+
+    <div
+      class="wizard-footer"
+      *ngIf="
+        currentStep > 0 &&
+        currentStep < steps.length - 1
+      ">
+
+      <button
+        type="button"
+        class="btn-back"
+        (click)="previous()">
+        ❮ Go Back
+      </button>
+    </div>
+
+  </div>
+</div>

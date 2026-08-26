@@ -1,0 +1,38 @@
+<section class="breadcrumb-hero">
+  <div class="content">
+    <h1>Services</h1>
+    <p><span></span> <a routerLink="/home">Home</a> <span></span> Services</p>
+  </div>
+</section>
+
+
+<!-- *\\-----------------------------------------\\* -->
+
+<section class="services">
+  <div class="container">
+
+    <span class="tag">List Of Services</span>
+    <h2>Find <span>Home Improvement</span> Contractors for All Your Needs</h2>
+    <p class="desc">
+      Choose a service and get tailored quotes for your home improvement needs.
+    </p>
+
+    <div class="tabs">
+      <button class="active">Interior</button>
+      <button>Exterior</button>
+    </div>
+
+    <div class="grid">
+      <div class="card" *ngFor="let item of services" (click)="redirect_to(item)">
+        <div class="icon">
+          <img [src]="item.icon" [alt]="item.title" loading="lazy" decoding="async">
+        </div>
+        <h4>{{ item.title }}</h4>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<app-contact-form></app-contact-form>
+

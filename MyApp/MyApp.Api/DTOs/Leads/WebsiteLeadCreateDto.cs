@@ -33,5 +33,24 @@
         public string? CountryCode { get; set; }
         public int? LeadTypeId { get; set; }
 
+
+
+        //=======
+        public string? TcpaComplianceText { get; set; }
+
+        public string? TrustedFormCertificateUrl { get; set; }
+
+        public string? JornayaLeadId { get; set; }
+
+        public string? LandingPageUrl { get; set; }
+
+        public DateTime? ConsentCapturedOn { get; set; }
+
+        public bool? IsTcpaCompliant { get; set; }
+
+        public bool? OwnsProperty { get; set; }
+
+        public string? AdditionalDataJson { get; set; }
+        public string? ServiceCode { get; set; }
     }
 }

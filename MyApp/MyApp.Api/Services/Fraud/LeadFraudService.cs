@@ -140,33 +140,83 @@ namespace MyApp.Api.Services.Fraud
             }
         }
 
-        private static void CheckPostcodeCountryMismatch(Lead lead, FraudCheckResult result)
+        //private static void CheckPostcodeCountryMismatch(Lead lead, FraudCheckResult result)
+        //{
+        //    if (string.IsNullOrWhiteSpace(lead.Postcode))
+        //        return;
+
+        //    var postcode = lead.Postcode.Trim().ToUpperInvariant();
+
+        //    var isUkPostcode = Regex.IsMatch(
+        //        postcode,
+        //        @"^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}|GIR\s*0AA)$",
+        //        RegexOptions.IgnoreCase
+        //    );
+
+        //    if (!isUkPostcode)
+        //    {
+        //        lead.IsPostcodeCountryMismatch = true;
+        //        result.Add(25, "Postcode does not match expected UK postcode format");
+        //    }
+
+        //    if (!string.IsNullOrWhiteSpace(lead.Country) &&
+        //        !lead.Country.Equals("United Kingdom", StringComparison.OrdinalIgnoreCase) &&
+        //        !lead.Country.Equals("UK", StringComparison.OrdinalIgnoreCase) &&
+        //        isUkPostcode)
+        //    {
+        //        lead.IsPostcodeCountryMismatch = true;
+        //        result.Add(20, "UK postcode submitted with non-UK country");
+        //    }
+        //}
+
+        //    private static void CheckPostcodeCountryMismatch(
+        //Lead lead,
+        //FraudCheckResult result)
+        //    {
+        //        if (string.IsNullOrWhiteSpace(lead.Postcode))
+        //            return;
+
+        //        var postcode = lead.Postcode.Trim();
+
+        //        // Valid formats:
+        //        // 12345
+        //        // 12345-6789
+        //        var isValidUsZip = Regex.IsMatch(
+        //            postcode,
+        //            @"^\d{5}(-\d{4})?$");
+
+        //        if (!isValidUsZip)
+        //        {
+        //            lead.IsPostcodeCountryMismatch = true;
+        //            result.Add(25, "Invalid US ZIP code format");
+        //            return;
+        //        }
+
+        //        lead.IsPostcodeCountryMismatch = false;
+        //    }
+
+
+        private static void CheckPostcodeCountryMismatch(
+    Lead lead,
+    FraudCheckResult result)
         {
             if (string.IsNullOrWhiteSpace(lead.Postcode))
                 return;
 
-            var postcode = lead.Postcode.Trim().ToUpperInvariant();
+            var postcode = lead.Postcode.Trim();
 
-            var isUkPostcode = Regex.IsMatch(
+            var isValidUsZip = Regex.IsMatch(
                 postcode,
-                @"^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}|GIR\s*0AA)$",
-                RegexOptions.IgnoreCase
-            );
+                @"^\d{5}(-\d{4})?$");
 
-            if (!isUkPostcode)
+            if (!isValidUsZip)
             {
                 lead.IsPostcodeCountryMismatch = true;
-                result.Add(25, "Postcode does not match expected UK postcode format");
+                result.Add(25, "Invalid US ZIP code format");
+                return;
             }
 
-            if (!string.IsNullOrWhiteSpace(lead.Country) &&
-                !lead.Country.Equals("United Kingdom", StringComparison.OrdinalIgnoreCase) &&
-                !lead.Country.Equals("UK", StringComparison.OrdinalIgnoreCase) &&
-                isUkPostcode)
-            {
-                lead.IsPostcodeCountryMismatch = true;
-                result.Add(20, "UK postcode submitted with non-UK country");
-            }
+            lead.IsPostcodeCountryMismatch = false;
         }
 
         private async Task CheckDuplicateAsync(Lead lead, FraudCheckResult result)

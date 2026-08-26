@@ -1,0 +1,14 @@
+<div class="compare-container" #container>
+
+  <img [src]="before" class="image before" alt="Before the renovation" loading="lazy" decoding="async" />
+
+  <div class="after-wrapper" #afterWrapper>
+    <img [src]="after" class="image after" alt="After the renovation" loading="lazy" decoding="async" />
+  </div>
+
+  <div class="slider" #slider (mousedown)="startDrag($event)" (touchstart)="startDrag($event)">
+    <span class="handle"></span>
+  </div>
+
+
+</div>

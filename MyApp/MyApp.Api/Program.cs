@@ -8,9 +8,16 @@ using MyApp.Api.Models.Identity;
 using MyApp.Api.Services.Bidding;
 using MyApp.Api.Services.Deliveries;
 using MyApp.Api.Services.EmailValidation;
+using MyApp.Api.Services.ExternalDeliveries;
+using MyApp.Api.Services.ExternalDeliveries.BlueInk;
+using MyApp.Api.Services.ExternalDeliveries.Networx;
 using MyApp.Api.Services.Fraud;
 using MyApp.Api.Services.Location;
+using MyApp.Api.Services.Ringba;
 using System.Text;
+using MyApp.Api.Services.MetaLeads;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +53,32 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.Configure<RingbaOptions>(
+    builder.Configuration.GetSection(
+        RingbaOptions.SectionName));
+
+builder.Services.AddHttpClient<RingbaService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+//builder.Services.Configure<MetaLeadOptions>(
+//    builder.Configuration.GetSection(
+//        MetaLeadOptions.SectionName));
+
+//builder.Services.AddHttpClient<MetaLeadService>(client =>
+//{
+//    client.Timeout = TimeSpan.FromSeconds(20);
+//});
+
+// META LEAD ADS
+builder.Services.Configure<MetaLeadOptions>(
+    builder.Configuration.GetSection("ExternalIntegrations:MetaLeadAds"));
+
+builder.Services.AddScoped<MetaLeadService>();
+
+builder.Services.AddHttpClient();
+
 // DB-first main context
 builder.Services.AddDbContext<MyAppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -53,6 +86,31 @@ builder.Services.AddDbContext<MyAppDbContext>(options =>
 // Identity context
 builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.Configure<BlueInkOptions>(
+    builder.Configuration.GetSection(
+        BlueInkOptions.SectionName));
+builder.Services.Configure<NetworxOptions>(
+    builder.Configuration.GetSection(
+        NetworxOptions.SectionName));
+
+builder.Services.AddScoped<ExternalLeadDistributionService>();
+
+builder.Services.AddHttpClient<
+    IExternalLeadProvider,
+    BlueInkLeadProvider>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+builder.Services.AddHttpClient<
+    IExternalLeadProvider,
+    NetworxLeadProvider>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+builder.Services.AddHostedService<
+    ExternalLeadDeliveryWorker>();
+
 
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -113,15 +171,32 @@ builder.Services.AddHttpClient<IpLocationService>();
 builder.Services.AddHttpClient<IAddressValidationService, GoogleGeocodingAddressValidationService>();
 
 // CORS for Angular
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowAngular", policy =>
+//    {
+//        policy.WithOrigins(
+//                "https://marketing.homeyy.com",
+//                "http://marketing.homeyy.com",
+//                "http://localhost:4200"
+//            )
+//            .AllowAnyHeader()
+//            .AllowAnyMethod();
+//    });
+//});
+
+var allowedOrigins =
+    builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>()
+    ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins(
-                "https://marketing.homeyy.com",
-                "http://marketing.homeyy.com",
-                "http://localhost:4200"
-            )
+        policy
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
