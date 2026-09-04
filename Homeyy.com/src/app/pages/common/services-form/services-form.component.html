@@ -225,21 +225,21 @@
 
               <div class="option-grid">
 
-                <button
-                  type="button"
-                  class="option-btn"
-                  *ngFor="let option of activeStep?.options"
-                  [class.selected]="
-                    form.get('purchaseTimeFrame')?.value === option
-                  "
-                  (click)="
-                    setValue(
-                      'purchaseTimeFrame',
-                      option
-                    )
-                  ">
-                  {{ option }}
-                </button>
+           <button
+  type="button"
+  class="option-btn"
+  *ngFor="let option of activeStep?.options"
+  [class.selected]="
+    form.get('bestTimeToCall')?.value === option
+  "
+  (click)="
+    setValue(
+      'bestTimeToCall',
+      option
+    )
+  ">
+  {{ option }}
+</button>
               </div>
             </div>
 

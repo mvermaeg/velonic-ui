@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyApp.Api.Data;
+using MyApp.Api.Services.ExternalDeliveries;
 using System.Data;
 
 namespace MyApp.Api.Controllers
@@ -17,6 +18,78 @@ namespace MyApp.Api.Controllers
         {
             _db = db;
         }
+
+
+
+        [HttpGet("by-lead/{leadId:long}")]
+        public async Task<IActionResult> GetByLead(long leadId)
+        {
+            var deliveries = await _db.ExternalLeadDeliveries
+                .AsNoTracking()
+                .Where(x => x.LeadId == leadId)
+                .OrderBy(x => x.Id)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.LeadId,
+                    x.PlatformCode,
+                    x.VerticalCode,
+                    x.Status,
+                    x.AttemptCount,
+                    x.MaxAttempts,
+                    x.HttpStatusCode,
+                    x.ExternalReferenceId,
+                    x.ErrorMessage,
+                    x.RequestPayload,
+                    x.ResponsePayload,
+                    x.CreatedOn,
+                    x.LastAttemptOn,
+                    x.DeliveredOn
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                leadId,
+                count = deliveries.Count,
+                deliveries
+            });
+        }
+
+
+        [HttpPost("queue-new-platforms/{leadId:long}")]
+        public async Task<IActionResult> QueueNewPlatforms(
+    long leadId,
+    [FromServices] ExternalLeadDistributionService distributionService,
+    CancellationToken cancellationToken)
+        {
+            try
+            {
+                await distributionService.QueueNewPlatformsForTestAsync(
+                    leadId,
+                    cancellationToken);
+
+                return Ok(new
+                {
+                    success = true,
+                    leadId,
+                    message =
+                        "Lead queued for applicable new external platforms."
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    leadId,
+                    message = ex.Message
+                });
+            }
+        }
+
+
+
 
         [HttpGet("database")]
         public async Task<IActionResult> Database()

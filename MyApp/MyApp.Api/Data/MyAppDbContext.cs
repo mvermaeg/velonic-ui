@@ -92,23 +92,13 @@ public partial class MyAppDbContext : DbContext
 
     public virtual DbSet<SiteSetting> SiteSettings { get; set; }
 
+    public virtual DbSet<ThumbtackSession> ThumbtackSessions { get; set; }
+
     public virtual DbSet<WebsiteTemplate> WebsiteTemplates { get; set; }
 
     public virtual DbSet<WebsiteTheme> WebsiteThemes { get; set; }
 
-    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-    //        => optionsBuilder.UseSqlServer("Server=52.54.2.36,1433;Database=VelonicDB;User Id=homeyy_app_user;Password=ChangeThis_StrongPassword_2026!;Encrypt=True;TrustServerCertificate=True;");
-
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            // Connection is supplied by Program.cs / appsettings.json
-        }
-    }
-
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Affiliate>(entity =>
@@ -838,6 +828,30 @@ public partial class MyAppDbContext : DbContext
                 .HasForeignKey(d => d.SiteId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_SiteSettings_Sites");
+        });
+
+        modelBuilder.Entity<ThumbtackSession>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Thumbtac__3214EC074968EBB4");
+
+            entity.HasIndex(e => new { e.CategoryCode, e.CreatedOn }, "IX_ThumbtackSessions_CategoryCode_CreatedOn");
+
+            entity.HasIndex(e => e.LeadId, "IX_ThumbtackSessions_LeadId");
+
+            entity.HasIndex(e => e.TrackingId, "UX_ThumbtackSessions_TrackingId").IsUnique();
+
+            entity.Property(e => e.ActualPayout).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BusinessId).HasMaxLength(100);
+            entity.Property(e => e.CategoryCode).HasMaxLength(100);
+            entity.Property(e => e.CategoryPk).HasMaxLength(100);
+            entity.Property(e => e.CreatedOn).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.ExpectedPayout).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ReportedOutcome).HasMaxLength(200);
+            entity.Property(e => e.ServicePk).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.TrackingId).HasMaxLength(100);
+            entity.Property(e => e.UtmContent).HasMaxLength(150);
+            entity.Property(e => e.ZipCode).HasMaxLength(20);
         });
 
         modelBuilder.Entity<WebsiteTemplate>(entity =>

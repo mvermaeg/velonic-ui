@@ -1,8 +1,8 @@
-// export const environment = {
-//   production: false,
-//   serviceUrl: 'https://localhost:7245/api/',
-//   imageUrl: '',
-// };
+// // export const environment = {
+// //   production: false,
+// //   serviceUrl: 'https://localhost:7245/api/',
+// //   imageUrl: '',
+// // };
 
 export const environment = {
   production: false,

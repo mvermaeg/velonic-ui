@@ -16,6 +16,11 @@ using MyApp.Api.Services.Location;
 using MyApp.Api.Services.Ringba;
 using System.Text;
 using MyApp.Api.Services.MetaLeads;
+using MyApp.Api.Services.ExternalDeliveries.InsuranceTales;
+using MyApp.Api.Services.ExternalDeliveries.Modernize;
+using MyApp.Api.Services.ExternalDeliveries.Mili;
+using MyApp.Api.Services.ExternalDeliveries.Thumbtack;
+
 
 
 
@@ -164,6 +169,64 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<LeadBiddingService>();
 builder.Services.AddScoped<LeadDeliveryService>();
 builder.Services.AddScoped<ILeadFraudService, LeadFraudService>();
+
+builder.Services.Configure<InsuranceTalesOptions>(
+    builder.Configuration.GetSection(
+        InsuranceTalesOptions.SectionName));
+
+
+builder.Services.AddHttpClient<
+    IExternalLeadProvider,
+    InsuranceTalesLeadProvider>(client =>
+    {
+        client.Timeout =
+            TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.AddSingleton<MiliRateLimiter>();
+builder.Services.AddHttpClient<
+    IExternalLeadProvider,
+    MiliLeadProvider>(client =>
+    {
+        client.Timeout =
+            TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.Configure<MiliOptions>(
+    builder.Configuration.GetSection(
+        MiliOptions.SectionName));
+
+
+
+builder.Services.Configure<ModernizeOptions>(
+    builder.Configuration.GetSection(
+        ModernizeOptions.SectionName));
+
+
+builder.Services.AddHttpClient<
+    IExternalLeadProvider,
+    ModernizeLeadProvider>(client =>
+    {
+        client.Timeout =
+            TimeSpan.FromSeconds(30);
+    });
+
+
+
+builder.Services.Configure<ThumbtackOptions>(
+    builder.Configuration.GetSection(
+        ThumbtackOptions.SectionName));
+
+
+
+builder.Services.AddScoped<ThumbtackEligibilityService>();
+
+builder.Services.AddHttpClient<ThumbtackApiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<BouncerEmailValidationService>();
