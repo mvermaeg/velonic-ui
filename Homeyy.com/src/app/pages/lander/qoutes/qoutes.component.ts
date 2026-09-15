@@ -55,11 +55,6 @@ export class QoutesComponent implements OnInit {
   zipValidationError = '';
   zipLocationMessage = '';
 
-  addressChecking = false;
-  addressVerified = false;
-  addressValidationError = '';
-  addressLocationMessage = '';
-
   emailChecking = false;
   emailValidationError = '';
 
@@ -364,16 +359,6 @@ export class QoutesComponent implements OnInit {
       this.zipVerified = false;
       this.zipValidationError = '';
       this.zipLocationMessage = '';
-
-      this.addressVerified = false;
-      this.addressValidationError = '';
-      this.addressLocationMessage = '';
-    });
-
-    this.quoteForm.get('address')?.valueChanges.subscribe(() => {
-      this.addressVerified = false;
-      this.addressValidationError = '';
-      this.addressLocationMessage = '';
     });
 
     this.quoteForm.get('email')?.valueChanges.subscribe(() => {
@@ -498,15 +483,6 @@ export class QoutesComponent implements OnInit {
       }
     }
 
-    if (currentType === 'location') {
-      const addressIsValid =
-        await this.verifyAddressAndZip();
-
-      if (!addressIsValid) {
-        return;
-      }
-    }
-
     if (this.step < this.totalSteps) {
       this.step++;
     }
@@ -515,7 +491,6 @@ export class QoutesComponent implements OnInit {
   previousStep(): void {
     if (
       this.zipChecking ||
-      this.addressChecking ||
       this.emailChecking ||
       this.isSubmitting
     ) {
@@ -636,98 +611,6 @@ export class QoutesComponent implements OnInit {
     });
   }
 
-  private verifyAddressAndZip(): Promise<boolean> {
-    this.addressValidationError = '';
-    this.addressLocationMessage = '';
-
-    if (this.addressVerified) {
-      return Promise.resolve(true);
-    }
-
-    const address =
-      String(
-        this.quoteForm.get('address')?.value || ''
-      ).trim();
-
-    const postcode =
-      String(
-        this.quoteForm.get('zip')?.value || ''
-      ).trim();
-
-    if (!address || !postcode) {
-      this.addressValidationError =
-        'Address and ZIP code are required.';
-
-      return Promise.resolve(false);
-    }
-
-    this.addressChecking = true;
-
-    return new Promise<boolean>(resolve => {
-      this.websiteLeadService
-        .validateAddress(address, postcode)
-        .subscribe({
-          next: response => {
-            this.addressChecking = false;
-
-            const result =
-              response?.result || response;
-
-            const accepted =
-              result?.isValid === true ||
-              String(result?.status || '')
-                .toLowerCase() === 'valid' ||
-              String(result?.possibleNextAction || '')
-                .toUpperCase() === 'ACCEPT';
-
-            if (!accepted) {
-              this.addressVerified = false;
-
-              this.addressValidationError =
-                result?.message ||
-                'Address and ZIP code do not match.';
-
-              resolve(false);
-              return;
-            }
-
-            this.addressVerified = true;
-
-            this.validatedPostcode =
-              result?.postalCode || postcode;
-
-            this.validatedCity =
-              result?.city || this.validatedCity;
-
-            this.validatedState =
-              result?.state || this.validatedState;
-
-            this.validatedCountry =
-              result?.country ||
-              this.validatedCountry ||
-              'United States';
-
-            this.addressLocationMessage =
-              this.buildLocationMessage(result);
-
-            resolve(true);
-          },
-
-          error: error => {
-            this.addressChecking = false;
-            this.addressVerified = false;
-
-            this.addressValidationError =
-              error?.error?.result?.message ||
-              error?.error?.message ||
-              'Address verification failed. Please try again.';
-
-            resolve(false);
-          }
-        });
-    });
-  }
-
   private verifyEmail(): Promise<boolean> {
     this.emailValidationError = '';
 
@@ -825,7 +708,6 @@ export class QoutesComponent implements OnInit {
     if (
       this.isSubmitting ||
       this.zipChecking ||
-      this.addressChecking ||
       this.emailChecking
     ) {
       return;
@@ -837,24 +719,6 @@ export class QoutesComponent implements OnInit {
 
       if (!zipIsValid) {
         this.step = 1;
-        return;
-      }
-    }
-
-    if (!this.addressVerified) {
-      const addressIsValid =
-        await this.verifyAddressAndZip();
-
-      if (!addressIsValid) {
-        const locationStep =
-          this.steps.findIndex(
-            x => x.type === 'location'
-          );
-
-        if (locationStep >= 0) {
-          this.step = locationStep + 1;
-        }
-
         return;
       }
     }
@@ -996,12 +860,16 @@ export class QoutesComponent implements OnInit {
     return Math.abs(hash).toString();
   }
 }
-
-
 // import { Component, OnInit } from '@angular/core';
-// import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
+// import {
+//   AbstractControl,
+//   FormBuilder,
+//   FormGroup,
+//   Validators
+// } from '@angular/forms';
 // import { ActivatedRoute, Router } from '@angular/router';
 // import { FormsService } from 'src/app/services/forms.service';
+// import { WebsiteLeadService } from 'src/app/services/website-lead.service';
 
 // interface FormField {
 //   label: string;
@@ -1038,14 +906,35 @@ export class QoutesComponent implements OnInit {
 
 //   path_name = '';
 //   service_name = '';
+//   serviceCode = '';
 //   imageUrl = '';
 
 //   quoteForm!: FormGroup;
 //   howItWorks: HowItWorksCard[] = [];
 
+//   zipChecking = false;
+//   zipVerified = false;
+//   zipValidationError = '';
+//   zipLocationMessage = '';
+
+//   addressChecking = false;
+//   addressVerified = false;
+//   addressValidationError = '';
+//   addressLocationMessage = '';
+
+//   emailChecking = false;
+//   emailValidationError = '';
+
+//   isSubmitting = false;
+//   submitError = '';
+
+//   validatedPostcode = '';
+//   validatedCity = '';
+//   validatedState = '';
+//   validatedCountry = 'United States';
+
 //   private steps: Step[] = [];
 
-//   // Labels used to build the error messages
 //   private labels: { [key: string]: string } = {
 //     zip: 'Zip code',
 //     firstName: 'First name',
@@ -1056,19 +945,24 @@ export class QoutesComponent implements OnInit {
 //     email: 'Email address'
 //   };
 
-//   // Overrides for messages the generic text does not describe well
-//   private customMessages: { [key: string]: { [error: string]: string } } = {
+//   private customMessages: {
+//     [key: string]: {
+//       [error: string]: string
+//     }
+//   } = {
 //     zip: {
-//       pattern: 'Enter a valid US zip code (e.g. 33021 or 33021-1234)'
+//       pattern: 'Enter a valid US ZIP code, for example 33021'
 //     },
 //     firstName: {
-//       pattern: 'First name can only contain letters, spaces, hyphens and apostrophes'
+//       pattern:
+//         'First name can only contain letters, spaces, hyphens and apostrophes'
 //     },
 //     lastName: {
-//       pattern: 'Last name can only contain letters, spaces, hyphens and apostrophes'
+//       pattern:
+//         'Last name can only contain letters, spaces, hyphens and apostrophes'
 //     },
 //     phone: {
-//       pattern: 'Enter a valid 10 digit US mobile number'
+//       pattern: 'Enter a valid 10-digit US phone number'
 //     },
 //     bestTimeToCall: {
 //       required: 'Please select the best time to call'
@@ -1082,28 +976,65 @@ export class QoutesComponent implements OnInit {
 //     private activatedRoute: ActivatedRoute,
 //     private router: Router,
 //     private fb: FormBuilder,
-//     private formsService: FormsService
-//   ) { }
+//     private formsService: FormsService,
+//     private websiteLeadService: WebsiteLeadService
+//   ) {}
 
 //   ngOnInit(): void {
+//     this.path_name =
+//       this.activatedRoute.snapshot.paramMap.get('qoute-name') ?? '';
 
-//     this.path_name = this.activatedRoute.snapshot.paramMap.get('qoute-name') ?? '';
-//     this.service_name = this.path_name === 'hvac' ? 'HVAC' : this.path_name;
-//     this.imageUrl = this.formsService.qoutes.find(x => x.path === this.path_name)?.icon ?? '';
+//     this.serviceCode = this.normalizeServiceCode(this.path_name);
+//     this.service_name = this.getServiceName(this.serviceCode);
+
+//     this.imageUrl =
+//       this.formsService.qoutes.find(
+//         x =>
+//           x.path === this.path_name ||
+//           x.path === this.serviceCode
+//       )?.icon ?? '';
 
 //     this.buildHowItWorks();
-//     this.loadSteps(this.path_name);
+//     this.loadSteps(this.serviceCode);
 //     this.buildForm();
+//     this.watchValidationFields();
 //   }
 
-//   // The step currently on screen — the template reads it instead of re-indexing steps[]
 //   get activeStep(): Step | undefined {
 //     return this.steps[this.step - 1];
 //   }
 
-//   // Built once service_name is known so the copy names the service being quoted
-//   private buildHowItWorks(): void {
+//   private normalizeServiceCode(path: string): string {
+//     const normalized = (path || '').trim().toLowerCase();
 
+//     if (normalized === 'home-security') {
+//       return 'homesecurity';
+//     }
+
+//     return normalized || 'roofing';
+//   }
+
+//   private getServiceName(serviceCode: string): string {
+//     const names: { [key: string]: string } = {
+//       hvac: 'HVAC',
+//       bathroom: 'Bathroom Remodeling',
+//       kitchen: 'Kitchen Remodeling',
+//       plumbing: 'Plumbing',
+//       window: 'Window Installation',
+//       door: 'Door Installation',
+//       flooring: 'Flooring',
+//       gutter: 'Gutter Installation',
+//       fencing: 'Fencing',
+//       solar: 'Solar Installation',
+//       roofing: 'Roofing',
+//       siding: 'Siding',
+//       homesecurity: 'Home Security'
+//     };
+
+//     return names[serviceCode] || 'Roofing';
+//   }
+
+//   private buildHowItWorks(): void {
 //     const service = this.service_name;
 
 //     this.howItWorks = [
@@ -1111,25 +1042,30 @@ export class QoutesComponent implements OnInit {
 //         number: '01',
 //         icon: 'assets/images/icons/form.svg',
 //         alt: 'Form',
-//         text: `Answer a few simple questions regarding your new ${service} requirements`
+//         text:
+//           `Answer a few simple questions regarding your new ` +
+//           `${service} requirements`
 //       },
 //       {
 //         number: '02',
 //         icon: 'assets/images/icons/contact.svg',
 //         alt: 'Contact',
-//         text: `Fill in your contact details so we can match you with the best ${service} pros in your area`
+//         text:
+//           `Fill in your contact details so we can match you with ` +
+//           `the best ${service} professionals in your area`
 //       },
 //       {
 //         number: '03',
 //         icon: 'assets/images/icons/check-list.svg',
 //         alt: 'Quote',
-//         text: `Receive up to 4 free, no obligation quotes from local ${service} experts`
+//         text:
+//           `Receive up to 4 free, no-obligation quotes from local ` +
+//           `${service} experts`
 //       }
 //     ];
 //   }
 
 //   private loadSteps(service: string): void {
-
 //     const configs: { [key: string]: Step[] } = {
 //       solar: this.formsService.solar,
 //       kitchen: this.formsService.kitchen,
@@ -1148,36 +1084,63 @@ export class QoutesComponent implements OnInit {
 
 //     this.steps = [
 //       {
-//         title: `Get Free Quotes on New, Affordable ${this.service_name}`,
+//         title:
+//           `Get Free Quotes on New, Affordable ${this.service_name}`,
 //         subtitle:
-//           `The fastest way to compare ${this.service_name} prices. Get a free quote on new ${this.service_name} for your home.`,
+//           `The fastest way to compare ${this.service_name} prices. ` +
+//           `Get a free quote for your home.`,
 //         type: 'intro'
 //       },
 
-//       ...(configs[service] || configs['homesecurity']),
+//       ...(configs[service] || configs['roofing']),
 
 //       {
 //         title: 'What is your name?',
 //         type: 'form',
 //         fields: [
-//           { label: 'First Name', key: 'firstName', placeholder: 'First Name', type: 'text' },
-//           { label: 'Last Name', key: 'lastName', placeholder: 'Last Name', type: 'text' }
+//           {
+//             label: 'First Name',
+//             key: 'firstName',
+//             placeholder: 'First Name',
+//             type: 'text'
+//           },
+//           {
+//             label: 'Last Name',
+//             key: 'lastName',
+//             placeholder: 'Last Name',
+//             type: 'text'
+//           }
 //         ]
 //       },
 
 //       {
 //         title: 'Where will this project take place?',
 //         type: 'location',
-//         options: ['Immediately', 'Within 1 Month', '1-3 Months', '3+ Months'],
+//         options: [
+//           'Immediately',
+//           'Within 1 Month',
+//           '1-3 Months',
+//           '3+ Months'
+//         ],
 //         fields: [
-//           { label: 'Address', key: 'address', placeholder: '123 Your Street', type: 'text' }
+//           {
+//             label: 'Address',
+//             key: 'address',
+//             placeholder: '13500 S. Figueroa St.',
+//             type: 'text'
+//           }
 //         ]
 //       },
 
 //       {
 //         title: 'Please enter your phone number and email',
 //         type: 'contact',
-//         options: ['Morning', 'Afternoon', 'Evening', 'Anytime']
+//         options: [
+//           'Morning',
+//           'Afternoon',
+//           'Evening',
+//           'Anytime'
+//         ]
 //       }
 //     ];
 
@@ -1185,7 +1148,6 @@ export class QoutesComponent implements OnInit {
 //   }
 
 //   private buildForm(): void {
-
 //     const nameRules = [
 //       Validators.required,
 //       Validators.minLength(2),
@@ -1194,41 +1156,58 @@ export class QoutesComponent implements OnInit {
 //     ];
 
 //     const controls: { [key: string]: any } = {
-
-//       zip: ['', [
-//         Validators.required,
-//         Validators.pattern(/^\d{5}(-\d{4})?$/)
-//       ]],
+//       zip: [
+//         '',
+//         [
+//           Validators.required,
+//           Validators.pattern(/^\d{5}$/)
+//         ]
+//       ],
 
 //       firstName: ['', nameRules],
 //       lastName: ['', nameRules],
 
-//       address: ['', [
-//         Validators.required,
-//         Validators.minLength(5),
-//         Validators.maxLength(100)
-//       ]],
+//       address: [
+//         '',
+//         [
+//           Validators.required,
+//           Validators.minLength(5),
+//           Validators.maxLength(150)
+//         ]
+//       ],
 
 //       purchaseTimeFrame: [''],
 
-//       phone: ['', [
-//         Validators.required,
-//         Validators.pattern(/^\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/)
-//       ]],
+//       phone: [
+//         '',
+//         [
+//           Validators.required,
+//           Validators.pattern(
+//             /^\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/
+//           )
+//         ]
+//       ],
 
 //       bestTimeToCall: ['', Validators.required],
 
-//       email: ['', [
-//         Validators.required,
-//         Validators.email,
-//         Validators.pattern(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/)
-//       ]]
+//       email: [
+//         '',
+//         [
+//           Validators.required,
+//           Validators.email,
+//           Validators.pattern(
+//             /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+//           )
+//         ]
+//       ]
 //     };
 
-//     // The question steps are service specific, so their controls are added on the fly
 //     this.steps.forEach(step => {
-
-//       if (step.type === 'buttons' && step.field && !controls[step.field]) {
+//       if (
+//         step.type === 'buttons' &&
+//         step.field &&
+//         !controls[step.field]
+//       ) {
 //         controls[step.field] = ['', Validators.required];
 //       }
 
@@ -1242,20 +1221,38 @@ export class QoutesComponent implements OnInit {
 //     this.quoteForm = this.fb.group(controls);
 //   }
 
-//   // Control names that belong to the given step
-//   private stepControls(step: number): string[] {
+//   private watchValidationFields(): void {
+//     this.quoteForm.get('zip')?.valueChanges.subscribe(() => {
+//       this.zipVerified = false;
+//       this.zipValidationError = '';
+//       this.zipLocationMessage = '';
 
-//     const current = this.steps[step - 1];
+//       this.addressVerified = false;
+//       this.addressValidationError = '';
+//       this.addressLocationMessage = '';
+//     });
+
+//     this.quoteForm.get('address')?.valueChanges.subscribe(() => {
+//       this.addressVerified = false;
+//       this.addressValidationError = '';
+//       this.addressLocationMessage = '';
+//     });
+
+//     this.quoteForm.get('email')?.valueChanges.subscribe(() => {
+//       this.emailValidationError = '';
+//     });
+//   }
+
+//   private stepControls(stepNumber: number): string[] {
+//     const current = this.steps[stepNumber - 1];
 
 //     switch (current?.type) {
-
 //       case 'intro':
 //         return ['zip'];
 
 //       case 'buttons':
 //         return current.field ? [current.field] : [];
 
-//       // Purchase time frame is optional, so the location step only guards its fields
 //       case 'form':
 //       case 'location':
 //         return (current.fields || []).map(field => field.key);
@@ -1268,19 +1265,25 @@ export class QoutesComponent implements OnInit {
 //     }
 //   }
 
-//   private stepAbstractControls(step: number): AbstractControl[] {
-//     return this.stepControls(step)
+//   private stepAbstractControls(
+//     stepNumber: number
+//   ): AbstractControl[] {
+//     return this.stepControls(stepNumber)
 //       .map(name => this.quoteForm.get(name))
-//       .filter((control): control is AbstractControl => !!control);
+//       .filter(
+//         (control): control is AbstractControl => !!control
+//       );
 //   }
 
-//   private validateStep(step: number): boolean {
-
-//     const controls = this.stepAbstractControls(step);
+//   private validateStep(stepNumber: number): boolean {
+//     const controls =
+//       this.stepAbstractControls(stepNumber);
 
 //     controls.forEach(control => {
 //       control.markAsTouched();
-//       control.updateValueAndValidity({ onlySelf: true });
+//       control.updateValueAndValidity({
+//         onlySelf: true
+//       });
 //     });
 
 //     return controls.every(control => control.valid);
@@ -1292,48 +1295,94 @@ export class QoutesComponent implements OnInit {
 
 //   isInvalid(name: string): boolean {
 //     const control = this.control(name);
-//     return !!control && control.invalid && (control.touched || control.dirty);
+
+//     return !!control &&
+//       control.invalid &&
+//       (control.touched || control.dirty);
 //   }
 
 //   getError(name: string, label?: string): string {
-
 //     const control = this.control(name);
 
-//     if (!control?.errors || !(control.touched || control.dirty)) {
+//     if (
+//       !control?.errors ||
+//       !(control.touched || control.dirty)
+//     ) {
 //       return '';
 //     }
 
 //     const errors = control.errors;
-//     const title = label || this.labels[name] || 'This field';
-//     const custom = this.customMessages[name] || {};
+//     const title =
+//       label || this.labels[name] || 'This field';
+
+//     const custom =
+//       this.customMessages[name] || {};
 
 //     if (errors['required']) {
-//       return custom['required'] || `${title} is required`;
+//       return custom['required'] ||
+//         `${title} is required`;
 //     }
 
 //     if (errors['minlength']) {
-//       return custom['minlength'] || `${title} must be at least ${errors['minlength'].requiredLength} characters`;
+//       return custom['minlength'] ||
+//         `${title} must be at least ` +
+//         `${errors['minlength'].requiredLength} characters`;
 //     }
 
 //     if (errors['maxlength']) {
-//       return custom['maxlength'] || `${title} cannot be longer than ${errors['maxlength'].requiredLength} characters`;
+//       return custom['maxlength'] ||
+//         `${title} cannot be longer than ` +
+//         `${errors['maxlength'].requiredLength} characters`;
 //     }
 
 //     if (errors['email'] || errors['pattern']) {
-//       return custom['pattern'] || `Enter a valid ${title.toLowerCase()}`;
+//       return custom['pattern'] ||
+//         `Enter a valid ${title.toLowerCase()}`;
 //     }
 
 //     return `${title} is not valid`;
 //   }
 
-//   nextStep(): void {
+//   async nextStep(): Promise<void> {
+//     this.submitError = '';
 
-//     if (this.validateStep(this.step) && this.step < this.totalSteps) {
+//     if (!this.validateStep(this.step)) {
+//       return;
+//     }
+
+//     const currentType = this.activeStep?.type;
+
+//     if (currentType === 'intro') {
+//       const zipIsValid = await this.verifyZipCode();
+
+//       if (!zipIsValid) {
+//         return;
+//       }
+//     }
+
+//     if (currentType === 'location') {
+//       const addressIsValid =
+//         await this.verifyAddressAndZip();
+
+//       if (!addressIsValid) {
+//         return;
+//       }
+//     }
+
+//     if (this.step < this.totalSteps) {
 //       this.step++;
 //     }
 //   }
 
 //   previousStep(): void {
+//     if (
+//       this.zipChecking ||
+//       this.addressChecking ||
+//       this.emailChecking ||
+//       this.isSubmitting
+//     ) {
+//       return;
+//     }
 
 //     if (this.step > 1) {
 //       this.step--;
@@ -1341,44 +1390,292 @@ export class QoutesComponent implements OnInit {
 //   }
 
 //   setValue(field: string, value: any): void {
-
 //     const control = this.control(field);
 
 //     if (control) {
 //       control.setValue(value);
 //       control.markAsTouched();
+//       control.markAsDirty();
 //     }
 //   }
 
-//   selectOption(field: string | undefined, value: string): void {
-
+//   selectOption(
+//     field: string | undefined,
+//     value: string
+//   ): void {
 //     if (!field) {
 //       return;
 //     }
 
 //     this.setValue(field, value);
-//     this.nextStep();
+//     void this.nextStep();
 //   }
 
-//   // First step that still holds an invalid control, used when the form is submitted
-//   private firstInvalidStep(): number {
+//   private verifyZipCode(): Promise<boolean> {
+//     this.zipValidationError = '';
+//     this.zipLocationMessage = '';
 
-//     for (let step = 1; step <= this.totalSteps; step++) {
-//       if (this.stepAbstractControls(step).some(control => control.invalid)) {
-//         return step;
+//     if (this.zipVerified) {
+//       return Promise.resolve(true);
+//     }
+
+//     const zip =
+//       String(this.quoteForm.get('zip')?.value || '').trim();
+
+//     if (!/^\d{5}$/.test(zip)) {
+//       this.zipValidationError =
+//         'Enter a valid 5-digit US ZIP code.';
+
+//       return Promise.resolve(false);
+//     }
+
+//     this.zipChecking = true;
+
+//     /*
+//      * The existing address-validation API is reused here.
+//      * Passing the ZIP as the address allows Google Geocoding
+//      * to confirm that the ZIP exists in the United States.
+//      */
+//     return new Promise<boolean>(resolve => {
+//       this.websiteLeadService
+//         .validateAddress(zip, zip)
+//         .subscribe({
+//           next: response => {
+//             this.zipChecking = false;
+
+//             const result =
+//               response?.result || response;
+
+//             const accepted =
+//               result?.isValid === true ||
+//               String(result?.status || '')
+//                 .toLowerCase() === 'valid' ||
+//               String(result?.possibleNextAction || '')
+//                 .toUpperCase() === 'ACCEPT';
+
+//             if (!accepted) {
+//               this.zipVerified = false;
+//               this.zipValidationError =
+//                 result?.message ||
+//                 'This ZIP code could not be verified.';
+
+//               resolve(false);
+//               return;
+//             }
+
+//             this.zipVerified = true;
+
+//             this.validatedPostcode =
+//               result?.postalCode || zip;
+
+//             this.validatedCity =
+//               result?.city || '';
+
+//             this.validatedState =
+//               result?.state || '';
+
+//             this.validatedCountry =
+//               result?.country || 'United States';
+
+//             this.zipLocationMessage =
+//               this.buildLocationMessage(result);
+
+//             resolve(true);
+//           },
+
+//           error: error => {
+//             this.zipChecking = false;
+//             this.zipVerified = false;
+
+//             this.zipValidationError =
+//               error?.error?.result?.message ||
+//               error?.error?.message ||
+//               'ZIP code verification failed. Please try again.';
+
+//             resolve(false);
+//           }
+//         });
+//     });
+//   }
+
+//   private verifyAddressAndZip(): Promise<boolean> {
+//     this.addressValidationError = '';
+//     this.addressLocationMessage = '';
+
+//     if (this.addressVerified) {
+//       return Promise.resolve(true);
+//     }
+
+//     const address =
+//       String(
+//         this.quoteForm.get('address')?.value || ''
+//       ).trim();
+
+//     const postcode =
+//       String(
+//         this.quoteForm.get('zip')?.value || ''
+//       ).trim();
+
+//     if (!address || !postcode) {
+//       this.addressValidationError =
+//         'Address and ZIP code are required.';
+
+//       return Promise.resolve(false);
+//     }
+
+//     this.addressChecking = true;
+
+//     return new Promise<boolean>(resolve => {
+//       this.websiteLeadService
+//         .validateAddress(address, postcode)
+//         .subscribe({
+//           next: response => {
+//             this.addressChecking = false;
+
+//             const result =
+//               response?.result || response;
+
+//             const accepted =
+//               result?.isValid === true ||
+//               String(result?.status || '')
+//                 .toLowerCase() === 'valid' ||
+//               String(result?.possibleNextAction || '')
+//                 .toUpperCase() === 'ACCEPT';
+
+//             if (!accepted) {
+//               this.addressVerified = false;
+
+//               this.addressValidationError =
+//                 result?.message ||
+//                 'Address and ZIP code do not match.';
+
+//               resolve(false);
+//               return;
+//             }
+
+//             this.addressVerified = true;
+
+//             this.validatedPostcode =
+//               result?.postalCode || postcode;
+
+//             this.validatedCity =
+//               result?.city || this.validatedCity;
+
+//             this.validatedState =
+//               result?.state || this.validatedState;
+
+//             this.validatedCountry =
+//               result?.country ||
+//               this.validatedCountry ||
+//               'United States';
+
+//             this.addressLocationMessage =
+//               this.buildLocationMessage(result);
+
+//             resolve(true);
+//           },
+
+//           error: error => {
+//             this.addressChecking = false;
+//             this.addressVerified = false;
+
+//             this.addressValidationError =
+//               error?.error?.result?.message ||
+//               error?.error?.message ||
+//               'Address verification failed. Please try again.';
+
+//             resolve(false);
+//           }
+//         });
+//     });
+//   }
+
+//   private verifyEmail(): Promise<boolean> {
+//     this.emailValidationError = '';
+
+//     const email =
+//       String(
+//         this.quoteForm.get('email')?.value || ''
+//       ).trim();
+
+//     this.emailChecking = true;
+
+//     return new Promise<boolean>(resolve => {
+//       this.websiteLeadService
+//         .validateEmail(email)
+//         .subscribe({
+//           next: response => {
+//             this.emailChecking = false;
+
+//             const result =
+//               response?.result || response;
+
+//             const status =
+//               String(result?.status || '')
+//                 .toLowerCase();
+
+//             const accepted =
+//               result?.deliverable === true ||
+//               status === 'deliverable';
+
+//             if (accepted) {
+//               resolve(true);
+//               return;
+//             }
+
+//             this.emailValidationError =
+//               result?.reason
+//                 ? `Email verification failed: ${result.reason}`
+//                 : 'Please enter a valid, deliverable email address.';
+
+//             resolve(false);
+//           },
+
+//           error: error => {
+//             this.emailChecking = false;
+
+//             const providerMessage =
+//               error?.error?.result?.reason ||
+//               error?.error?.message ||
+//               error?.error?.error;
+
+//             this.emailValidationError =
+//               providerMessage
+//                 ? `Email verification failed: ${providerMessage}`
+//                 : 'Email verification failed. Please try again.';
+
+//             resolve(false);
+//           }
+//         });
+//     });
+//   }
+
+//   private firstInvalidStep(): number {
+//     for (
+//       let stepNumber = 1;
+//       stepNumber <= this.totalSteps;
+//       stepNumber++
+//     ) {
+//       if (
+//         this.stepAbstractControls(stepNumber)
+//           .some(control => control.invalid)
+//       ) {
+//         return stepNumber;
 //       }
 //     }
 
 //     return 0;
 //   }
 
-//   submitForm(): void {
+//   async submitForm(): Promise<void> {
+//     this.submitError = '';
+//     this.emailValidationError = '';
 
 //     this.quoteForm.markAllAsTouched();
 
 //     if (this.quoteForm.invalid) {
-
-//       const invalidStep = this.firstInvalidStep();
+//       const invalidStep =
+//         this.firstInvalidStep();
 
 //       if (invalidStep) {
 //         this.step = invalidStep;
@@ -1387,7 +1684,177 @@ export class QoutesComponent implements OnInit {
 //       return;
 //     }
 
-//     this.router.navigate(['/', this.path_name, 'thank-you']);
+//     if (
+//       this.isSubmitting ||
+//       this.zipChecking ||
+//       this.addressChecking ||
+//       this.emailChecking
+//     ) {
+//       return;
+//     }
+
+//     if (!this.zipVerified) {
+//       const zipIsValid =
+//         await this.verifyZipCode();
+
+//       if (!zipIsValid) {
+//         this.step = 1;
+//         return;
+//       }
+//     }
+
+//     if (!this.addressVerified) {
+//       const addressIsValid =
+//         await this.verifyAddressAndZip();
+
+//       if (!addressIsValid) {
+//         const locationStep =
+//           this.steps.findIndex(
+//             x => x.type === 'location'
+//           );
+
+//         if (locationStep >= 0) {
+//           this.step = locationStep + 1;
+//         }
+
+//         return;
+//       }
+//     }
+
+//     const emailIsValid =
+//       await this.verifyEmail();
+
+//     if (!emailIsValid) {
+//       return;
+//     }
+
+//     this.saveLead();
 //   }
 
+//   private saveLead(): void {
+//     const value =
+//       this.quoteForm.getRawValue();
+
+//     this.isSubmitting = true;
+//     this.submitError = '';
+
+//     this.websiteLeadService.createLead({
+//       fullName:
+//         `${value.firstName} ${value.lastName}`.trim(),
+
+//       email:
+//         String(value.email || '').trim(),
+
+//       phone:
+//         String(value.phone || '').trim(),
+
+//       serviceCode:
+//         this.serviceCode,
+
+//       campaignName:
+//         this.service_name,
+
+//       pageName:
+//         `Homeyy Services ${this.service_name} Quote Form`,
+
+//       address:
+//         String(value.address || '').trim(),
+
+//       postcode:
+//         this.validatedPostcode ||
+//         String(value.zip || '').trim(),
+
+//       city:
+//         this.validatedCity || undefined,
+
+//       state:
+//         this.validatedState || undefined,
+
+//       country:
+//         this.validatedCountry ||
+//         'United States',
+
+//       countryCode: 'US',
+
+//       step: this.totalSteps,
+
+//       isTest: false,
+//       isCompleted: true,
+
+//       affiliateSubId: null,
+
+//       fingerprintHash:
+//         this.generateFingerprint(),
+
+//       landingPageUrl:
+//         window.location.href,
+
+//       isTcpaCompliant: true,
+
+//       ownsProperty: null,
+
+//       additionalDataJson:
+//         JSON.stringify({
+//           formType: 'ServicesQuote',
+//           routeType: '/services/:service',
+//           serviceCode: this.serviceCode,
+//           serviceName: this.service_name,
+//           purchaseTimeFrame:
+//             value.purchaseTimeFrame || null,
+//           bestTimeToCall:
+//             value.bestTimeToCall || null,
+//           answers: value
+//         })
+//     }).subscribe({
+//       next: () => {
+//         this.isSubmitting = false;
+
+//         this.router.navigate([
+//           '/',
+//           this.path_name,
+//           'thank-you'
+//         ]);
+//       },
+
+//       error: error => {
+//         this.isSubmitting = false;
+
+//         this.submitError =
+//           error?.error?.message ||
+//           'We could not submit your request. Please try again.';
+//       }
+//     });
+//   }
+
+//   private buildLocationMessage(result: any): string {
+//     return [
+//       result?.city,
+//       result?.state,
+//       result?.postalCode
+//     ]
+//       .filter(Boolean)
+//       .join(', ');
+//   }
+
+//   private generateFingerprint(): string {
+//     const source = [
+//       navigator.userAgent || '',
+//       navigator.language || '',
+//       screen.width,
+//       screen.height,
+//       new Date().getTimezoneOffset()
+//     ].join('|');
+
+//     let hash = 0;
+
+//     for (let index = 0; index < source.length; index++) {
+//       hash =
+//         ((hash << 5) - hash) +
+//         source.charCodeAt(index);
+
+//       hash |= 0;
+//     }
+
+//     return Math.abs(hash).toString();
+//   }
 // }

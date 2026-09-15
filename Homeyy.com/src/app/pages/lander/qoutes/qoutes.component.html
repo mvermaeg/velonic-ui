@@ -8,6 +8,201 @@
       <div class="left">
         <form [formGroup]="quoteForm" (ngSubmit)="submitForm()" novalidate>
           <ng-container [ngSwitch]="activeStep?.type">
+
+            <div class="intro-step" *ngSwitchCase="'intro'">
+              <h2 class="capitalize">{{ activeStep?.title }}</h2>
+              <p>{{ activeStep?.subtitle }}</p>
+
+              <label for="zip">ZIP Code</label>
+              <div class="input-group">
+                <input type="text" id="zip" formControlName="zip" maxlength="5"
+                       inputmode="numeric" placeholder="Enter ZIP Code"
+                       autocomplete="postal-code"
+                       [class.is-invalid]="isInvalid('zip')"
+                       (keydown.enter)="$event.preventDefault(); nextStep()">
+                <button type="button" aria-label="Continue"
+                        [disabled]="zipChecking" (click)="nextStep()">
+                  {{ zipChecking ? '...' : '➤' }}
+                </button>
+              </div>
+
+              <div class="error-text" *ngIf="getError('zip') as error">{{ error }}</div>
+              <div class="error-text" *ngIf="zipValidationError">{{ zipValidationError }}</div>
+              <div class="validation-success" *ngIf="zipVerified && zipLocationMessage">
+                Verified: {{ zipLocationMessage }}
+              </div>
+            </div>
+
+            <div class="question-step" *ngSwitchCase="'buttons'">
+              <h2>{{ activeStep?.title }}</h2>
+              <div class="options full">
+                <button type="button"
+                        *ngFor="let option of activeStep?.options"
+                        [class.active]="quoteForm.get(activeStep?.field || '')?.value === option"
+                        (click)="selectOption(activeStep?.field, option)">
+                  {{ option }}
+                </button>
+              </div>
+              <div class="error-text"
+                   *ngIf="getError(activeStep?.field || '', 'An option') as error">
+                {{ error }}
+              </div>
+            </div>
+
+            <div class="form-step" *ngSwitchCase="'form'">
+              <h2>{{ activeStep?.title }}</h2>
+              <ng-container *ngTemplateOutlet="textFields"></ng-container>
+              <button type="button" class="primary-btn" (click)="nextStep()">Continue</button>
+            </div>
+
+            <div class="form-step" *ngSwitchCase="'location'">
+              <h2>{{ activeStep?.title }}</h2>
+              <ng-container *ngTemplateOutlet="textFields"></ng-container>
+              <ng-container
+                *ngTemplateOutlet="optionGrid; context: { field: 'purchaseTimeFrame', label: 'Purchase Time Frame', optional: true }">
+              </ng-container>
+
+              <button type="button" class="primary-btn" (click)="nextStep()">
+                Continue
+              </button>
+            </div>
+
+            <div class="form-step" *ngSwitchCase="'contact'">
+              <h2>{{ activeStep?.title }}</h2>
+
+              <div class="form-group">
+                <label for="phone">Mobile Number</label>
+                <input type="tel" id="phone" placeholder="(XXX) XXX-XXXX"
+                       formControlName="phone" maxlength="18" autocomplete="tel"
+                       [class.is-invalid]="isInvalid('phone')">
+                <div class="error-text" *ngIf="getError('phone') as error">{{ error }}</div>
+              </div>
+
+              <ng-container
+                *ngTemplateOutlet="optionGrid; context: { field: 'bestTimeToCall', label: 'Best Time To Call' }">
+              </ng-container>
+
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="Enter Email"
+                       formControlName="email" autocomplete="email"
+                       [class.is-invalid]="isInvalid('email')">
+                <div class="error-text" *ngIf="getError('email') as error">{{ error }}</div>
+              </div>
+
+              <p class="disclaimer">
+                By clicking Get A Quote Today, you agree to Homeyy's Terms of Service and Privacy Policy.
+                You authorize Homeyy, its partners and service professionals, or parties acting on their behalf,
+                to call or send text messages to the telephone number provided, including through automated
+                technology and prerecorded messages. Message and data rates may apply. Consent is not a condition
+                of purchasing products or services. Reply STOP to opt out.
+              </p>
+
+              <div class="error-text" *ngIf="emailValidationError">{{ emailValidationError }}</div>
+              <div class="error-text" *ngIf="submitError">{{ submitError }}</div>
+
+              <button type="submit" class="primary-btn"
+                      [disabled]="emailChecking || isSubmitting || zipChecking">
+                <span *ngIf="emailChecking">Validating Email...</span>
+                <span *ngIf="!emailChecking && isSubmitting">Submitting...</span>
+                <span *ngIf="!emailChecking && !isSubmitting">Get A Quote Today</span>
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #textFields>
+            <div class="form-group" *ngFor="let field of activeStep?.fields">
+              <label [for]="field.key">{{ field.label }}</label>
+              <input [type]="field.type" [id]="field.key"
+                     [placeholder]="field.placeholder"
+                     [formControlName]="field.key"
+                     [class.is-invalid]="isInvalid(field.key)">
+              <div class="error-text" *ngIf="getError(field.key, field.label) as error">
+                {{ error }}
+              </div>
+            </div>
+          </ng-template>
+
+          <ng-template #optionGrid let-field="field" let-label="label" let-optional="optional">
+            <div class="form-group">
+              <label>
+                {{ label }}
+                <span class="optional" *ngIf="optional">(optional)</span>
+              </label>
+              <div class="options grid">
+                <button type="button" class="option-btn"
+                        *ngFor="let option of activeStep?.options"
+                        [class.active]="quoteForm.get(field)?.value === option"
+                        (click)="setValue(field, option)">
+                  {{ option }}
+                </button>
+              </div>
+              <div class="error-text" *ngIf="getError(field) as error">{{ error }}</div>
+            </div>
+          </ng-template>
+
+          <div class="back-btn-wrap" *ngIf="step > 1">
+            <button type="button" class="back-btn"
+                    [disabled]="zipChecking || emailChecking || isSubmitting"
+                    (click)="previousStep()">
+              ❮ Go Back
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="right">
+        <div class="hero_popup_image">
+          <img src="assets/images/services/image_shape.png" class="radius_shape" alt="" decoding="async">
+          <div class="popup_image">
+            <img [src]="imageUrl" [alt]="service_name + ' service'"
+                 fetchpriority="high" decoding="async">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="flooring-steps">
+  <div class="container">
+    <h2 class="section-title">
+      3 Easy Steps To Saving Big on New <span class="service-name">{{ service_name }}</span>:
+    </h2>
+
+    <div class="steps-wrapper">
+      <div class="step-card" *ngFor="let item of howItWorks">
+        <span class="step-number">{{ item.number }}</span>
+        <div class="icon-circle">
+          <img [src]="item.icon" [alt]="item.alt" width="40" height="40"
+               loading="lazy" decoding="async">
+        </div>
+        <p>{{ item.text }}</p>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Home Services Campaign Disclaimer:</strong>
+      Homeyy is a free service that assists homeowners in connecting with local service providers.
+      All contractors and providers are independent. Homeyy does not warrant or guarantee work
+      performed by independent providers. The homeowner is responsible for verifying licensing,
+      insurance and qualifications before hiring a contractor.
+    </div>
+  </div>
+</section>
+
+
+
+<!-- <section class="quote-section">
+  <div class="card">
+    <div class="progress">
+      <div class="bar" [style.width.%]="(step / totalSteps) * 100"></div>
+    </div>
+
+    <div class="content">
+      <div class="left">
+        <form [formGroup]="quoteForm" (ngSubmit)="submitForm()" novalidate>
+          <ng-container [ngSwitch]="activeStep?.type">
             <div class="intro-step" *ngSwitchCase="'intro'">
               <h2 class="capitalize">{{ activeStep?.title }}</h2>
               <p>{{ activeStep?.subtitle }}</p>
@@ -210,4 +405,4 @@
       insurance and qualifications before hiring a contractor.
     </div>
   </div>
-</section>
+</section> -->

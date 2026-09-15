@@ -60,11 +60,7 @@
                     maxlength="5"
                     inputmode="numeric"
                     autocomplete="postal-code"
-                    (input)="
-                      zipCodeError = '';
-                      zipCodeVerified = false;
-                      resetAddressPostcodeState()
-                    ">
+                    (input)="resetZipValidationState()">
 
                   <button
                     class="zip-btn"
@@ -92,7 +88,7 @@
                 </div>
 
                 <div class="address-verified" *ngIf="zipCodeVerified">
-                  ZIP code verified.
+                  Verified: {{ verifiedZipLocation?.city }}, {{ verifiedZipLocation?.state }}, {{ verifiedZipLocation?.postalCode }}
                 </div>
               </div>
             </div>
@@ -182,36 +178,13 @@
                 [id]="'sf-' + field.key"
                 [placeholder]="field.placeholder"
                 [formControlName]="field.key"
-                autocomplete="street-address"
-                (input)="resetAddressPostcodeState()">
+                autocomplete="street-address">
 
               <div
                 class="field-error"
                 *ngIf="isFieldInvalid(field.key)">
                 {{ field.label }} is required.
               </div>
-            </div>
-
-            <div
-              class="field-error"
-              *ngIf="addressPostcodeError">
-              {{ addressPostcodeError }}
-            </div>
-
-            <div
-              class="address-verified"
-              *ngIf="addressPostcodeVerified">
-
-              Verified:
-              {{ expectedLocation?.city }},
-              {{ expectedLocation?.state }},
-              {{ expectedLocation?.postalCode }}
-            </div>
-
-            <div
-              class="address-checking"
-              *ngIf="addressPostcodeChecking">
-              Checking address and ZIP code...
             </div>
 
             <div class="form-group">
@@ -225,36 +198,25 @@
 
               <div class="option-grid">
 
-           <button
-  type="button"
-  class="option-btn"
-  *ngFor="let option of activeStep?.options"
-  [class.selected]="
-    form.get('bestTimeToCall')?.value === option
-  "
-  (click)="
-    setValue(
-      'bestTimeToCall',
-      option
-    )
-  ">
-  {{ option }}
-</button>
+                <button
+                  type="button"
+                  class="option-btn"
+                  *ngFor="let option of activeStep?.options"
+                  [class.selected]="
+                    form.get('purchaseTimeFrame')?.value === option
+                  "
+                  (click)="
+                    setValue(
+                      'purchaseTimeFrame',
+                      option
+                    )
+                  ">
+                  {{ option }}
+                </button>
               </div>
             </div>
 
-            <button
-              class="primary-btn mt-2"
-              type="button"
-              [disabled]="addressPostcodeChecking"
-              (click)="next()">
-
-              {{
-                addressPostcodeChecking
-                  ? 'Checking address...'
-                  : 'Continue'
-              }}
-            </button>
+            <button class="primary-btn mt-2" type="button" (click)="next()">Continue</button>
           </ng-container>
 
           <!-- CONTACT STEP -->
@@ -366,7 +328,8 @@
               type="button"
               [disabled]="
                 emailChecking ||
-                isSubmitting
+                isSubmitting ||
+                zipCodeChecking
               "
               (click)="submitForm()">
 

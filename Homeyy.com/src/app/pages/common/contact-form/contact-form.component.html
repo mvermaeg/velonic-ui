@@ -146,8 +146,7 @@
               placeholder="Full address"
               aria-label="Address"
               autocomplete="street-address"
-              formControlName="Address"
-              (input)="resetAddressPostcodeState()">
+              formControlName="Address">
 
             <div
               class="invalid_feedback"
@@ -168,7 +167,7 @@
               formControlName="Zipcode"
               maxlength="5"
               (input)="resetAddressPostcodeState()"
-              (blur)="checkAddressPostcode()">
+              (blur)="checkZipCode()">
 
             <div
               class="invalid_feedback"
@@ -201,7 +200,7 @@
             <div
               class="address-checking"
               *ngIf="addressPostcodeChecking">
-              Checking address and ZIP code...
+              Checking US ZIP code...
             </div>
           </div>
 
@@ -223,7 +222,7 @@
           ">
 
           <span *ngIf="addressPostcodeChecking">
-            CHECKING ADDRESS...
+            CHECKING ZIP...
           </span>
 
           <span
@@ -260,7 +259,6 @@
     </div>
   </div>
 </section>
-
 
 <!-- <section class="contact-section">
     <div class="container contact-wrapper">
