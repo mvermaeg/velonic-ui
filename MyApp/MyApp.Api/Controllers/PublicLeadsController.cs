@@ -379,44 +379,118 @@ namespace MyApp.Api.Controllers
 
                 model.Phone = phoneDigits;
 
+                // Address is required as lead information, but it is intentionally
+                // NOT validated against Google and is NOT matched to the ZIP code.
                 if (string.IsNullOrWhiteSpace(model.Address))
                     return BadRequest(new { message = "Full address is required." });
 
                 if (string.IsNullOrWhiteSpace(model.Postcode))
-                    return BadRequest(new { message = "Postcode is required." });
+                    return BadRequest(new { message = "ZIP code is required." });
 
-                var addressCheck = await _addressValidationService.VerifyAsync(
-                    new VerifyAddressPostcodeRequest
-                    {
-                        Address = model.Address,
-                        Postcode = model.Postcode,
-                        CountryCode = model.CountryCode
-                    });
+                // Homeyy currently accepts standard 5-digit US ZIP codes.
+                // Format validation alone is not enough, so the existing location
+                // provider is used as a ZIP lookup by sending the ZIP as both values.
+                var validUsZipFormat =
+                    System.Text.RegularExpressions.Regex.IsMatch(
+                        model.Postcode,
+                        @"^\d{5}$");
 
-                var addressAccepted =
-                    addressCheck.IsValid ||
-                    string.Equals(addressCheck.Status, "Valid", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(addressCheck.Status, "Review", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(addressCheck.PossibleNextAction, "ACCEPT", StringComparison.OrdinalIgnoreCase);
-
-                var addressRejected =
-                    string.Equals(addressCheck.Status, "Mismatch", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(addressCheck.Status, "ProviderError", StringComparison.OrdinalIgnoreCase);
-
-                if (!addressAccepted || addressRejected)
+                if (!validUsZipFormat)
                 {
                     return BadRequest(new
                     {
-                        message = addressCheck.Message ?? "Address and postcode could not be verified.",
-                        addressStatus = addressCheck.Status,
-                        addressCheck
+                        message = "Please enter a valid 5-digit US ZIP code."
                     });
                 }
 
-                model.City = addressCheck.City ?? model.City;
-                model.State = addressCheck.State ?? model.State;
-                model.Country = addressCheck.Country ?? model.Country;
-                model.Postcode = addressCheck.PostalCode ?? model.Postcode;
+                var zipCheck = await _addressValidationService.VerifyAsync(
+                    new VerifyAddressPostcodeRequest
+                    {
+                        Address = model.Postcode,
+                        Postcode = model.Postcode,
+                        CountryCode = "US"
+                    });
+
+                if (string.Equals(
+                        zipCheck.Status,
+                        "ProviderError",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return StatusCode(
+                        StatusCodes.Status503ServiceUnavailable,
+                        new
+                        {
+                            message = "ZIP verification is temporarily unavailable.",
+                            zipStatus = zipCheck.Status
+                        });
+                }
+
+                var returnedPostcode =
+                    (zipCheck.PostalCode ?? string.Empty)
+                    .Trim();
+
+                if (returnedPostcode.Length > 5)
+                    returnedPostcode = returnedPostcode[..5];
+
+                var returnedCountry =
+                    (zipCheck.Country ?? string.Empty)
+                    .Trim();
+
+                var zipAccepted =
+                    (
+                        zipCheck.IsValid ||
+                        string.Equals(
+                            zipCheck.Status,
+                            "Valid",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            zipCheck.PossibleNextAction,
+                            "ACCEPT",
+                            StringComparison.OrdinalIgnoreCase)
+                    ) &&
+                    string.Equals(
+                        returnedPostcode,
+                        model.Postcode,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    (
+                        string.Equals(
+                            returnedCountry,
+                            "United States",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            returnedCountry,
+                            "United States of America",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            returnedCountry,
+                            "USA",
+                            StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(
+                            returnedCountry,
+                            "US",
+                            StringComparison.OrdinalIgnoreCase)
+                    );
+
+                if (!zipAccepted)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Please enter a valid United States ZIP code.",
+                        zipStatus = zipCheck.Status,
+                        postalCode = zipCheck.PostalCode,
+                        city = zipCheck.City,
+                        state = zipCheck.State,
+                        country = zipCheck.Country
+                    });
+                }
+
+                // City/state/country are authoritative from the verified ZIP.
+                // The user's address text is left untouched.
+                model.City = zipCheck.City ?? model.City;
+                model.State = zipCheck.State ?? model.State;
+                model.Country = zipCheck.Country ?? "United States";
+                model.Postcode = returnedPostcode;
+                model.CountryCode = "US";
 
                 var ipAddress =
                     Request.Headers["CF-Connecting-IP"].FirstOrDefault()
@@ -661,3 +735,4 @@ namespace MyApp.Api.Controllers
         }
     }
 }
+ 

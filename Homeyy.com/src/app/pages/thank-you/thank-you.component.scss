@@ -97,6 +97,64 @@
     }
 }
 
+.thumbtack-section {
+    padding: 0 20px 100px;
+    background: #f5f5f5;
+}
+
+.thumbtack-container {
+    max-width: 1100px;
+    margin: 0 auto;
+
+    > h2 {
+        margin: 0 0 24px;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+    }
+}
+
+.thumbtack-message {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+    color: #666;
+}
+
+.thumbtack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.thumbtack-card {
+    padding: 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
+
+    h3 {
+        margin: 0 0 10px;
+        font-size: 20px;
+    }
+
+    p {
+        margin: 0 0 10px;
+        color: #666;
+    }
+}
+
+.thumbtack-button {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 11px 18px;
+    border-radius: 6px;
+    background: var(--color-secondary);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
 @media (max-width: 991px) {
     .quote-section {
         .content {
@@ -173,3 +231,181 @@
         }
     }
 }
+
+
+
+// .quote-section {
+//     padding: 180px 20px 100px;
+//     background: #f5f5f5;
+
+//     .card {
+//         max-width: 900px;
+//         margin: auto;
+//         background: #fff;
+//         border-radius: 12px;
+//         overflow: hidden;
+//         box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+//     }
+
+//     .progress {
+//         height: 6px;
+//         background: #e0e0e0;
+
+//         .bar {
+//             height: 100%;
+//             width: 100%;
+//             background: var(--color-secondary);
+//         }
+//     }
+
+//     .content {
+//         display: flex;
+//     }
+
+//     .left,
+//     .right {
+//         flex: 1;
+//     }
+
+//     .left {
+//         padding: 40px;
+//         align-content: center;
+
+//         h2 {
+//             font-size: 28px;
+//             font-weight: 700;
+//             line-height: 1.4;
+//             margin-bottom: 16px;
+//         }
+
+//         p {
+//             color: #666;
+//             font-size: 16px;
+//             line-height: 1.6;
+//             margin-bottom: 20px;
+//         }
+//     }
+
+//     .success-content {
+//         margin-top: 30px;
+
+//         h3,
+//         h4 {
+//             font-size: 16px;
+//             line-height: 1.7;
+//             color: #666;
+//             font-weight: 700;
+//         }
+
+//         p {
+//             font-size: 14px;
+//             color: #666;
+//         }
+//     }
+
+//     .hero_popup_image {
+//         position: relative;
+//         height: 100%;
+//         width: 100%;
+//         overflow: hidden;
+
+//         .radius_shape {
+//             position: absolute;
+//             top: 0;
+//             left: 0;
+//             height: 100%;
+//             z-index: 2;
+//             pointer-events: none;
+//         }
+
+//         .popup_image {
+//             height: 100%;
+//             width: 100%;
+
+//             img {
+//                 width: 100%;
+//                 height: 100%;
+//                 min-height: 400px;
+
+//                 object-fit: cover;
+//             }
+//         }
+//     }
+// }
+
+// @media (max-width: 991px) {
+//     .quote-section {
+//         .content {
+//             flex-direction: column;
+//         }
+
+//         .right {
+//             order: -1;
+//         }
+
+//         .hero_popup_image {
+//             height: 350px;
+
+//             .radius_shape {
+//                 display: none;
+//             }
+
+//             .popup_image img {
+//                 height: 350px;
+//                 min-height: 350px;
+//             }
+//         }
+//     }
+// }
+
+// @media (max-width: 767px) {
+//     .quote-section {
+//         padding: 100px 16px 40px;
+
+//         .left {
+//             padding: 25px;
+
+//             h2 {
+//                 font-size: 24px;
+//             }
+
+//             p {
+//                 font-size: 14px;
+//             }
+//         }
+
+//         .hero_popup_image {
+//             height: 250px;
+
+//             .popup_image img {
+//                 height: 250px;
+//                 min-height: 250px;
+//             }
+//         }
+//     }
+// }
+
+// @media (max-width: 575px) {
+//     .quote-section {
+//         .left {
+//             padding: 20px;
+
+//             h2 {
+//                 font-size: 20px;
+//             }
+
+//             p {
+//                 font-size: 13px;
+//             }
+//         }
+
+//         .hero_popup_image {
+//             height: 220px;
+
+//             .popup_image img {
+//                 height: 220px;
+//                 min-height: 220px;
+//             }
+//         }
+//     }
+// }

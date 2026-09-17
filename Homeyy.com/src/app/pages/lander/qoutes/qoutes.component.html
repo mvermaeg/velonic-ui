@@ -203,23 +203,20 @@
       <div class="left">
         <form [formGroup]="quoteForm" (ngSubmit)="submitForm()" novalidate>
           <ng-container [ngSwitch]="activeStep?.type">
+
             <div class="intro-step" *ngSwitchCase="'intro'">
               <h2 class="capitalize">{{ activeStep?.title }}</h2>
               <p>{{ activeStep?.subtitle }}</p>
 
               <label for="zip">ZIP Code</label>
               <div class="input-group">
-                <input
-                  type="text"
-                  id="zip"
-                  formControlName="zip"
-                  maxlength="5"
-                  inputmode="numeric"
-                  placeholder="Enter ZIP Code"
-                  autocomplete="postal-code"
-                  [class.is-invalid]="isInvalid('zip')"
-                  (keydown.enter)="$event.preventDefault(); nextStep()">
-                <button type="button" aria-label="Continue" [disabled]="zipChecking" (click)="nextStep()">
+                <input type="text" id="zip" formControlName="zip" maxlength="5"
+                       inputmode="numeric" placeholder="Enter ZIP Code"
+                       autocomplete="postal-code"
+                       [class.is-invalid]="isInvalid('zip')"
+                       (keydown.enter)="$event.preventDefault(); nextStep()">
+                <button type="button" aria-label="Continue"
+                        [disabled]="zipChecking" (click)="nextStep()">
                   {{ zipChecking ? '...' : '➤' }}
                 </button>
               </div>
@@ -234,15 +231,15 @@
             <div class="question-step" *ngSwitchCase="'buttons'">
               <h2>{{ activeStep?.title }}</h2>
               <div class="options full">
-                <button
-                  type="button"
-                  *ngFor="let option of activeStep?.options"
-                  [class.active]="quoteForm.get(activeStep?.field || '')?.value === option"
-                  (click)="selectOption(activeStep?.field, option)">
+                <button type="button"
+                        *ngFor="let option of activeStep?.options"
+                        [class.active]="quoteForm.get(activeStep?.field || '')?.value === option"
+                        (click)="selectOption(activeStep?.field, option)">
                   {{ option }}
                 </button>
               </div>
-              <div class="error-text" *ngIf="getError(activeStep?.field || '', 'An option') as error">
+              <div class="error-text"
+                   *ngIf="getError(activeStep?.field || '', 'An option') as error">
                 {{ error }}
               </div>
             </div>
@@ -260,13 +257,8 @@
                 *ngTemplateOutlet="optionGrid; context: { field: 'purchaseTimeFrame', label: 'Purchase Time Frame', optional: true }">
               </ng-container>
 
-              <div class="error-text" *ngIf="addressValidationError">{{ addressValidationError }}</div>
-              <div class="validation-success" *ngIf="addressVerified && addressLocationMessage">
-                Verified: {{ addressLocationMessage }}
-              </div>
-
-              <button type="button" class="primary-btn" [disabled]="addressChecking" (click)="nextStep()">
-                {{ addressChecking ? 'Validating Address...' : 'Continue' }}
+              <button type="button" class="primary-btn" (click)="nextStep()">
+                Continue
               </button>
             </div>
 
@@ -275,14 +267,9 @@
 
               <div class="form-group">
                 <label for="phone">Mobile Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  placeholder="(XXX) XXX-XXXX"
-                  formControlName="phone"
-                  maxlength="18"
-                  autocomplete="tel"
-                  [class.is-invalid]="isInvalid('phone')">
+                <input type="tel" id="phone" placeholder="(XXX) XXX-XXXX"
+                       formControlName="phone" maxlength="18" autocomplete="tel"
+                       [class.is-invalid]="isInvalid('phone')">
                 <div class="error-text" *ngIf="getError('phone') as error">{{ error }}</div>
               </div>
 
@@ -292,13 +279,9 @@
 
               <div class="form-group">
                 <label for="email">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Enter Email"
-                  formControlName="email"
-                  autocomplete="email"
-                  [class.is-invalid]="isInvalid('email')">
+                <input type="email" id="email" placeholder="Enter Email"
+                       formControlName="email" autocomplete="email"
+                       [class.is-invalid]="isInvalid('email')">
                 <div class="error-text" *ngIf="getError('email') as error">{{ error }}</div>
               </div>
 
@@ -313,10 +296,8 @@
               <div class="error-text" *ngIf="emailValidationError">{{ emailValidationError }}</div>
               <div class="error-text" *ngIf="submitError">{{ submitError }}</div>
 
-              <button
-                type="submit"
-                class="primary-btn"
-                [disabled]="emailChecking || isSubmitting || addressChecking || zipChecking">
+              <button type="submit" class="primary-btn"
+                      [disabled]="emailChecking || isSubmitting || zipChecking">
                 <span *ngIf="emailChecking">Validating Email...</span>
                 <span *ngIf="!emailChecking && isSubmitting">Submitting...</span>
                 <span *ngIf="!emailChecking && !isSubmitting">Get A Quote Today</span>
@@ -327,13 +308,13 @@
           <ng-template #textFields>
             <div class="form-group" *ngFor="let field of activeStep?.fields">
               <label [for]="field.key">{{ field.label }}</label>
-              <input
-                [type]="field.type"
-                [id]="field.key"
-                [placeholder]="field.placeholder"
-                [formControlName]="field.key"
-                [class.is-invalid]="isInvalid(field.key)">
-              <div class="error-text" *ngIf="getError(field.key, field.label) as error">{{ error }}</div>
+              <input [type]="field.type" [id]="field.key"
+                     [placeholder]="field.placeholder"
+                     [formControlName]="field.key"
+                     [class.is-invalid]="isInvalid(field.key)">
+              <div class="error-text" *ngIf="getError(field.key, field.label) as error">
+                {{ error }}
+              </div>
             </div>
           </ng-template>
 
@@ -344,12 +325,10 @@
                 <span class="optional" *ngIf="optional">(optional)</span>
               </label>
               <div class="options grid">
-                <button
-                  type="button"
-                  class="option-btn"
-                  *ngFor="let option of activeStep?.options"
-                  [class.active]="quoteForm.get(field)?.value === option"
-                  (click)="setValue(field, option)">
+                <button type="button" class="option-btn"
+                        *ngFor="let option of activeStep?.options"
+                        [class.active]="quoteForm.get(field)?.value === option"
+                        (click)="setValue(field, option)">
                   {{ option }}
                 </button>
               </div>
@@ -358,11 +337,9 @@
           </ng-template>
 
           <div class="back-btn-wrap" *ngIf="step > 1">
-            <button
-              type="button"
-              class="back-btn"
-              [disabled]="zipChecking || addressChecking || emailChecking || isSubmitting"
-              (click)="previousStep()">
+            <button type="button" class="back-btn"
+                    [disabled]="zipChecking || emailChecking || isSubmitting"
+                    (click)="previousStep()">
               ❮ Go Back
             </button>
           </div>
@@ -373,7 +350,8 @@
         <div class="hero_popup_image">
           <img src="assets/images/services/image_shape.png" class="radius_shape" alt="" decoding="async">
           <div class="popup_image">
-            <img [src]="imageUrl" [alt]="service_name + ' service'" fetchpriority="high" decoding="async">
+            <img [src]="imageUrl" [alt]="service_name + ' service'"
+                 fetchpriority="high" decoding="async">
           </div>
         </div>
       </div>
@@ -391,7 +369,8 @@
       <div class="step-card" *ngFor="let item of howItWorks">
         <span class="step-number">{{ item.number }}</span>
         <div class="icon-circle">
-          <img [src]="item.icon" [alt]="item.alt" width="40" height="40" loading="lazy" decoding="async">
+          <img [src]="item.icon" [alt]="item.alt" width="40" height="40"
+               loading="lazy" decoding="async">
         </div>
         <p>{{ item.text }}</p>
       </div>
@@ -405,4 +384,6 @@
       insurance and qualifications before hiring a contractor.
     </div>
   </div>
-</section> -->
+</section>
+
+ -->

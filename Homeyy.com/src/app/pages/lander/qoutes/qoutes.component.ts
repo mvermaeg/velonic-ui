@@ -730,12 +730,15 @@ export class QoutesComponent implements OnInit {
       return;
     }
 
-    this.saveLead();
+    await this.saveLead();
   }
 
-  private saveLead(): void {
+  private async saveLead(): Promise<void> {
     const value =
       this.quoteForm.getRawValue();
+
+    const trustedFormCertificateUrl =
+      await this.websiteLeadService.waitForTrustedFormCertificateUrl();
 
     this.isSubmitting = true;
     this.submitError = '';
@@ -793,7 +796,12 @@ export class QoutesComponent implements OnInit {
 
       isTcpaCompliant: true,
 
-      ownsProperty: null,
+      trustedFormCertificateUrl,
+
+      ownsProperty:
+        String(value.homeOwner || '')
+          .trim()
+          .toLowerCase() === 'yes',
 
       additionalDataJson:
         JSON.stringify({
@@ -808,8 +816,15 @@ export class QoutesComponent implements OnInit {
           answers: value
         })
     }).subscribe({
-      next: () => {
+      next: response => {
         this.isSubmitting = false;
+
+        if (this.websiteLeadService.isThumbtackService(this.serviceCode)) {
+          this.websiteLeadService.rememberThumbtackLead(
+            response,
+            this.serviceCode
+          );
+        }
 
         this.router.navigate([
           '/',
@@ -860,6 +875,9 @@ export class QoutesComponent implements OnInit {
     return Math.abs(hash).toString();
   }
 }
+
+ 
+
 // import { Component, OnInit } from '@angular/core';
 // import {
 //   AbstractControl,
@@ -916,11 +934,6 @@ export class QoutesComponent implements OnInit {
 //   zipVerified = false;
 //   zipValidationError = '';
 //   zipLocationMessage = '';
-
-//   addressChecking = false;
-//   addressVerified = false;
-//   addressValidationError = '';
-//   addressLocationMessage = '';
 
 //   emailChecking = false;
 //   emailValidationError = '';
@@ -1226,16 +1239,6 @@ export class QoutesComponent implements OnInit {
 //       this.zipVerified = false;
 //       this.zipValidationError = '';
 //       this.zipLocationMessage = '';
-
-//       this.addressVerified = false;
-//       this.addressValidationError = '';
-//       this.addressLocationMessage = '';
-//     });
-
-//     this.quoteForm.get('address')?.valueChanges.subscribe(() => {
-//       this.addressVerified = false;
-//       this.addressValidationError = '';
-//       this.addressLocationMessage = '';
 //     });
 
 //     this.quoteForm.get('email')?.valueChanges.subscribe(() => {
@@ -1360,15 +1363,6 @@ export class QoutesComponent implements OnInit {
 //       }
 //     }
 
-//     if (currentType === 'location') {
-//       const addressIsValid =
-//         await this.verifyAddressAndZip();
-
-//       if (!addressIsValid) {
-//         return;
-//       }
-//     }
-
 //     if (this.step < this.totalSteps) {
 //       this.step++;
 //     }
@@ -1377,7 +1371,6 @@ export class QoutesComponent implements OnInit {
 //   previousStep(): void {
 //     if (
 //       this.zipChecking ||
-//       this.addressChecking ||
 //       this.emailChecking ||
 //       this.isSubmitting
 //     ) {
@@ -1498,98 +1491,6 @@ export class QoutesComponent implements OnInit {
 //     });
 //   }
 
-//   private verifyAddressAndZip(): Promise<boolean> {
-//     this.addressValidationError = '';
-//     this.addressLocationMessage = '';
-
-//     if (this.addressVerified) {
-//       return Promise.resolve(true);
-//     }
-
-//     const address =
-//       String(
-//         this.quoteForm.get('address')?.value || ''
-//       ).trim();
-
-//     const postcode =
-//       String(
-//         this.quoteForm.get('zip')?.value || ''
-//       ).trim();
-
-//     if (!address || !postcode) {
-//       this.addressValidationError =
-//         'Address and ZIP code are required.';
-
-//       return Promise.resolve(false);
-//     }
-
-//     this.addressChecking = true;
-
-//     return new Promise<boolean>(resolve => {
-//       this.websiteLeadService
-//         .validateAddress(address, postcode)
-//         .subscribe({
-//           next: response => {
-//             this.addressChecking = false;
-
-//             const result =
-//               response?.result || response;
-
-//             const accepted =
-//               result?.isValid === true ||
-//               String(result?.status || '')
-//                 .toLowerCase() === 'valid' ||
-//               String(result?.possibleNextAction || '')
-//                 .toUpperCase() === 'ACCEPT';
-
-//             if (!accepted) {
-//               this.addressVerified = false;
-
-//               this.addressValidationError =
-//                 result?.message ||
-//                 'Address and ZIP code do not match.';
-
-//               resolve(false);
-//               return;
-//             }
-
-//             this.addressVerified = true;
-
-//             this.validatedPostcode =
-//               result?.postalCode || postcode;
-
-//             this.validatedCity =
-//               result?.city || this.validatedCity;
-
-//             this.validatedState =
-//               result?.state || this.validatedState;
-
-//             this.validatedCountry =
-//               result?.country ||
-//               this.validatedCountry ||
-//               'United States';
-
-//             this.addressLocationMessage =
-//               this.buildLocationMessage(result);
-
-//             resolve(true);
-//           },
-
-//           error: error => {
-//             this.addressChecking = false;
-//             this.addressVerified = false;
-
-//             this.addressValidationError =
-//               error?.error?.result?.message ||
-//               error?.error?.message ||
-//               'Address verification failed. Please try again.';
-
-//             resolve(false);
-//           }
-//         });
-//     });
-//   }
-
 //   private verifyEmail(): Promise<boolean> {
 //     this.emailValidationError = '';
 
@@ -1687,7 +1588,6 @@ export class QoutesComponent implements OnInit {
 //     if (
 //       this.isSubmitting ||
 //       this.zipChecking ||
-//       this.addressChecking ||
 //       this.emailChecking
 //     ) {
 //       return;
@@ -1703,24 +1603,6 @@ export class QoutesComponent implements OnInit {
 //       }
 //     }
 
-//     if (!this.addressVerified) {
-//       const addressIsValid =
-//         await this.verifyAddressAndZip();
-
-//       if (!addressIsValid) {
-//         const locationStep =
-//           this.steps.findIndex(
-//             x => x.type === 'location'
-//           );
-
-//         if (locationStep >= 0) {
-//           this.step = locationStep + 1;
-//         }
-
-//         return;
-//       }
-//     }
-
 //     const emailIsValid =
 //       await this.verifyEmail();
 
@@ -1728,12 +1610,15 @@ export class QoutesComponent implements OnInit {
 //       return;
 //     }
 
-//     this.saveLead();
+//     await this.saveLead();
 //   }
 
-//   private saveLead(): void {
+//   private async saveLead(): Promise<void> {
 //     const value =
 //       this.quoteForm.getRawValue();
+
+//     const trustedFormCertificateUrl =
+//       await this.websiteLeadService.waitForTrustedFormCertificateUrl();
 
 //     this.isSubmitting = true;
 //     this.submitError = '';
@@ -1791,7 +1676,12 @@ export class QoutesComponent implements OnInit {
 
 //       isTcpaCompliant: true,
 
-//       ownsProperty: null,
+//       trustedFormCertificateUrl,
+
+//       ownsProperty:
+//         String(value.homeOwner || '')
+//           .trim()
+//           .toLowerCase() === 'yes',
 
 //       additionalDataJson:
 //         JSON.stringify({
@@ -1858,3 +1748,6 @@ export class QoutesComponent implements OnInit {
 //     return Math.abs(hash).toString();
 //   }
 // }
+
+
+ 

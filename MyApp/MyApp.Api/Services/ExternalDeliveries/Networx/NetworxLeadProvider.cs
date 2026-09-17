@@ -194,7 +194,8 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
                 GetString(data, "projectType"));
 
             var roofingType = NormalizeValue(
-                GetString(data, "roofingType"));
+                GetString(data, "roofingType") ??
+                GetString(data, "roofType"));
 
             if (projectType.Contains("replace") &&
                 roofingType.Contains("asphalt"))
@@ -419,23 +420,59 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
         private static Dictionary<string, JsonElement> ParseAdditionalData(
             string? json)
         {
+            var result =
+                new Dictionary<string, JsonElement>(
+                    StringComparer.OrdinalIgnoreCase);
+
             if (string.IsNullOrWhiteSpace(json))
             {
-                return new Dictionary<string, JsonElement>(
-                    StringComparer.OrdinalIgnoreCase);
+                return result;
             }
 
             try
             {
-                return JsonSerializer.Deserialize<
-                    Dictionary<string, JsonElement>>(json)
-                    ?? new Dictionary<string, JsonElement>(
-                        StringComparer.OrdinalIgnoreCase);
+                using var document =
+                    JsonDocument.Parse(json);
+
+                if (document.RootElement.ValueKind !=
+                    JsonValueKind.Object)
+                {
+                    return result;
+                }
+
+                // Preserve root-level fields for historical/flat payloads.
+                foreach (var property in
+                    document.RootElement.EnumerateObject())
+                {
+                    if (!string.Equals(
+                            property.Name,
+                            "answers",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        result[property.Name] =
+                            property.Value.Clone();
+                    }
+                }
+
+                // Current Homeyy forms store project answers inside "answers".
+                if (document.RootElement.TryGetProperty(
+                        "answers",
+                        out var answers) &&
+                    answers.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var property in
+                        answers.EnumerateObject())
+                    {
+                        result[property.Name] =
+                            property.Value.Clone();
+                    }
+                }
+
+                return result;
             }
             catch
             {
-                return new Dictionary<string, JsonElement>(
-                    StringComparer.OrdinalIgnoreCase);
+                return result;
             }
         }
 
@@ -1117,3 +1154,5 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
         }
     }
 }
+
+ 

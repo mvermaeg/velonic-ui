@@ -52,3 +52,96 @@
   </div>
 
 </section>
+
+<section
+  class="thumbtack-section"
+  *ngIf="thumbtackLoading || thumbtackBusinesses.length || thumbtackMessage">
+  <div class="thumbtack-container">
+    <h2>Connect with additional local professionals</h2>
+
+    <p *ngIf="thumbtackLoading">
+      Finding available professionals in your area...
+    </p>
+
+    <p class="thumbtack-message" *ngIf="!thumbtackLoading && thumbtackMessage">
+      {{ thumbtackMessage }}
+    </p>
+
+    <div class="thumbtack-grid" *ngIf="!thumbtackLoading && thumbtackBusinesses.length">
+      <article class="thumbtack-card" *ngFor="let business of thumbtackBusinesses">
+        <h3>{{ business.businessName || 'Local professional' }}</h3>
+        <p *ngIf="business.businessLocation">{{ business.businessLocation }}</p>
+        <p *ngIf="business.rating">
+          {{ business.rating | number:'1.1-1' }} stars
+          <span *ngIf="business.numberOfReviews">
+            ({{ business.numberOfReviews }} reviews)
+          </span>
+        </p>
+        <a
+          class="thumbtack-button"
+          [href]="business.requestFlowUrl"
+          target="_blank"
+          rel="noopener noreferrer">
+          Request a quote
+        </a>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- <section class="quote-section">
+  <div class="card">
+
+    <div class="progress">
+      <div class="bar"></div>
+    </div>
+
+    <div class="content">
+
+      <div class="left">
+        <div class="final">
+          <h2> Thank you for your application!</h2>
+
+          <div class="success-content">
+            <h3>
+              Keep an eye out for NEW phone numbers!
+              It's probably us trying to contact you.
+            </h3>
+
+            <h4>1. One of our local pros</h4>
+            <p>will be in touch with you very soon!</p>
+
+            <p>IMPORTANT: whilst we aim to call you back as soon as possible,we know that this is important to you
+              and
+              if you are only available to discuss right now,please call on +1(561) 665 0332</p>
+
+            <h4>2. Please make sure</h4>
+            <p>you have your phone on you at all times.</p>
+
+            <h4>3. During the call</h4>
+            <p>make sure our pros have accurately confirmed your request.</p>
+
+            <h4>4. Feel free to take your time</h4>
+            <p>and ask as many questions as you like. we're here to serve you!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="hero_popup_image">
+
+          <img src="assets/images/services/image_shape.png" class="radius_shape" alt="" decoding="async">
+
+          <div class="popup_image">
+            <img [src]="imageUrl" [alt]="path_name + ' service'" fetchpriority="high" decoding="async">
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section> -->

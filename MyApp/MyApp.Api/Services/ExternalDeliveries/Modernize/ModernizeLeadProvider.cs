@@ -154,6 +154,43 @@ namespace MyApp.Api.Services.ExternalDeliveries.Modernize
                         "Modernize Post failed.");
                 }
 
+                var postStatus =
+      ExtractString(
+          postResponseJson,
+          "status");
+
+                var postMessage =
+                    ExtractString(
+                        postResponseJson,
+                        "message");
+
+                if (string.Equals(
+                        postStatus,
+                        "rejected",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(
+                        postStatus,
+                        "denied",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(
+                        postStatus,
+                        "failed",
+                        StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(
+                        postStatus,
+                        "error",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return ExternalLeadDeliveryResult.Failed(
+                        false,
+                        (int)postResponse.StatusCode,
+                        postJson,
+                        postResponseJson,
+                        string.IsNullOrWhiteSpace(postMessage)
+                            ? $"Modernize rejected the lead. Status: {postStatus}."
+                            : postMessage);
+                }
+
                 var reference =
                     ExtractString(
                         postResponseJson,
