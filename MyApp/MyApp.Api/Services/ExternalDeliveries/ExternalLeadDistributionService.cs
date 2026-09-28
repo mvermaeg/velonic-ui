@@ -2,6 +2,8 @@
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using MyApp.Api.Services.Routing;
 
 namespace MyApp.Api.Services.ExternalDeliveries
 {
@@ -9,12 +11,21 @@ namespace MyApp.Api.Services.ExternalDeliveries
     {
         private readonly MyAppDbContext _db;
         private readonly ILogger<ExternalLeadDistributionService> _logger;
+        private readonly ExclusiveLeadRoutingService _exclusiveRouting;
+        private readonly ExclusiveRoutingOptions _routingOptions;
+        private readonly ExternalLeadAuctionOptions _auctionOptions;
         public ExternalLeadDistributionService(
             MyAppDbContext db,
-            ILogger<ExternalLeadDistributionService> logger)
+            ILogger<ExternalLeadDistributionService> logger,
+            ExclusiveLeadRoutingService exclusiveRouting,
+            IOptions<ExclusiveRoutingOptions> routingOptions,
+            IOptions<ExternalLeadAuctionOptions> auctionOptions)
         {
             _db = db;
             _logger = logger;
+            _exclusiveRouting = exclusiveRouting;
+            _routingOptions = routingOptions.Value;
+            _auctionOptions = auctionOptions.Value;
         }
 
         // ============================================================
@@ -68,7 +79,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
             }
 
             var verticalCode =
-                ResolveVertical(lead);
+                ResolveVertical(lead, _auctionOptions.Enabled);
 
             if (verticalCode == null)
             {
@@ -76,6 +87,27 @@ namespace MyApp.Api.Services.ExternalDeliveries
                     "External delivery skipped for LeadId {LeadId}: unsupported vertical.",
                     leadId);
 
+                return;
+            }
+
+            if (RoutingActivation.Mode(_auctionOptions.Enabled, _routingOptions.Enabled) == "Auction")
+            {
+                await using var ownership = await LeadExecutionLock.AcquireAsync(_db, lead.Id, cancellationToken);
+                if (ownership == null) return;
+                if (!RoutingActivation.CanCreateAuction(
+                    await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == lead.Id, cancellationToken),
+                    await _db.ExternalLeadDeliveries.AnyAsync(x => x.LeadId == lead.Id, cancellationToken))) return;
+                _db.LeadRoutingRuns.Add(new LeadRoutingRun { LeadId = lead.Id, VerticalCode = verticalCode,
+                    RoutingMode = "Auction", Status = "Pending", CreatedOn = DateTime.UtcNow, UpdatedOn = DateTime.UtcNow });
+                await _db.SaveChangesAsync(cancellationToken);
+                return;
+            }
+            if (await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == lead.Id && x.RoutingMode == "Auction", cancellationToken)) return;
+            // Feature-flag cutover: disabled preserves the original queue exactly.
+            // Enabled hands this lead only to the exclusive router.
+            if (_routingOptions.Enabled)
+            {
+                await _exclusiveRouting.QueueAsync(lead, verticalCode, cancellationToken);
                 return;
             }
 
@@ -96,6 +128,11 @@ namespace MyApp.Api.Services.ExternalDeliveries
             long leadId,
             CancellationToken cancellationToken = default)
         {
+            if (_auctionOptions.Enabled || await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == leadId && x.RoutingMode == "Auction", cancellationToken))
+            {
+                await QueueForLeadAsync(leadId, cancellationToken);
+                return;
+            }
             var lead = await GetLeadAsync(
                 leadId,
                 cancellationToken);
@@ -402,7 +439,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
         // ============================================================
 
         private static string? ResolveVertical(
-            Lead lead)
+            Lead lead, bool includeGutters = false)
         {
             /*
              * HomeyyWebsiteLeads intentionally reuses LeadTypeId 2 for
@@ -416,7 +453,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
 
             var payloadVertical =
                 NormalizeSupportedVertical(
-                    payloadService);
+                    payloadService, includeGutters);
 
             if (payloadVertical != null)
                 return payloadVertical;
@@ -432,7 +469,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
             foreach (var item in possibleValues)
             {
                 var vertical =
-                    NormalizeSupportedVertical(item);
+                    NormalizeSupportedVertical(item, includeGutters);
 
                 if (vertical != null)
                     return vertical;
@@ -499,7 +536,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
         }
 
         private static string? NormalizeSupportedVertical(
-            string? value)
+            string? value, bool includeGutters = false)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;
@@ -514,6 +551,9 @@ namespace MyApp.Api.Services.ExternalDeliveries
 
             if (normalized.Contains("roof"))
                 return "Roofing";
+
+            if (includeGutters && normalized.Contains("gutter"))
+                return "Gutters";
 
             if (normalized.Contains("window"))
                 return "Windows";
@@ -542,6 +582,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
 //using Microsoft.EntityFrameworkCore;
 //using MyApp.Api.Data;
 //using MyApp.Api.Data.Entities;
+//using System.Text.Json;
 
 //namespace MyApp.Api.Services.ExternalDeliveries
 //{
@@ -945,23 +986,48 @@ namespace MyApp.Api.Services.ExternalDeliveries
 //            Lead lead)
 //        {
 //            /*
-//             * Prefer LeadTypeId because it is deterministic.
-//             *
-//             * Existing Homeyy mapping:
-//             *
-//             * 1 = Roofing
-//             * 2 = Windows
-//             * 4 = HVAC
-//             * 5 = Bathroom
+//             * HomeyyWebsiteLeads intentionally reuses LeadTypeId 2 for
+//             * several services. Therefore serviceCode/service from the
+//             * saved website payload must be checked before LeadTypeId.
+//             */
+
+//            var payloadService =
+//                ReadServiceFromAdditionalData(
+//                    lead.AdditionalDataJson);
+
+//            var payloadVertical =
+//                NormalizeSupportedVertical(
+//                    payloadService);
+
+//            if (payloadVertical != null)
+//                return payloadVertical;
+
+//            var possibleValues =
+//                new[]
+//                {
+//                    lead.CampaignName,
+//                    lead.PageName,
+//                    lead.LeadType?.Name
+//                };
+
+//            foreach (var item in possibleValues)
+//            {
+//                var vertical =
+//                    NormalizeSupportedVertical(item);
+
+//                if (vertical != null)
+//                    return vertical;
+//            }
+
+//            /*
+//             * Legacy fallback only. LeadTypeId 2 is deliberately not
+//             * mapped because it is shared by multiple website services.
 //             */
 
 //            switch (lead.LeadTypeId)
 //            {
 //                case 1:
 //                    return "Roofing";
-
-//                case 2:
-//                    return "Windows";
 
 //                case 4:
 //                    return "HVAC";
@@ -970,56 +1036,84 @@ namespace MyApp.Api.Services.ExternalDeliveries
 //                    return "Bathroom";
 //            }
 
-//            /*
-//             * Fallback for historical leads where LeadTypeId
-//             * may not have been populated.
-//             */
+//            return null;
+//        }
 
-//            var possibleValues =
-//                new[]
-//                {
-//                    lead.LeadType?.Name,
-//                    lead.CampaignName,
-//                    lead.PageName
-//                };
+//        private static string? ReadServiceFromAdditionalData(
+//            string? additionalDataJson)
+//        {
+//            if (string.IsNullOrWhiteSpace(additionalDataJson))
+//                return null;
 
-//            foreach (var item in possibleValues)
+//            try
 //            {
-//                if (string.IsNullOrWhiteSpace(item))
-//                    continue;
+//                using var document =
+//                    JsonDocument.Parse(additionalDataJson);
 
-//                var normalized =
-//                    item
-//                        .Trim()
-//                        .Replace(" ", string.Empty)
-//                        .Replace("-", string.Empty)
-//                        .Replace("_", string.Empty)
-//                        .ToLowerInvariant();
+//                var root = document.RootElement;
 
-//                if (normalized.Contains("roof"))
-//                    return "Roofing";
+//                if (root.ValueKind != JsonValueKind.Object)
+//                    return null;
 
-//                if (normalized.Contains("window"))
-//                    return "Windows";
-
-//                if (normalized.Contains("bath"))
-//                    return "Bathroom";
-
-//                if (
-//                    normalized.Contains("hvac") ||
-//                    normalized.Contains("heating") ||
-//                    normalized.Contains("cooling") ||
-//                    normalized.Contains("furnace") ||
-//                    normalized.Contains("airconditioning")
-//                )
+//                if (root.TryGetProperty(
+//                        "serviceCode",
+//                        out var serviceCode) &&
+//                    serviceCode.ValueKind == JsonValueKind.String)
 //                {
-//                    return "HVAC";
+//                    return serviceCode.GetString();
 //                }
+
+//                if (root.TryGetProperty(
+//                        "service",
+//                        out var service) &&
+//                    service.ValueKind == JsonValueKind.String)
+//                {
+//                    return service.GetString();
+//                }
+//            }
+//            catch (JsonException)
+//            {
+//                // Historical malformed JSON falls through to other fields.
+//            }
+
+//            return null;
+//        }
+
+//        private static string? NormalizeSupportedVertical(
+//            string? value)
+//        {
+//            if (string.IsNullOrWhiteSpace(value))
+//                return null;
+
+//            var normalized =
+//                value
+//                    .Trim()
+//                    .Replace(" ", string.Empty)
+//                    .Replace("-", string.Empty)
+//                    .Replace("_", string.Empty)
+//                    .ToLowerInvariant();
+
+//            if (normalized.Contains("roof"))
+//                return "Roofing";
+
+//            if (normalized.Contains("window"))
+//                return "Windows";
+
+//            if (normalized.Contains("bath"))
+//                return "Bathroom";
+
+//            if (
+//                normalized.Contains("hvac") ||
+//                normalized.Contains("heating") ||
+//                normalized.Contains("cooling") ||
+//                normalized.Contains("furnace") ||
+//                normalized.Contains("airconditioning")
+//            )
+//            {
+//                return "HVAC";
 //            }
 
 //            return null;
 //        }
 //    }
 //}
-
-

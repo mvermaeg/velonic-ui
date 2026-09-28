@@ -6,24 +6,27 @@ using MyApp.Api.Data.Entities;
 
 namespace MyApp.Api.Services.ExternalDeliveries.Mili
 {
-    public sealed class MiliLeadProvider
+    public sealed partial class MiliLeadProvider
         : IExternalLeadProvider
     {
         private readonly HttpClient _httpClient;
         private readonly MiliOptions _options;
         private readonly MiliRateLimiter _rateLimiter;
         private readonly ILogger<MiliLeadProvider> _logger;
+        private readonly TimeProvider _clock;
 
         public MiliLeadProvider(
             HttpClient httpClient,
             IOptions<MiliOptions> options,
             MiliRateLimiter rateLimiter,
-            ILogger<MiliLeadProvider> logger)
+            ILogger<MiliLeadProvider> logger,
+            TimeProvider? clock = null)
         {
             _httpClient = httpClient;
             _options = options.Value;
             _rateLimiter = rateLimiter;
             _logger = logger;
+            _clock = clock ?? TimeProvider.System;
         }
 
         public string PlatformCode => "Mili";
@@ -721,7 +724,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
          * =====================================
          */
 
-        private static bool IsWithinMiliSchedule(
+        private bool IsWithinMiliSchedule(
             out string? reason)
         {
             reason = null;
@@ -747,7 +750,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
 
                 var nowPacific =
                     TimeZoneInfo.ConvertTime(
-                        DateTimeOffset.UtcNow,
+                        _clock.GetUtcNow(),
                         pacific);
 
                 var current =

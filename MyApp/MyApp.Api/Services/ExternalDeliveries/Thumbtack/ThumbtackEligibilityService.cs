@@ -44,6 +44,10 @@ namespace MyApp.Api.Services.ExternalDeliveries.Thumbtack
             if (vertical == null || !vertical.Enabled)
                 return (false, $"Thumbtack vertical {verticalCode} is disabled.");
 
+            if (!await MyApp.Api.Services.Thumbtack.ThumbtackCoverageLookup.IsCoveredAsync(
+                    _db, verticalCode, lead.Postcode, cancellationToken))
+                return (false, "Thumbtack has no enabled coverage for this service and ZIP code.");
+
             var text = string.Join(" ",
                 lead.CampaignName,
                 lead.PageName,
@@ -72,6 +76,8 @@ namespace MyApp.Api.Services.ExternalDeliveries.Thumbtack
                         x.CreatedOn >= startOfWeek,
                     cancellationToken);
 
+            count += await _db.LeadRoutingRuns.AsNoTracking().CountAsync(x => x.RoutingMode == "Auction" &&
+                x.VerticalCode == verticalCode && x.ThumbtackSearchStartedOn >= startOfWeek, cancellationToken);
             if (count >= _options.WeeklyCapPerVertical)
             {
                 return (

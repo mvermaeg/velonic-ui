@@ -143,5 +143,9 @@ public partial class Lead
 
     public virtual ICollection<ExternalLeadDelivery> ExternalLeadDeliveries { get; set; } = new List<ExternalLeadDelivery>();
 
+    public virtual ICollection<LeadRoutingAttempt> LeadRoutingAttempts { get; set; } = new List<LeadRoutingAttempt>();
+
+    public virtual LeadRoutingRun? LeadRoutingRun { get; set; }
+
     public virtual LeadType? LeadType { get; set; }
 }

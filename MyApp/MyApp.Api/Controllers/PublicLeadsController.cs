@@ -659,8 +659,33 @@ namespace MyApp.Api.Controllers
                 //        .CreateDeliveryFromBiddingResultAsync(winningBid.Id);
                 //}
 
+                //if (!lead.IsTest)
+                //{
+                //    await _leadBiddingService.RunForLeadAsync(lead.Id);
+
+                //    await _externalLeadDistributionService
+                //        .QueueForLeadAsync(lead.Id);
+
+                //    var winningBid = await _db.LeadBiddingResults
+                //        .Where(x =>
+                //            x.LeadId == lead.Id &&
+                //            x.IsWon &&
+                //            !x.IsSold)
+                //        .OrderByDescending(x => x.BidAmount)
+                //        .FirstOrDefaultAsync();
+
+                //    if (winningBid != null)
+                //    {
+                //        await _leadDeliveryService
+                //            .CreateDeliveryFromBiddingResultAsync(
+                //                winningBid.Id);
+                //    }
+                //}
+
+
                 if (!lead.IsTest)
                 {
+                    // Preserve the existing production process.
                     await _leadBiddingService.RunForLeadAsync(lead.Id);
 
                     await _externalLeadDistributionService
@@ -681,6 +706,15 @@ namespace MyApp.Api.Controllers
                                 winningBid.Id);
                     }
                 }
+                else if (_configuration.GetValue<bool>("LeadRouting:Enabled") || _configuration.GetValue<bool>("ExternalLeadAuction:Enabled"))
+                {
+                    // Test leads enter only the new exclusive router.
+                    // Existing internal bidding/delivery remains untouched.
+                    await _externalLeadDistributionService
+                        .QueueForLeadAsync(lead.Id);
+                }
+
+
 
                 return Ok(new
                 {

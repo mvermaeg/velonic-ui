@@ -7,10 +7,6 @@ namespace MyApp.Api.Data;
 
 public partial class MyAppDbContext : DbContext
 {
-    public MyAppDbContext()
-    {
-    }
-
     public MyAppDbContext(DbContextOptions<MyAppDbContext> options)
         : base(options)
     {
@@ -64,6 +60,12 @@ public partial class MyAppDbContext : DbContext
 
     public virtual DbSet<LeadReturn> LeadReturns { get; set; }
 
+    public virtual DbSet<LeadRoutingAttempt> LeadRoutingAttempts { get; set; }
+
+    public virtual DbSet<LeadRoutingRule> LeadRoutingRules { get; set; }
+
+    public virtual DbSet<LeadRoutingRun> LeadRoutingRuns { get; set; }
+
     public virtual DbSet<LeadSource> LeadSources { get; set; }
 
     public virtual DbSet<LeadStatusHistory> LeadStatusHistories { get; set; }
@@ -98,7 +100,6 @@ public partial class MyAppDbContext : DbContext
 
     public virtual DbSet<WebsiteTheme> WebsiteThemes { get; set; }
 
-    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Affiliate>(entity =>
@@ -549,6 +550,104 @@ public partial class MyAppDbContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
             entity.Property(e => e.ReviewedByUserId).HasMaxLength(450);
+        });
+
+        modelBuilder.Entity<LeadRoutingAttempt>(entity =>
+        {
+            entity.ToTable("LeadRoutingAttempts", "VelonicDBUser");
+
+            entity.HasIndex(e => new { e.LeadRoutingRunId, e.CreatedOn }, "IX_LeadRoutingAttempts_Run");
+
+            entity.Property(e => e.BidAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedOn).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.DestinationType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+            entity.Property(e => e.ExternalReferenceId)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.PlatformCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Lead).WithMany(p => p.LeadRoutingAttempts)
+                .HasForeignKey(d => d.LeadId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeadRoutingAttempts_Lead");
+
+            entity.HasOne(d => d.LeadRoutingRule).WithMany(p => p.LeadRoutingAttempts)
+                .HasForeignKey(d => d.LeadRoutingRuleId)
+                .HasConstraintName("FK_LeadRoutingAttempts_Rule");
+
+            entity.HasOne(d => d.LeadRoutingRun).WithMany(p => p.LeadRoutingAttempts)
+                .HasForeignKey(d => d.LeadRoutingRunId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeadRoutingAttempts_Run");
+        });
+
+        modelBuilder.Entity<LeadRoutingRule>(entity =>
+        {
+            entity.ToTable("LeadRoutingRules", "VelonicDBUser");
+
+            entity.HasIndex(e => new { e.IsActive, e.VerticalCode, e.State, e.Postcode, e.BidAmount, e.Priority }, "IX_LeadRoutingRules_Match").IsDescending(false, false, false, false, true, false);
+
+            entity.Property(e => e.BidAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedOn).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.DestinationType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.PlatformCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Postcode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Priority).HasDefaultValue(100);
+            entity.Property(e => e.State)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.VerticalCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<LeadRoutingRun>(entity =>
+        {
+            entity.ToTable("LeadRoutingRuns", "VelonicDBUser");
+
+            entity.HasIndex(e => new { e.Status, e.NextAttemptOn }, "IX_LeadRoutingRuns_Work");
+
+            entity.HasIndex(e => e.LeadId, "UX_LeadRoutingRuns_LeadId").IsUnique();
+
+            entity.Property(e => e.CreatedOn).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.ErrorMessage).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.VerticalCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.WinnerPlatformCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.WinnerType)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.WinningBidAmount).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.Lead).WithOne(p => p.LeadRoutingRun)
+                .HasForeignKey<LeadRoutingRun>(d => d.LeadId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeadRoutingRuns_Leads");
         });
 
         modelBuilder.Entity<LeadSource>(entity =>

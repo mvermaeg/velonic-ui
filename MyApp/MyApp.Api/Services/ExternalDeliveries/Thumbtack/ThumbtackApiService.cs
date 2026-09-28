@@ -115,11 +115,11 @@ namespace MyApp.Api.Services.ExternalDeliveries.Thumbtack
                 _logger.LogError(
                     "Thumbtack OAuth failed. HTTP={StatusCode}, Response={Response}",
                     (int)response.StatusCode,
-                    responseText);
+                    "[REDACTED]");
 
                 throw new InvalidOperationException(
                     $"Thumbtack OAuth token request failed. " +
-                    $"HTTP {(int)response.StatusCode}: {responseText}");
+                    $"HTTP {(int)response.StatusCode}; response redacted.");
             }
 
             ThumbtackTokenResponse? tokenResponse;
@@ -276,13 +276,12 @@ namespace MyApp.Api.Services.ExternalDeliveries.Thumbtack
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError(
-                    "Thumbtack Business Search failed. HTTP={StatusCode}, Response={Response}",
-                    (int)response.StatusCode,
-                    responseText);
+                    "Thumbtack Business Search failed. HTTP={StatusCode}; response redacted.",
+                    (int)response.StatusCode);
 
                 throw new InvalidOperationException(
                     $"Thumbtack businesses search failed. " +
-                    $"HTTP {(int)response.StatusCode}: {responseText}");
+                    $"HTTP {(int)response.StatusCode}; response redacted.");
             }
 
             ThumbtackBusinessSearchResponse? result;

@@ -10,21 +10,26 @@ namespace MyApp.Api.Services.Thumbtack
         private readonly MyAppDbContext _db;
         private readonly ThumbtackOptions _options;
         private readonly ThumbtackEligibilityService _eligibility;
+        private readonly bool _auctionEnabled;
 
         public ThumbtackService(
             MyAppDbContext db,
             IOptions<ThumbtackOptions> options,
-            ThumbtackEligibilityService eligibility)
+            ThumbtackEligibilityService eligibility,
+            IOptions<MyApp.Api.Services.Routing.ExternalLeadAuctionOptions> auction)
         {
             _db = db;
             _options = options.Value;
             _eligibility = eligibility;
+            _auctionEnabled = auction.Value.Enabled;
         }
 
         public async Task<object> CreateSessionAsync(
             long leadId,
             CancellationToken cancellationToken = default)
         {
+            if (_auctionEnabled || await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == leadId && x.RoutingMode == "Auction", cancellationToken))
+                throw new InvalidOperationException("This lead is controlled by the external auction. Use its saved Thumbtack recommendations.");
             var lead =
                 await _db.Leads
                     .AsNoTracking()
@@ -88,7 +93,7 @@ namespace MyApp.Api.Services.Thumbtack
                     CategoryCode = categoryCode,
                     CategoryPk = category.CategoryPk,
 
-                    ZipCode = lead.Postcode,
+                    ZipCode = ThumbtackCoverageLookup.NormalizeZip(lead.Postcode),
 
                     Status = "Created",
 

@@ -6,7 +6,7 @@ using MyApp.Api.Data.Entities;
 
 namespace MyApp.Api.Services.ExternalDeliveries.InsuranceTales
 {
-    public sealed class InsuranceTalesLeadProvider
+    public sealed partial class InsuranceTalesLeadProvider
         : IExternalLeadProvider
     {
         private readonly HttpClient _httpClient;

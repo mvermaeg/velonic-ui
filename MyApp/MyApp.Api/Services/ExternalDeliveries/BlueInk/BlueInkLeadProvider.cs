@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -7,7 +7,7 @@ using MyApp.Api.Data.Entities;
 
 namespace MyApp.Api.Services.ExternalDeliveries.BlueInk
 {
-    public class BlueInkLeadProvider : IExternalLeadProvider
+    public partial class BlueInkLeadProvider : IExternalLeadProvider
     {
         public const string ProviderCode = "BLUEINK";
 

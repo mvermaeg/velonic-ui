@@ -44,6 +44,9 @@ namespace MyApp.Api.Services.Thumbtack
                 return (false,
                     $"Thumbtack category {categoryCode} is not enabled.");
 
+            if (!await ThumbtackCoverageLookup.IsCoveredAsync(_db, categoryCode, lead.Postcode, cancellationToken))
+                return (false, "Thumbtack has no enabled coverage for this service and ZIP code.");
+
             var text =
                 string.Join(
                     " ",

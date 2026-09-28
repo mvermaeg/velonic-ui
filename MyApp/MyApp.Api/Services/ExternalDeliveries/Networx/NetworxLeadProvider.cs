@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
@@ -9,7 +9,7 @@ using System.Xml.Linq;
 
 namespace MyApp.Api.Services.ExternalDeliveries.Networx
 {
-    public class NetworxLeadProvider : IExternalLeadProvider
+    public partial class NetworxLeadProvider : IExternalLeadProvider
     {
         public const string ProviderCode = "NETWORX";
 
@@ -22,12 +22,14 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
             HttpClient httpClient,
             MyAppDbContext db,
             IOptions<NetworxOptions> options,
-            ILogger<NetworxLeadProvider> logger)
+            ILogger<NetworxLeadProvider> logger,
+            INetworxAuctionTaskLookup? auctionTasks = null)
         {
             _httpClient = httpClient;
             _db = db;
             _options = options.Value;
             _logger = logger;
+            _auctionTasks = auctionTasks ?? new SqlNetworxAuctionTaskLookup(db);
         }
 
         public string PlatformCode => ProviderCode;
@@ -1155,4 +1157,4 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
     }
 }
 
- 
+

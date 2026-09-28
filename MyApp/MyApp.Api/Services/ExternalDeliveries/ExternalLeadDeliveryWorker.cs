@@ -51,6 +51,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
             CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
+            if (scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MyApp.Api.Services.Routing.ExternalLeadAuctionOptions>>().Value.Enabled) return;
 
             var db = scope.ServiceProvider
                 .GetRequiredService<MyAppDbContext>();
@@ -65,6 +66,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
             var staleProcessingTime = now.AddMinutes(-10);
 
             var deliveries = await db.ExternalLeadDeliveries
+                .Where(x => !db.LeadRoutingRuns.Any(r => r.LeadId == x.LeadId))
                 .Include(x => x.Lead)
                     .ThenInclude(x => x.LeadType)
                 .Where(x =>
@@ -104,6 +106,10 @@ namespace MyApp.Api.Services.ExternalDeliveries
             Data.Entities.ExternalLeadDelivery delivery,
             CancellationToken cancellationToken)
         {
+            await using var ownership = await MyApp.Api.Services.Routing.LeadExecutionLock.AcquireAsync(db, delivery.LeadId, cancellationToken);
+            if (ownership == null) return;
+            await db.Entry(delivery).ReloadAsync(cancellationToken);
+            if (delivery.Status == "Delivered" || await db.LeadRoutingRuns.AnyAsync(x => x.LeadId == delivery.LeadId, cancellationToken)) return;
             if (!providers.TryGetValue(
                     delivery.PlatformCode,
                     out var provider))
