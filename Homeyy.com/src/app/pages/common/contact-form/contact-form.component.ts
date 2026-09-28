@@ -281,6 +281,8 @@ export class ContactFormComponent
   private async saveContactLead(
     value: any
   ): Promise<void> {
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
     const serviceCode =
       this.toServiceCode(
         value.Service
@@ -289,7 +291,6 @@ export class ContactFormComponent
     const trustedFormCertificateUrl =
       await this.websiteLeadService.waitForTrustedFormCertificateUrl();
 
-    this.isSubmitting = true;
 
     this.websiteLeadService
       .createLead({

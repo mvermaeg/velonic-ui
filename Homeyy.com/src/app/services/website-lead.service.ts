@@ -49,6 +49,7 @@ export interface ThumbtackBusiness {
 export interface ThumbtackBusinessResponse {
   success: boolean;
   available: boolean;
+  routingPending?: boolean;
   message?: string | null;
   environment?: string | null;
   service?: string | null;

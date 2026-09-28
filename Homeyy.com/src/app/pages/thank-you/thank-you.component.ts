@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject, timer } from 'rxjs';
+import { exhaustMap, finalize, takeUntil, takeWhile, timeout } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { FormsService } from 'src/app/services/forms.service';
 import {
@@ -11,7 +13,8 @@ import {
   templateUrl: './thank-you.component.html',
   styleUrls: ['./thank-you.component.scss']
 })
-export class ThankYouComponent implements OnInit {
+export class ThankYouComponent implements OnInit, OnDestroy {
+  private readonly destroyed = new Subject<void>();
 
   path_name = '';
   imageUrl = '';
@@ -31,6 +34,11 @@ export class ThankYouComponent implements OnInit {
     this.loadThumbtackBusinesses();
   }
 
+  ngOnDestroy(): void {
+    this.destroyed.next();
+    this.destroyed.complete();
+  }
+
   private loadThumbtackBusinesses(): void {
     const pending = this.websiteLeadService.getPendingThumbtackLead();
 
@@ -43,18 +51,35 @@ export class ThankYouComponent implements OnInit {
 
     this.thumbtackLoading = true;
 
-    this.websiteLeadService
-      .getThumbtackBusinesses(pending.leadId, pending.leadUuid)
+    // Observe the API's decision; never start another lead or select a provider here.
+    timer(0, 3000).pipe(
+      exhaustMap(() => this.websiteLeadService
+        .getThumbtackBusinesses(pending.leadId, pending.leadUuid)
+        .pipe(timeout(10000))),
+      takeWhile(response => response.routingPending === true, true),
+      takeUntil(timer(120000)),
+      takeUntil(this.destroyed),
+      finalize(() => {
+        this.thumbtackLoading = false;
+        if (!this.thumbtackBusinesses.length && !this.thumbtackMessage) {
+          this.thumbtackMessage = 'Your request was submitted successfully. Matching is still in progress.';
+        }
+      })
+    )
       .subscribe({
         next: response => {
+          if (response.success === false) {
+            this.thumbtackMessage = 'Your request was submitted successfully. Thumbtack recommendations are temporarily unavailable.';
+            return;
+          }
+          if (response.routingPending) return;
           this.thumbtackLoading = false;
           this.thumbtackBusinesses = response.available
             ? (response.businesses || []).filter(x => !!x.requestFlowUrl)
             : [];
 
-          if (!response.available) {
+          if (!response.available || !this.thumbtackBusinesses.length) {
             this.thumbtackMessage =
-              response.message ||
               'No additional Thumbtack professionals are available for this request.';
           }
         },

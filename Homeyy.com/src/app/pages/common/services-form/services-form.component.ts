@@ -629,6 +629,8 @@ checkInitialZipCode(): Promise<boolean> {
   }
 
   private async saveLead(): Promise<void> {
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
     const value =
       this.form.getRawValue();
 
@@ -643,7 +645,6 @@ checkInitialZipCode(): Promise<boolean> {
           'Roofing Installation'
       };
 
-    this.isSubmitting = true;
 
     const trustedFormCertificateUrl =
       await this.websiteLeadService.waitForTrustedFormCertificateUrl();

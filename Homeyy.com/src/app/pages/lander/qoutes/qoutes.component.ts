@@ -734,13 +734,14 @@ export class QoutesComponent implements OnInit {
   }
 
   private async saveLead(): Promise<void> {
+    if (this.isSubmitting) return;
+    this.isSubmitting = true;
     const value =
       this.quoteForm.getRawValue();
 
     const trustedFormCertificateUrl =
       await this.websiteLeadService.waitForTrustedFormCertificateUrl();
 
-    this.isSubmitting = true;
     this.submitError = '';
 
     this.websiteLeadService.createLead({
