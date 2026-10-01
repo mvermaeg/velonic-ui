@@ -44,7 +44,7 @@ public sealed record AuctionFacts(long LeadId, int? LeadTypeId, string Vertical,
                     if (Keys.Contains(p.Name) && (p.Value.ValueKind is JsonValueKind.True or JsonValueKind.False ||
                         p.Value.ValueKind == JsonValueKind.Number && p.Value.TryGetInt32(out var n) && n is >= 0 and <= 10000 ||
                         p.Value.ValueKind == JsonValueKind.String && p.Value.GetString() is { Length: <= 60 } value &&
-                        value.Count(char.IsDigit) <= 3 && value.All(c => char.IsLetterOrDigit(c) || c is ' ' or '_' or '-' or '/') &&
+                        value.Count(char.IsDigit) <= 3 && value.All(c => char.IsLetterOrDigit(c) || c is ' ' or '_' or '-' or '/' or '+') &&
                         !new[] { lead.FullName, lead.Email, lead.Phone, lead.Address }.Any(s => !string.IsNullOrWhiteSpace(s) && value.Contains(s, StringComparison.OrdinalIgnoreCase))))
                         safe[p.Name] = p.Value.Clone();
         }

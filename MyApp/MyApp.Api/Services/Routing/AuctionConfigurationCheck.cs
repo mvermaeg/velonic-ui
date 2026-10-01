@@ -18,7 +18,7 @@ public sealed class AuctionConfigurationCheck(IOptions<ExternalLeadAuctionOption
             if (verticals.Length == 0)
                 logger.LogWarning("Auction provider {Provider} is unavailable: disabled, unsupported verticals, missing credentials, invalid HTTPS endpoints or split ping/post mode disabled. Check configuration; values redacted.", provider.PlatformCode);
         }
-        logger.LogWarning("Modernize is excluded from auctions: documented monetary bid and offer expiry contract missing. Unknown winner post outcomes require provider confirmation; automatic replay is disabled.");
+        logger.LogInformation("Modernize uses the documented price/pingToken contract. Production activation requires provider staging approval. Unknown winner post outcomes require reconciliation; automatic replay is disabled.");
         if (networx.Value.Enabled)
         {
             var n = networx.Value;
@@ -26,7 +26,7 @@ public sealed class AuctionConfigurationCheck(IOptions<ExternalLeadAuctionOption
                 !Uri.TryCreate(n.BaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != "https")
                 throw new OptionsValidationException("Networx", typeof(NetworxOptions),
                     ["Auction Networx requires ping/post mode, credentials and an absolute HTTPS BaseUrl; values redacted."]);
-            logger.LogWarning("NETWORX readiness requires 15 documented task options across Roofing, Windows, HVAC and Bathroom. Check /api/lead-routing/networx-readiness for exact missing/ambiguous mappings. Gutters is unsupported. Each lead is checked before HTTP; startup does not assume database mappings exist.");
+            logger.LogWarning("NETWORX readiness requires approved provider task IDs for each project option. Check /api/lead-routing/networx-readiness for missing/ambiguous mappings, including roofing operation and material. Gutters is unsupported. Each lead is checked before HTTP; startup does not assume database mappings exist.");
         }
         return Task.CompletedTask;
     }

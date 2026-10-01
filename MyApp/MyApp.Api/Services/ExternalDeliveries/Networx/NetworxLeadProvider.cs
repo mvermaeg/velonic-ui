@@ -199,13 +199,15 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
                 GetString(data, "roofingType") ??
                 GetString(data, "roofType"));
 
-            if (projectType.Contains("replace") &&
-                roofingType.Contains("asphalt"))
-            {
-                return "ROOF_REPLACE_ASPHALT";
-            }
-
-            return null;
+            // Classify the consumer's actual project. Provider IDs still come only
+            // from the approved task mapping table, never from a material default.
+            var operation = projectType.Contains("replace") ? "REPLACE" :
+                projectType.Contains("repair") ? "REPAIR" : projectType.Contains("install") ? "INSTALL" : null;
+            var material = roofingType.Contains("asphalt") ? "ASPHALT" :
+                roofingType.Contains("metal") ? "METAL" : roofingType.Contains("tile") ? "TILE" :
+                roofingType.Contains("cedar") ? "CEDAR_SHAKE" : roofingType.Contains("tar") ? "TAR" :
+                roofingType.Contains("slate") ? "NATURAL_SLATE" : null;
+            return operation == null || material == null ? null : $"ROOF_{operation}_{material}";
         }
 
         private static string? ResolveWindowsOption(
@@ -1156,5 +1158,4 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
         }
     }
 }
-
 

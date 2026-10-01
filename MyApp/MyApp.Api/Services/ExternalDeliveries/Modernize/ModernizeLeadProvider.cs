@@ -5,7 +5,7 @@ using MyApp.Api.Data.Entities;
 
 namespace MyApp.Api.Services.ExternalDeliveries.Modernize
 {
-    public sealed class ModernizeLeadProvider
+    public sealed partial class ModernizeLeadProvider
         : IExternalLeadProvider
     {
         private readonly HttpClient _httpClient;

@@ -14,7 +14,14 @@ fails closed before either remote route. Legacy `FallThrough` configuration cann
 override this policy.
 
 Only a confirmed absent coverage pair enters the existing auction (90 seconds by
-default, configurable). Winner locking, contact-free pings, winner-only posting
+default, configurable). External rule ZIP/state filters are ignored both when
+selecting providers and when locking a winner. Providers receive the actual ZIP
+in the ping and decide their own coverage. All enabled auction adapters are
+considered: if an adapter has no rule for the vertical, a global active rule is
+created transactionally. Explicit disabled rules are not overridden. Existing
+caps and effective dates remain enforced. Default rules have no configured cap;
+provider-specific quotas still apply. Internal-client routing is unchanged.
+Winner locking, contact-free pings, winner-only posting
 and durable retry rules remain unchanged. Terminal Thumbtack failures are not
 automatically retried: administrators must reconcile an ambiguous remote outcome
 before considering a controlled retry. Do not reset ownership to route elsewhere.
@@ -44,3 +51,26 @@ and `npm run build -- --configuration production`.
 
 Public UI reads the existing saved-result endpoint using lead ID and UUID. It
 does not select providers, start auctions, or resubmit leads while polling.
+
+## Provider completion
+
+Modernize now implements the split auction interface using its official
+[Ping Post v3 contract](https://apidoc.modernize.com/publishers/ping-post.html):
+successful pings provide a USD `price` and `pingToken`, valid for up to 30 minutes.
+Posts require explicit success and a lead ID. Unknown post outcomes require
+reconciliation; no automatic replay or next-buyer fallback is permitted. The
+encrypted ping context retains the service/material and environment for the
+winner post. Contact and compliance data are absent from pings. Existing
+credentials and staging/production settings are unchanged. Modernize requires
+staging verification and account approval before production activation.
+
+NETWORX classifies all 18 combinations of the public Roofing form's three
+operations and six materials. The task ID must still be an approved mapping in
+`ExternalPlatformTaskMappings`, scoped to the incoming `LeadTypeId`. The readiness
+endpoint lists missing mappings. Lead 129 is metal replacement and requires
+`ROOF_REPLACE_METAL` for `LeadTypeId=1`. The existing `ROOF_REPLACE_ASPHALT` task
+325 must not be substituted. No numeric task IDs were invented or inserted.
+Provide the approved NETWORX catalog to finish unconfigured combinations.
+
+These changes need an API publish, not an Angular change or SQL schema migration.
+They do not automatically replay lead 129 or any previously completed auction.

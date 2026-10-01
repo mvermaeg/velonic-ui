@@ -58,7 +58,7 @@ public sealed class AuctionGateway(IServiceScopeFactory scopes, IDataProtectionP
         new("NETWORX", true, true, "token", "Active task mappings", "TrustedForm/consent on post", "Configured BaseUrl; test ZIP 00001", null),
         new("Mili", true, true, "ping_id", "Roofing, Windows, HVAC, Bathroom", "Existing post compliance", "Configured ping/post; lp_test", null),
         new("InsuranceTales", true, true, "ping_id", "Windows", "Existing post compliance", "Configured ping/post; lp_test", null),
-        new("Modernize", true, false, "pingToken", "Roofing, Windows, HVAC, Bathroom", "TrustedForm on post", "Configured /ping-post/pings and /posts", "Missing documented monetary bid field, amount/currency and expiration semantics.") ];
+        new("Modernize", true, true, "pingToken", "Roofing, Windows, HVAC, Bathroom", "TrustedForm and TCPA consent on winner post", "Configured /ping-post/pings and /posts; price in USD; token valid up to 30 minutes", null) ];
     private static IAuctionProvider? Find(IServiceProvider services, string code) => services.GetServices<IExternalLeadProvider>()
         .OfType<IAuctionProvider>().SingleOrDefault(x => x.PlatformCode == code);
     public bool Enabled(string platform, string vertical) { using var s = scopes.CreateScope(); return Find(s.ServiceProvider, platform)?.IsEnabled(vertical) == true; }

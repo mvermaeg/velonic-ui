@@ -204,12 +204,12 @@ await Check("Networx actual split adapter sends mapped task, token and winner-on
     var post = await p.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "stable-key", default);
     Assert(post.Accepted && handler.Bodies.Count == 2 && handler.Bodies[1].Contains("net-token"), "Networx separate post");
 });
-await Check("Networx readiness enumerates all 15 existing option mappings", () => {
-    Assert(NetworxLeadProvider.RequiredTaskOptions.Values.Sum(x => x.Length) == 15, "Mapping manifest"); return Task.CompletedTask;
+await Check("Networx readiness enumerates 18 roofing options plus existing services", () => {
+    Assert(NetworxLeadProvider.RequiredTaskOptions["Roofing"].Length == 18 && NetworxLeadProvider.RequiredTaskOptions.Values.Sum(x => x.Length) == 32, "Mapping manifest"); return Task.CompletedTask;
 });
-await Check("Modernize cannot enter monetary auction adapter registry", () => {
-    Assert(!typeof(IAuctionProvider).IsAssignableFrom(typeof(MyApp.Api.Services.ExternalDeliveries.Modernize.ModernizeLeadProvider)) &&
-        !AuctionGateway.Capabilities.Single(x => x.PlatformCode == "Modernize").MonetaryBid, "Modernize entered auction"); return Task.CompletedTask;
+await Check("Modernize implements the documented monetary auction contract", () => {
+    Assert(typeof(IAuctionProvider).IsAssignableFrom(typeof(MyApp.Api.Services.ExternalDeliveries.Modernize.ModernizeLeadProvider)) &&
+        AuctionGateway.Capabilities.Single(x => x.PlatformCode == "Modernize").MonetaryBid, "Modernize missing from auction"); return Task.CompletedTask;
 });
 await Check("duplicate lead queue policy refuses prior run or any prior provider delivery", () => {
     Assert(RoutingActivation.CanCreateAuction(false, false) && !RoutingActivation.CanCreateAuction(true, false) &&
@@ -297,6 +297,7 @@ await Check("persisted Thumbtack ownership survives coverage removal before look
     f.Store.Work.Run.WinnerPlatformCode = "THUMBTACK"; f.TT.Covered = false; await f.Run();
     Assert(f.Gateway.Pings.Count == 0 && f.Store.Work.Run.Status == "ThumbtackFailed", "Coverage change transferred ownership");
 });
+await ProviderCompletionChecks.Run(Check, Assert);
 Console.WriteLine($"All {passed} offline checks passed. No database or live-provider connections.");
 
 sealed class Fixture

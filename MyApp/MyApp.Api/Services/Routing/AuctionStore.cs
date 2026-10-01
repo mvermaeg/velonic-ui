@@ -47,7 +47,7 @@ public sealed class LeadExecutionLock : IAsyncDisposable
     }
 }
 
-public sealed class SqlAuctionStore(MyAppDbContext db) : IAuctionStore
+public sealed class SqlAuctionStore(MyAppDbContext db, IAuctionGateway gateway) : IAuctionStore
 {
     public Task<IAsyncDisposable?> LockAsync(long leadId, CancellationToken ct) => LeadExecutionLock.AcquireAsync(db, leadId, ct);
     public async Task<AuctionWork?> LoadAsync(long id, CancellationToken ct)
@@ -60,12 +60,18 @@ public sealed class SqlAuctionStore(MyAppDbContext db) : IAuctionStore
     public async Task<List<LeadRoutingRule>> RulesAsync(AuctionWork w, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
-        var zip = Thumbtack.ThumbtackCoverageLookup.NormalizeZip(w.Lead.Postcode);
-        var state = w.Lead.State?.Trim().ToUpperInvariant();
-        var rules = await db.LeadRoutingRules.AsNoTracking().Where(x => x.IsActive && x.DestinationType == "ExternalPlatform" &&
-            x.VerticalCode == w.Run.VerticalCode && (x.State == null || x.State == "" || x.State == state) &&
-            (x.Postcode == null || x.Postcode == "" || x.Postcode == zip) &&
-            (x.EffectiveFrom == null || x.EffectiveFrom <= now) && (x.EffectiveTo == null || x.EffectiveTo > now))
+        // Materialize a default rule for each configured adapter that has no rule.
+        // Existing disabled rules remain deliberate opt-outs; existing caps survive.
+        await using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct))
+        {
+            var existing = await db.LeadRoutingRules.FromSqlInterpolated($"SELECT * FROM VelonicDBUser.LeadRoutingRules WITH (UPDLOCK,HOLDLOCK) WHERE DestinationType='ExternalPlatform' AND VerticalCode={w.Run.VerticalCode}").ToListAsync(ct);
+            foreach (var platform in AuctionRulePolicy.MissingProviders(existing, w.Run.VerticalCode, gateway))
+                db.LeadRoutingRules.Add(new LeadRoutingRule { DestinationType = "ExternalPlatform", PlatformCode = platform,
+                    VerticalCode = w.Run.VerticalCode, IsActive = true, Priority = 100, CreatedOn = now, UpdatedOn = now });
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
+        var rules = await db.LeadRoutingRules.AsNoTracking().Where(AuctionRulePolicy.Eligible(w.Run.VerticalCode, now))
             .OrderBy(x => x.Priority).ThenBy(x => x.Id).ToListAsync(ct);
         var month = new DateTime(now.Year, now.Month, 1);
         var eligible = new List<LeadRoutingRule>();
@@ -88,15 +94,11 @@ public sealed class SqlAuctionStore(MyAppDbContext db) : IAuctionStore
     public async Task<bool> LockWinnerAsync(AuctionWork work, LeadRoutingAttempt attempt, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
-        var rule = await db.LeadRoutingRules.FromSqlInterpolated($"SELECT * FROM VelonicDBUser.LeadRoutingRules WITH (UPDLOCK,HOLDLOCK) WHERE Id={attempt.LeadRoutingRuleId}").SingleAsync(ct);
+        var rule = await db.LeadRoutingRules.FromSqlInterpolated($"SELECT * FROM VelonicDBUser.LeadRoutingRules WITH (UPDLOCK,HOLDLOCK) WHERE Id={attempt.LeadRoutingRuleId}").AsNoTracking().SingleAsync(ct);
         var now = DateTime.UtcNow;
         var month = new DateTime(now.Year, now.Month, 1);
         var reservations = db.LeadRoutingAttempts.Where(x => (x.IsWinner || x.Status == "Delivered") && x.LeadRoutingRuleId == rule.Id && x.LeadRoutingRunId != work.Run.Id);
-        if (!rule.IsActive || rule.DestinationType != "ExternalPlatform" || rule.PlatformCode != attempt.PlatformCode ||
-            rule.VerticalCode != work.Run.VerticalCode ||
-            !string.IsNullOrEmpty(rule.State) && !string.Equals(rule.State, work.Lead.State?.Trim(), StringComparison.OrdinalIgnoreCase) ||
-            !string.IsNullOrEmpty(rule.Postcode) && rule.Postcode != Thumbtack.ThumbtackCoverageLookup.NormalizeZip(work.Lead.Postcode) ||
-            rule.EffectiveTo <= now || rule.EffectiveFrom > now ||
+        if (!AuctionRulePolicy.Eligible(work.Run.VerticalCode, now).Compile()(rule) || rule.PlatformCode != attempt.PlatformCode ||
             rule.DailyCap is > 0 && await reservations.CountAsync(x => (x.LeadRoutingRun.WinnerLockedOn ?? x.CompletedOn) >= now.Date, ct) >= rule.DailyCap ||
             rule.MonthlyCap is > 0 && await reservations.CountAsync(x => (x.LeadRoutingRun.WinnerLockedOn ?? x.CompletedOn) >= month, ct) >= rule.MonthlyCap)
         { await tx.RollbackAsync(ct); return false; }

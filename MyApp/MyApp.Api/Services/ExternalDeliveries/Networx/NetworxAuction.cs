@@ -18,7 +18,9 @@ public partial class NetworxLeadProvider : IAuctionProvider
 {
     private readonly INetworxAuctionTaskLookup _auctionTasks;
     public static readonly IReadOnlyDictionary<string, string[]> RequiredTaskOptions = new Dictionary<string, string[]> {
-        ["Roofing"] = ["ROOF_REPLACE_ASPHALT"],
+        ["Roofing"] = (from operation in new[] { "REPLACE", "REPAIR", "INSTALL" }
+                       from material in new[] { "ASPHALT", "METAL", "TILE", "CEDAR_SHAKE", "TAR", "NATURAL_SLATE" }
+                       select $"ROOF_{operation}_{material}").ToArray(),
         ["Windows"] = ["WINDOW_GLASS_INSTALL_REPLACE", "WINDOW_FRAME_GLASS_REPAIR", "WINDOW_INSTALL_MULTIPLE", "WINDOW_INSTALL_SINGLE"],
         ["HVAC"] = ["HVAC_CENTRAL_AC_INSTALL", "HVAC_CENTRAL_AC_REPAIR", "HVAC_HEAT_PUMP_INSTALL", "HVAC_HEAT_PUMP_REPAIR", "HVAC_FURNACE_INSTALL", "HVAC_FURNACE_REPAIR"],
         ["Bathroom"] = ["BATH_WALK_IN_TUB", "BATH_TUB_TO_SHOWER", "BATH_TUB_SHOWER_INSTALL", "BATHROOM_REMODEL"] };
