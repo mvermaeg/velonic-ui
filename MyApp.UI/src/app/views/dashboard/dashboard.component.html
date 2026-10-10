@@ -1,9 +1,40 @@
-<app-page-title title="Welcome!" subtitle="Dashboards" />
-
-
-
-<dashboard-state />
-
-<dashboard-weekly-report />
-
-<dashboard-projects />
+<app-page-title title="Lead dashboard" subtitle="Dashboards" />
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="text-muted">Production leads only. Test and deleted leads are excluded.</span>
+  <button class="btn btn-primary" (click)="refresh()" [disabled]="loading">{{ loading ? 'Loading…' : 'Refresh' }}</button>
+</div>
+<p *ngIf="loading" role="status">Loading live dashboard data…</p>
+<div *ngIf="error" class="alert alert-danger" role="alert">{{ error }}</div>
+<ng-container *ngIf="data as d">
+  <p class="text-muted">Updated {{ d.asOfUtc | date:'medium':'UTC' }} UTC · {{ d.totalLeads | number }} total leads</p>
+  <div class="metrics">
+    <div class="metric" *ngFor="let m of metrics"><span>{{ m.title }}</span><strong>{{ m.value | number }}</strong><small>{{ m.note }}</small></div>
+  </div>
+  <div class="card mb-4"><div class="card-body">
+    <h4 class="card-title">Financial reporting</h4>
+    <div class="row">
+      <div class="col-md-4">Confirmed earnings: <strong>{{ d.confirmedEarnings === null ? 'Unavailable' : (d.confirmedEarnings | currency:'USD') }}</strong></div>
+      <div class="col-md-4">Cost: <strong>{{ d.cost === null ? 'Unavailable' : (d.cost | currency:'USD') }}</strong></div>
+      <div class="col-md-4">Profit: <strong>{{ d.profit === null ? 'Unavailable' : (d.profit | currency:'USD') }}</strong></div>
+    </div>
+    <p class="text-muted mt-2 mb-0">{{ d.financialNote }}</p>
+  </div></div>
+  <div class="card mb-4"><div class="card-body">
+    <h4 class="card-title">Last 24 hours</h4>
+    <p *ngIf="d.totalLeads === 0">No production leads have been recorded yet.</p>
+    <apx-chart *ngIf="chart" [series]="chart.series" [chart]="chart.chart" [xaxis]="chart.xaxis" [yaxis]="chart.yaxis" [stroke]="chart.stroke" [colors]="chart.colors" />
+  </div></div>
+  <div class="card mb-4"><div class="card-body">
+    <h4 class="card-title">External provider deliveries · last 30 UTC calendar days</h4>
+    <p class="text-muted">Accepted API deliveries, including historical routes. These are not confirmed paid matches.</p>
+    <p *ngIf="!d.providers.length">No external deliveries recorded in this period.</p>
+    <table *ngIf="d.providers.length" class="table"><thead><tr><th>Provider</th><th>Distinct leads delivered</th></tr></thead>
+      <tbody><tr *ngFor="let p of d.providers"><td>{{ p.platform }}</td><td>{{ p.delivered | number }}</td></tr></tbody></table>
+  </div></div>
+  <div class="card"><div class="card-body">
+    <h4 class="card-title">Latest routing runs</h4>
+    <p *ngIf="!d.recentRuns.length">No routing runs recorded yet.</p>
+    <div class="table-responsive" *ngIf="d.recentRuns.length"><table class="table"><thead><tr><th>Lead</th><th>Service</th><th>Mode</th><th>Status</th><th>Winner</th><th>Created (UTC)</th></tr></thead>
+      <tbody><tr *ngFor="let r of d.recentRuns"><td>{{ r.leadId }}</td><td>{{ r.vertical }}</td><td>{{ r.mode }}</td><td>{{ r.status }}</td><td>{{ r.winner || '—' }}</td><td>{{ r.createdOn | date:'medium':'UTC' }}</td></tr></tbody></table></div>
+  </div></div>
+</ng-container>

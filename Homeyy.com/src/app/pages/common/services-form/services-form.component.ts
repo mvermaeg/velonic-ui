@@ -1,3 +1,4 @@
+import { updateRoofInstallationStep } from 'src/app/services/roof-installation-step';
 import {
   Component,
   Input,
@@ -509,6 +510,7 @@ checkInitialZipCode(): Promise<boolean> {
       value
     );
 
+    updateRoofInstallationStep(this.steps, this.form, field, value);
     this.next();
   }
   resetZipValidationState(): void {

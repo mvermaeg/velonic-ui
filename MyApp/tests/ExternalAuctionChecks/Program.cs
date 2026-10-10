@@ -96,8 +96,11 @@ await Check("coverage parser retains duplicate input for idempotent upsert", () 
 await Check("BlueInk split adapter ping omits contacts; post uses stored token", async () => {
     var handler = new CaptureHandler(["{\"status\":\"success\",\"price\":\"25\",\"auth_code\":\"offer-token\"}"]);
     var provider = new BlueInkLeadProvider(new HttpClient(handler), Options.Create(new BlueInkOptions { Enabled = true,
+        RoofingProjectTypes = new() { ["Roof Replacement"] = "fixture-approved-replacement" },
+        RoofingMaterials = new() { ["Metal Roofing"] = "fixture-approved-metal" },
         Verticals = new(StringComparer.OrdinalIgnoreCase) { ["Roofing"] = new() { Enabled = true, Token = "TEST-SECRET" } } }), NullLogger<BlueInkLeadProvider>.Instance);
-    var lead = Fixture.Lead(); var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    var lead = Fixture.Lead(); lead.AdditionalDataJson = "{\"projectType\":\"Roof Replacement\",\"roofType\":\"Metal Roofing\"}";
+    var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
     Assert(offer.Amount == 25 && offer.Reference == "offer-token", "Bid parser");
     foreach (var value in new[] { lead.Email!, lead.Phone!, lead.Address!, lead.FullName!, lead.TrustedFormCertificateUrl! }) Assert(!handler.Bodies.Single().Contains(value), "Adapter ping PII");
     Assert(!offer.RequestAudit.Contains("TEST-SECRET") && !offer.ResponseAudit.Contains("offer-token"), "Audit leaked token");
@@ -124,14 +127,31 @@ await Check("Mili uses separate contact-free ping and stored-token post", async 
     var handler = new CaptureHandler(["<response><result>success</result><ping_id>mili-token</ping_id><price>30</price></response>",
         "<response><result>success</result><lead_id>mili-delivery</lead_id></response>"]);
     var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true,
+        UseTestMode = false,
         Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(),
         NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
     var lead = Fixture.Lead(); var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
     Assert(offer.Accepted && offer.Amount == 30 && offer.Reference == "mili-token", "Mili bid parsing");
+    Assert(handler.Bodies[0].Contains("type=Exclusive") && !handler.Bodies[0].Contains("type=Shared"), "Auction ping used legacy shared type");
+    Assert(!lead.IsTest && !handler.Bodies[0].Contains("lp_test=1"), "Real-lead Mili ping incorrectly used test mode");
     foreach (var secret in new[] { lead.Email!, lead.Phone!, lead.FullName!, lead.Address!, lead.TrustedFormCertificateUrl! })
         Assert(!Uri.UnescapeDataString(handler.Bodies[0]).Contains(secret), "Mili ping contact leak");
     var result = await provider.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "stable-key", default);
     Assert(result.Accepted && handler.Bodies.Count == 2 && handler.Bodies[1].Contains("mili-token"), "Mili separate post");
+    Assert(handler.Bodies[1].Contains("type=Exclusive") && !handler.Bodies[1].Contains("type=Shared"), "Winner post changed exclusive type");
+    Assert(!handler.Bodies[1].Contains("lp_test=1"), "Real-lead winner post incorrectly used test mode");
+});
+await Check("Mili campaign errors are classified without contacts; production stays live and quota blocks repeated ping", async () => {
+    var handler = new CaptureHandler(["<response><result>failed</result><price>0.00</price><errors><error>Invalid Campaign ID or Key TEST-SECRET private@example.com</error></errors></response>"]);
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = true,
+        Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(),
+        NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
+    var lead = Fixture.Lead(); lead.IsTest = false;
+    var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    Assert(!offer.Accepted && offer.Error == "Mili authentication failed: Invalid Campaign ID or Key.", "Campaign rejection not classified safely");
+    Assert(handler.Bodies[0].Contains("lp_response=xml") && !handler.Bodies[0].Contains("lp_test=1"), "Production mode or XML contract incorrect");
+    var second = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    Assert(!second.Accepted && handler.Bodies.Count == 1 && second.Error!.Contains("quota"), "Repeated ping exceeded cap");
 });
 await Check("Networx existing XML contract parses price and post token", () => {
     var method = typeof(MyApp.Api.Services.ExternalDeliveries.Networx.NetworxLeadProvider)
@@ -207,9 +227,9 @@ await Check("Networx actual split adapter sends mapped task, token and winner-on
 await Check("Networx readiness enumerates 18 roofing options plus existing services", () => {
     Assert(NetworxLeadProvider.RequiredTaskOptions["Roofing"].Length == 18 && NetworxLeadProvider.RequiredTaskOptions.Values.Sum(x => x.Length) == 32, "Mapping manifest"); return Task.CompletedTask;
 });
-await Check("Modernize implements the documented monetary auction contract", () => {
+await Check("Modernize participates in monetary auction policy", () => {
     Assert(typeof(IAuctionProvider).IsAssignableFrom(typeof(MyApp.Api.Services.ExternalDeliveries.Modernize.ModernizeLeadProvider)) &&
-        AuctionGateway.Capabilities.Single(x => x.PlatformCode == "Modernize").MonetaryBid, "Modernize missing from auction"); return Task.CompletedTask;
+        AuctionGateway.Capabilities.Single(x => x.PlatformCode == "Modernize").MonetaryBid, "Modernize entered auction"); return Task.CompletedTask;
 });
 await Check("duplicate lead queue policy refuses prior run or any prior provider delivery", () => {
     Assert(RoutingActivation.CanCreateAuction(false, false) && !RoutingActivation.CanCreateAuction(true, false) &&
@@ -297,8 +317,36 @@ await Check("persisted Thumbtack ownership survives coverage removal before look
     f.Store.Work.Run.WinnerPlatformCode = "THUMBTACK"; f.TT.Covered = false; await f.Run();
     Assert(f.Gateway.Pings.Count == 0 && f.Store.Work.Run.Status == "ThumbtackFailed", "Coverage change transferred ownership");
 });
+await Check("Mili shared quota calculates bounded minute and hour waits", () => {
+    var now = DateTime.UtcNow;
+    Assert(MiliQuotaPolicy.Wait([], now) == TimeSpan.Zero, "Empty quota blocked");
+    Assert(MiliQuotaPolicy.Wait([now.AddSeconds(-20)], now).TotalSeconds is > 40 and < 41, "Minute slot incorrect");
+    var times = Enumerable.Range(0,45).Select(i => now.AddMinutes(-59).AddSeconds(i)).ToArray();
+    Assert(MiliQuotaPolicy.Wait(times, now).TotalSeconds >= 60, "Hourly cap bypassed");
+    return Task.CompletedTask;
+});
+await Check("BLUEINK documented consent proof is passed without contacts and absent proof blocks HTTP", async () => {
+    var handler = new CaptureHandler(["{\"status\":\"success\",\"price\":\"8.32\",\"auth_code\":\"test\"}"]);
+    var lead = Fixture.Lead(); lead.AdditionalDataJson = "{\"projectType\":\"Replace Roof\",\"roofType\":\"Metal Roofing\"}";
+    var provider = ProductionRoutingChecks.BlueInk(handler);
+    var facts = AuctionFacts.From(lead, "Roofing");
+    var blocked = await provider.PingWithComplianceAsync(facts, null, null, true, default);
+    Assert(!blocked.Accepted && handler.Bodies.Count == 0, "Missing proof sent");
+    var accepted = await provider.PingWithComplianceAsync(facts, "https://cert.trustedform.com/test-only", null, true, default);
+    Assert(accepted.Accepted && handler.Bodies.Count == 1, "Documented proof blocked");
+    using var json = System.Text.Json.JsonDocument.Parse(handler.Bodies[0]);
+    Assert(json.RootElement.GetProperty("meta").GetProperty("trusted_form_cert_url").GetString() == "https://cert.trustedform.com/test-only", "Proof missing");
+    Assert(!json.RootElement.GetProperty("contact").TryGetProperty("email", out _), "Contact leaked");
+    Assert(!accepted.RequestAudit.Contains("test-only"), "Certificate leaked to audit");
+});
+await Check("Modernize can win the auction and only one winner posts", async () => {
+    var f = New(("NETWORX", 8, 0), ("Modernize", 10, 0), ("BLUEINK", 6, 0));
+    await f.Run(); await f.Run();
+    Assert(f.Store.Work.Run.WinnerPlatformCode == "Modernize" && f.Gateway.Posts.Count == 1, "Modernize excluded or duplicate delivery");
+});
 await ProviderCompletionChecks.Run(Check, Assert);
-Console.WriteLine($"All {passed} offline checks passed. No database or live-provider connections.");
+await ProductionRoutingChecks.Run(Check, Assert);
+Console.WriteLine($"All {passed} checks passed. Isolated SQLite integration tests; no production database or live-provider connections.");
 
 sealed class Fixture
 {

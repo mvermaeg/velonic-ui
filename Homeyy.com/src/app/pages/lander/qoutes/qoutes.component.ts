@@ -1,3 +1,4 @@
+import { updateRoofInstallationStep } from 'src/app/services/roof-installation-step';
 import { Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
@@ -521,6 +522,8 @@ export class QoutesComponent implements OnInit {
     }
 
     this.setValue(field, value);
+    updateRoofInstallationStep(this.steps, this.quoteForm, field, value);
+    this.totalSteps = this.steps.length;
     void this.nextStep();
   }
 

@@ -121,6 +121,10 @@ builder.Services.Configure<NetworxOptions>(
         NetworxOptions.SectionName));
 
 builder.Services.AddScoped<ExternalLeadDistributionService>();
+builder.Services.AddScoped<ILeadRoutingQueue>(s => s.GetRequiredService<ExternalLeadDistributionService>());
+builder.Services.AddScoped<ILegacyLeadCompletion, LegacyLeadCompletion>();
+builder.Services.AddScoped<CompletedLeadRouter>();
+builder.Services.AddScoped<ILeadExecutionLocker, SqlLeadExecutionLocker>();
 
 builder.Services.AddHttpClient<
     IExternalLeadProvider,

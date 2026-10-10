@@ -71,7 +71,8 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
         if (w.Run.Status == "Pinging")
         {
             var rules = await store.RulesAsync(w, ct);
-            foreach (var rule in rules.GroupBy(x => x.PlatformCode).Select(x => x.First()))
+            foreach (var rule in rules.Where(x => !AuctionProviderPolicy.Excluded(x.PlatformCode))
+                .GroupBy(x => x.PlatformCode, StringComparer.OrdinalIgnoreCase).Select(x => x.First()))
             {
                 var supported = rule.PlatformCode != null && gateway.Enabled(rule.PlatformCode, w.Run.VerticalCode);
                 w.Attempts.Add(new LeadRoutingAttempt { LeadRoutingRunId = w.Run.Id, LeadId = w.Lead.Id,

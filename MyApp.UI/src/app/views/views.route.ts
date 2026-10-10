@@ -125,5 +125,13 @@ export const VIEW_ROUTES: Route[] = [
     import('./clients/bidding-settings/bidding-settings.component').then(
       (m) => m.BiddingSettingsComponent
     ),
+},
+{
+  path: 'clients/routing-control',
+  loadComponent: () =>
+    import('./clients/routing-control/routing-control.component').then(
+      (m) => m.RoutingControlComponent
+    ),
+  data: { title: 'Lead Routing Control' },
 }
 ]

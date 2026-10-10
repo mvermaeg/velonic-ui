@@ -1,12 +1,10 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
-using MyApp.Api.Services.Bidding;
-using MyApp.Api.Services.Deliveries;
 using MyApp.Api.Services.EmailValidation;
-using MyApp.Api.Services.ExternalDeliveries;
+using MyApp.Api.Services.Routing;
 using MyApp.Api.Services.Fraud;
 
 namespace MyApp.Api.Services.MetaLeads
@@ -14,15 +12,12 @@ namespace MyApp.Api.Services.MetaLeads
     public class MetaLeadService
     {
         private readonly HttpClient _httpClient;
+        private readonly CompletedLeadRouter _completedLeadRouter;
         private readonly MyAppDbContext _db;
         private readonly MetaLeadOptions _options;
 
         private readonly BouncerEmailValidationService _emailValidation;
         private readonly ILeadFraudService _leadFraudService;
-        private readonly LeadBiddingService _leadBiddingService;
-        private readonly LeadDeliveryService _leadDeliveryService;
-        private readonly ExternalLeadDistributionService
-            _externalLeadDistributionService;
 
         private readonly ILogger<MetaLeadService> _logger;
 
@@ -32,21 +27,16 @@ namespace MyApp.Api.Services.MetaLeads
             IOptions<MetaLeadOptions> options,
             BouncerEmailValidationService emailValidation,
             ILeadFraudService leadFraudService,
-            LeadBiddingService leadBiddingService,
-            LeadDeliveryService leadDeliveryService,
-            ExternalLeadDistributionService externalLeadDistributionService,
-            ILogger<MetaLeadService> logger)
+            ILogger<MetaLeadService> logger,
+            CompletedLeadRouter completedLeadRouter)
         {
             _httpClient = httpClient;
             _db = db;
             _options = options.Value;
             _emailValidation = emailValidation;
             _leadFraudService = leadFraudService;
-            _leadBiddingService = leadBiddingService;
-            _leadDeliveryService = leadDeliveryService;
-            _externalLeadDistributionService =
-                externalLeadDistributionService;
             _logger = logger;
+            _completedLeadRouter = completedLeadRouter;
         }
 
         public async Task ProcessLeadAsync(
@@ -431,31 +421,7 @@ namespace MyApp.Api.Services.MetaLeads
             await _db.SaveChangesAsync(
                 cancellationToken);
 
-            await _leadBiddingService
-                .RunForLeadAsync(lead.Id);
-
-            await _externalLeadDistributionService
-                .QueueForLeadAsync(
-                    lead.Id,
-                    cancellationToken);
-
-            var winningBid =
-                await _db.LeadBiddingResults
-                    .Where(x =>
-                        x.LeadId == lead.Id &&
-                        x.IsWon &&
-                        !x.IsSold)
-                    .OrderByDescending(
-                        x => x.BidAmount)
-                    .FirstOrDefaultAsync(
-                        cancellationToken);
-
-            if (winningBid != null)
-            {
-                await _leadDeliveryService
-                    .CreateDeliveryFromBiddingResultAsync(
-                        winningBid.Id);
-            }
+            await _completedLeadRouter.CompleteAsync(lead, cancellationToken);
 
             _logger.LogInformation(
                 "Meta Lead received. MetaLeadgenId={LeadgenId}, HomeyyLeadId={LeadId}, Page={PageName}",

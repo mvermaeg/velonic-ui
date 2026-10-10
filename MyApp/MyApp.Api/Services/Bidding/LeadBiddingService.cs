@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
 
@@ -8,9 +8,12 @@ namespace MyApp.Api.Services.Bidding
     {
         private readonly MyAppDbContext _db;
 
-        public LeadBiddingService(MyAppDbContext db)
+        private readonly Microsoft.Extensions.Options.IOptions<MyApp.Api.Services.Routing.ExternalLeadAuctionOptions> _auction;
+
+        public LeadBiddingService(MyAppDbContext db, Microsoft.Extensions.Options.IOptions<MyApp.Api.Services.Routing.ExternalLeadAuctionOptions> auction)
         {
             _db = db;
+            _auction = auction;
         }
 
         //public async Task RunForLeadAsync(long leadId)
@@ -88,6 +91,7 @@ namespace MyApp.Api.Services.Bidding
         //}
         public async Task RunForLeadAsync(long leadId)
         {
+            if (_auction.Value.Enabled || await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == leadId && x.RoutingMode == "Auction")) return;
             var lead = await _db.Leads
                 .FirstOrDefaultAsync(x => x.Id == leadId && !x.IsDeleted);
 

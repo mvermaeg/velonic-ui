@@ -14,6 +14,7 @@ public sealed class ExclusiveLeadRoutingService
     };
 
     private readonly MyAppDbContext _db;
+    private readonly ExternalLeadAuctionOptions _auction;
     private readonly Dictionary<string, IExternalLeadProvider> _providers;
     private readonly ExclusiveRoutingOptions _options;
     private readonly ILogger<ExclusiveLeadRoutingService> _logger;
@@ -22,9 +23,11 @@ public sealed class ExclusiveLeadRoutingService
         MyAppDbContext db,
         IEnumerable<IExternalLeadProvider> providers,
         IOptions<ExclusiveRoutingOptions> options,
-        ILogger<ExclusiveLeadRoutingService> logger)
+        ILogger<ExclusiveLeadRoutingService> logger,
+        IOptions<ExternalLeadAuctionOptions> auction)
     {
         _db = db;
+        _auction = auction.Value;
         _providers = providers.ToDictionary(x => x.PlatformCode, StringComparer.OrdinalIgnoreCase);
         _options = options.Value;
         _logger = logger;
@@ -32,7 +35,7 @@ public sealed class ExclusiveLeadRoutingService
 
     public async Task QueueAsync(Lead lead, string verticalCode, CancellationToken ct)
     {
-        if (!_options.Enabled)
+        if (_auction.Enabled || !_options.Enabled)
             return;
 
         var exists = await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == lead.Id, ct);
@@ -62,6 +65,7 @@ public sealed class ExclusiveLeadRoutingService
 
     public async Task ProcessAsync(long runId, CancellationToken ct)
     {
+        if (_auction.Enabled) return;
         var run = await _db.LeadRoutingRuns.FirstOrDefaultAsync(x => x.Id == runId, ct);
         if (run == null || run.RoutingMode != "Legacy") return;
         await using var ownership = await LeadExecutionLock.AcquireAsync(_db, run.LeadId, ct);

@@ -12,6 +12,10 @@
 
         public Dictionary<string, BlueInkVerticalOptions> Verticals { get; set; }
             = new(StringComparer.OrdinalIgnoreCase);
+
+        // Values must come from the account's approved BLUEINK field specification.
+        public Dictionary<string, string> RoofingProjectTypes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> RoofingMaterials { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
     public class BlueInkVerticalOptions

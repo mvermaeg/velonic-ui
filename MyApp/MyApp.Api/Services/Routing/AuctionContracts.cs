@@ -27,7 +27,7 @@ public sealed record AuctionFacts(long LeadId, int? LeadTypeId, string Vertical,
     string? LandingPageOrigin = null, DateTime CreatedAt = default, string? ConsentText = null)
 {
     private static readonly HashSet<string> Keys = new(StringComparer.OrdinalIgnoreCase) {
-        "projectType", "roofType", "roofingType", "roofingMaterial", "serviceType", "windowsCount", "numWindows", "windowQuantity",
+        "projectType", "roofInstallationHomeType", "roofType", "roofingType", "roofingMaterial", "serviceType", "windowsCount", "numWindows", "windowQuantity",
         "numberOfWindows", "windowCount", "windowProject", "roofingProject", "bathroomProject",
         "hvacProject", "airType", "systemType", "ownProperty", "propertyType", "timeframe",
         "material", "windowMaterial", "creditRating", "bestCallTime", "purchaseTimeFrame" };

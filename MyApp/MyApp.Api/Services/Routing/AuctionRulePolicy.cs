@@ -18,3 +18,8 @@ public static class AuctionRulePolicy
                 string.Equals(r.PlatformCode, x.PlatformCode, StringComparison.OrdinalIgnoreCase)))
         .Select(x => x.PlatformCode);
 }
+
+public static class AuctionProviderPolicy
+{
+    public static bool Excluded(string? platform) => false;
+}

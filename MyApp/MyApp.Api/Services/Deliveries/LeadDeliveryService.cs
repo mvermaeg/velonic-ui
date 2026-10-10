@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
 
@@ -8,18 +8,25 @@ namespace MyApp.Api.Services.Deliveries
     {
         private readonly MyAppDbContext _db;
 
-        public LeadDeliveryService(MyAppDbContext db)
+        private readonly Microsoft.Extensions.Options.IOptions<MyApp.Api.Services.Routing.ExternalLeadAuctionOptions> _auction;
+
+        public LeadDeliveryService(MyAppDbContext db, Microsoft.Extensions.Options.IOptions<MyApp.Api.Services.Routing.ExternalLeadAuctionOptions> auction)
         {
             _db = db;
+            _auction = auction;
         }
 
         public async Task<long> CreateDeliveryFromBiddingResultAsync(long biddingResultId)
         {
+            if (_auction.Value.Enabled) throw new InvalidOperationException("Legacy delivery is disabled while the external auction owns routing.");
             var biddingResult = await _db.LeadBiddingResults
                 .FirstOrDefaultAsync(x => x.Id == biddingResultId);
 
             if (biddingResult == null)
                 throw new Exception("Bidding result not found.");
+
+            if (await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == biddingResult.LeadId && x.RoutingMode == "Auction"))
+                throw new InvalidOperationException("This lead belongs to the external auction.");
 
             if (biddingResult.IsSold)
                 throw new Exception("This lead is already sold.");

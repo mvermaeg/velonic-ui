@@ -94,6 +94,16 @@ static class ProviderCompletionChecks
             var offer = await Modernize(handler).PingAsync(AuctionFacts.From(lead, "Roofing"), default);
             assert(!offer.Accepted && handler.Bodies.Count == 0, "Fabricated roof sent");
         });
+        await check("Modernize installation respects the captured home type", () => {
+            foreach (var home in new[] { "Newly constructed home", "Existing home", "", "Unknown" }) {
+                var lead = MetalLead();
+                lead.AdditionalDataJson = JsonSerializer.Serialize(new { answers = new { projectType = "Install New Roof", roofType = "Metal Roofing", roofInstallationHomeType = home } });
+                var payload = ModernizeLeadProvider.AuctionPayload(AuctionFacts.From(lead, "Roofing"));
+                if (home is "" or "Unknown") assert(payload == null, "Ambiguous home type guessed");
+                else assert((string)payload!["RoofingPlan"]! == (home == "Existing home" ? "Completely replace roof" : "Install roof on new construction"), "Incorrect home type mapping");
+            }
+            return Task.CompletedTask;
+        });
         await check("Modernize handles shared LeadTypeId using actual vertical and window ranges", () => {
             var lead = MetalLead(); lead.LeadTypeId = 2;
             lead.AdditionalDataJson = "{\"answers\":{\"projectType\":\"Repair window\",\"windowCount\":\"10+\"}}";
@@ -106,7 +116,7 @@ static class ProviderCompletionChecks
     }
     private static Lead MetalLead() { var lead = Fixture.Lead(); lead.AdditionalDataJson = "{\"answers\":{\"projectType\":\"Replace Roof\",\"roofType\":\"Metal Roofing\"},\"purchaseTimeFrame\":\"Immediately\"}"; return lead; }
     private static ModernizeLeadProvider Modernize(CaptureHandler handler) => new(new HttpClient(handler),
-        Options.Create(new ModernizeOptions { Enabled = true, UseStaging = true, StagingTagId = "test-tag" }), NullLogger<ModernizeLeadProvider>.Instance);
+        Options.Create(new ModernizeOptions { Enabled = true, UseStaging = false, ProductionTagId = "test-tag" }), NullLogger<ModernizeLeadProvider>.Instance);
     private sealed class RecordingTaskLookup : INetworxAuctionTaskLookup {
         public List<string> Tasks = []; public string? Option;
         public Task<List<string>> FindAsync(int leadTypeId, string option, CancellationToken ct) { Option = option; return Task.FromResult(Tasks); }

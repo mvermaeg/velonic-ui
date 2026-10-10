@@ -1,0 +1,132 @@
+<div class="container-fluid">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+    <div><h3 class="mb-1">Lead Routing Control</h3>
+      <p class="text-muted mb-0">Manage routing rules, Thumbtack coverage and exclusive external auctions.</p></div>
+    <button class="btn btn-outline-primary" (click)="refresh()">Refresh</button>
+  </div>
+  <div class="alert alert-warning">New rules are disabled by default. Auction mode:
+    <strong>{{ capabilities?.options?.enabled ? 'Enabled' : 'Disabled' }}</strong>.
+    Window: {{ capabilities?.options?.auctionWindowSeconds || 90 }} seconds. Full contact data goes only to the locked winner.</div>
+  <div class="alert alert-info" *ngIf="message">{{ message }}</div>
+  <div class="row g-3">
+    <div class="col-xl-4"><div class="card"><div class="card-header"><h5 class="mb-0">Routing Rule</h5></div>
+      <div class="card-body">
+        <label class="form-label">Destination</label>
+        <select class="form-select mb-3" [(ngModel)]="form.destinationType">
+          <option value="ExternalPlatform">External platform</option><option value="InternalClient">Internal client</option>
+        </select>
+        <div *ngIf="form.destinationType === 'ExternalPlatform'"><label class="form-label">Platform</label>
+          <select class="form-select mb-3" [(ngModel)]="form.platformCode">
+            <option>BLUEINK</option><option>NETWORX</option><option>Modernize</option><option>Mili</option><option>InsuranceTales</option>
+          </select></div>
+        <div *ngIf="form.destinationType === 'InternalClient'"><label class="form-label">Client ID</label>
+          <input type="number" class="form-control mb-3" [(ngModel)]="form.clientId"></div>
+        <label class="form-label">Vertical</label>
+        <select class="form-select mb-3" [(ngModel)]="form.verticalCode">
+          <option>Roofing</option><option>Windows</option><option>Bathroom</option><option>HVAC</option><option>Gutters</option>
+        </select>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label">State</label><input class="form-control" [(ngModel)]="form.state" placeholder="All"></div>
+          <div class="col-6"><label class="form-label">ZIP</label><input class="form-control" [(ngModel)]="form.postcode" placeholder="All"></div>
+          <div class="col-6"><label class="form-label">Legacy fixed bid</label><input type="number" class="form-control" [(ngModel)]="form.bidAmount"></div>
+          <div class="col-6"><label class="form-label">Rule priority (auction ties use response time)</label><input type="number" class="form-control" [(ngModel)]="form.priority"></div>
+          <div class="col-6"><label class="form-label">Daily cap</label><input type="number" class="form-control" [(ngModel)]="form.dailyCap"></div>
+          <div class="col-6"><label class="form-label">Monthly cap</label><input type="number" class="form-control" [(ngModel)]="form.monthlyCap"></div>
+        </div>
+        <label class="form-label mt-2">Active from (UTC)</label><input type="datetime-local" class="form-control" [(ngModel)]="form.effectiveFrom">
+        <label class="form-label mt-2">Active until (UTC)</label><input type="datetime-local" class="form-control" [(ngModel)]="form.effectiveTo">
+        <div class="form-check my-3"><input class="form-check-input" type="checkbox" [(ngModel)]="form.isActive" id="routeActive">
+          <label class="form-check-label" for="routeActive">Rule active</label></div>
+        <button class="btn btn-primary w-100" (click)="save()" [disabled]="saving">{{ saving ? 'Saving...' : 'Save rule' }}</button>
+      </div></div></div>
+    <div class="col-xl-8">
+      <div class="card mb-3"><div class="card-header"><h5 class="mb-0">Configured ranking</h5></div>
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Vertical</th><th>Destination</th><th>Coverage</th><th>Bid</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr *ngFor="let x of rules"><td>{{x.verticalCode}}</td>
+            <td>{{x.destinationType === 'InternalClient' ? 'Client #' + x.clientId : x.platformCode}}</td>
+            <td>{{x.state || 'All states'}} / {{x.postcode || 'All ZIPs'}}</td><td>{{x.bidAmount | currency:'USD'}}</td><td>{{x.priority}}</td>
+            <td><span class="badge" [ngClass]="x.isActive ? 'bg-success':'bg-secondary'">{{x.isActive ? 'Active':'Disabled'}}</span></td>
+            <td class="text-nowrap"><button class="btn btn-sm btn-outline-primary me-1" (click)="edit(x)">Edit</button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="toggle(x)">{{x.isActive ? 'Disable':'Enable'}}</button></td></tr>
+          <tr *ngIf="!loading && rules.length === 0"><td colspan="7" class="text-center text-muted py-4">No routing rules configured.</td></tr></tbody>
+        </table></div></div>
+      <div class="card"><div class="card-header"><h5 class="mb-0">Recent routing results</h5></div>
+        <p *ngIf="runsLoading" class="p-3" role="status">Loading runs…</p><p *ngIf="runsError" class="alert alert-danger">{{runsError}}</p>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Lead</th><th>Vertical</th><th>Status</th><th>Winner</th><th>Bid</th><th>Completed</th></tr></thead>
+          <tbody><tr *ngFor="let x of runs"><td>{{x.leadId}}</td><td>{{x.verticalCode}}</td><td>{{x.status}}</td>
+            <td>{{x.winnerPlatformCode || (x.winnerClientId ? 'Client #' + x.winnerClientId : '-')}}</td>
+            <td>{{x.winningBidAmount == null ? '-' : (x.winningBidAmount | currency:'USD')}}</td><td>{{x.completedOn | date:'short'}}</td></tr>
+          <tr *ngIf="!runsLoading && !runsError && runs.length === 0"><td colspan="6" class="text-center text-muted py-3">No exclusive-routing runs yet.</td></tr></tbody>
+        </table></div></div>
+    </div>
+  </div>
+</div>
+<div class="container-fluid mt-3">
+  <div class="card"><div class="card-header"><h5>Provider capabilities</h5></div>
+    <div class="table-responsive"><table class="table table-sm align-middle">
+      <thead><tr><th>Provider</th><th>Ping / post</th><th>Monetary bid</th><th>Enabled services</th><th>Readiness</th></tr></thead>
+      <tbody><tr *ngFor="let x of capabilities?.providers"><td>{{x.capability.platformCode}}</td>
+        <td>{{x.capability.truePingPost ? 'Separate operations' : 'Unavailable'}}</td><td>{{x.capability.monetaryBid ? 'Supported' : 'Not mapped'}}</td>
+        <td>{{x.enabledVerticals.join(', ') || 'None'}}</td><td>{{x.capability.blocker || 'Implemented; provider acceptance testing required'}}<br><small>{{x.retryNote}}</small></td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="card"><div class="card-header"><h5>Auction details</h5></div><div class="card-body">
+    <details *ngIf="readiness" class="mb-3"><summary>Networx task mapping readiness</summary><p>{{readiness.note}}</p><ul><li *ngFor="let m of readiness.items">Lead type {{m.leadTypeIds.join(', ')}} · {{m.vertical}} / {{m.option}} — {{m.ready ? 'Ready' : m.reason}}</li></ul></details>
+    <label class="form-label" for="auctionRun">Routing run</label>
+    <select id="auctionRun" class="form-select mb-3" [(ngModel)]="selectedRunId" (ngModelChange)="selectRun()">
+      <option [ngValue]="null">Select a recent run</option><option *ngFor="let r of runs" [ngValue]="r.id">Lead {{r.leadId}} · {{r.verticalCode}} · {{r.status}}</option>
+    </select>
+    <p *ngIf="detailLoading" role="status">Loading auction details…</p><p *ngIf="detailError" class="alert alert-danger">{{detailError}}</p>
+    <p *ngIf="!selectedRunId" class="text-muted">Select a run to inspect its responses and delivery outcome.</p>
+    <ng-container *ngIf="detail">
+      <p>Run completed: {{detail.run.completedOn ? (detail.run.completedOn | date:'medium') : 'In progress'}} · Auction duration: {{durationSeconds}} seconds <span *ngIf="detail.run.status === 'CollectingBids'">· {{secondsRemaining}} seconds remaining (refresh for new responses)</span></p>
+      <div *ngIf="detail.run.status === 'ReconciliationRequired'" class="alert alert-danger">
+        <h6>Provider confirmation required — automatic posting is stopped</h6>
+        <p>Contact the locked winner outside this application. Record its confirmed outcome and support-case reference below. This action sends no lead data and never retries or changes the winner.</p>
+        <label class="form-label">Provider-confirmed outcome</label><select class="form-select mb-2" [(ngModel)]="reconciliationAccepted"><option [ngValue]="false">Confirmed NOT accepted</option><option [ngValue]="true">Confirmed accepted</option></select>
+        <label class="form-label">Support-case reference (no contact data)</label><input class="form-control mb-2" maxlength="100" [(ngModel)]="reconciliationReference">
+        <button class="btn btn-danger" [disabled]="reconciling || reconciliationReference.length < 3" (click)="reconcile()">Record confirmed outcome</button>
+      </div>
+      <p *ngIf="detail.run.reconciledOn">Reconciled {{detail.run.reconciledOn | date:'medium'}}: {{detail.run.reconciliationOutcome}} · Case {{detail.run.reconciliationReference}}</p>
+      <div class="row g-3 mb-3"><div class="col-md-4"><strong>Status:</strong> {{detail.run.status}}<br><strong>Thumbtack:</strong> {{detail.run.thumbtackEligibility || 'Not checked'}}<br><strong>Search ID:</strong> {{detail.run.thumbtackSearchId || '—'}}</div>
+        <div class="col-md-4"><strong>Opened:</strong> {{detail.run.auctionStartedOn | date:'medium'}}<br><strong>Closes:</strong> {{detail.run.auctionClosesOn | date:'medium'}}<br><strong>Winner locked:</strong> {{detail.run.winnerLockedOn | date:'medium'}}</div>
+        <div class="col-md-4"><strong>Winner:</strong> {{detail.run.winnerPlatformCode || '—'}}<br><strong>Bid:</strong> {{detail.run.winningBidAmount | currency:'USD'}}<br><strong>Post completed:</strong> {{detail.run.postCompletedOn | date:'medium'}}</div></div>
+      <div *ngIf="detail.run.errorMessage" class="alert alert-warning">{{detail.run.errorMessage}}</div>
+      <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Provider</th><th>Ping / post status</th><th>Bid</th><th>Response</th><th>Received / expires</th><th>Post attempts</th><th>Details</th></tr></thead>
+        <tbody><tr *ngFor="let a of detail.attempts"><td>{{a.platformCode}} <span *ngIf="a.isWinner" class="badge bg-success">Winner</span></td>
+          <td>{{a.status}}</td><td>{{a.offeredBidAmount | currency:'USD'}}</td><td>{{a.responseDurationMilliseconds}} ms</td>
+          <td>{{a.bidReceivedOn | date:'medium'}}<br>{{a.bidExpiresOn | date:'medium'}}</td><td>{{a.postAttempts}}</td><td>{{a.errorMessage || '—'}}<br>Post reference: {{a.hasPostReference ? 'Saved securely' : 'None'}}</td></tr></tbody>
+      </table></div>
+      <p *ngIf="detail.attempts.length === 0" class="text-muted">No provider attempts. Thumbtack selection and eligibility checks do not ping buyers.</p>
+      <details *ngFor="let a of detail.attempts" class="mb-2"><summary>{{a.platformCode}} audit (sensitive values redacted)</summary>
+        <pre class="text-wrap">Ping request: {{a.pingRequestAudit}}
+Ping response: {{a.pingResponseAudit}}
+Post request: {{a.postRequestAudit}}
+Post response: {{a.postResponseAudit}}</pre></details>
+    </ng-container>
+  </div></div>
+  <div class="card"><div class="card-header"><h5>Thumbtack service + ZIP coverage</h5></div><div class="card-body">
+    <p *ngIf="coverageLoading" role="status">Loading coverage…</p><p *ngIf="coverageError" class="alert alert-danger">{{coverageError}}</p><p *ngIf="coverage && !coverageLoading && !coverageError && !coverage.total">No coverage matches these filters.</p>
+    <div class="d-flex flex-wrap gap-2 mb-3"><button *ngFor="let s of coverage?.services" class="btn btn-sm" [ngClass]="s.isEnabled ? 'btn-outline-success' : 'btn-outline-secondary'"
+      (click)="toggleCoverage(s.serviceCode, null, !s.isEnabled)">{{s.serviceCode}}: {{s.isEnabled ? 'Enabled' : 'Disabled'}}</button></div>
+    <div class="row g-2 mb-3"><div class="col-md-4"><label class="form-label">Service filter</label><select class="form-select" [(ngModel)]="coverageService"><option value="">All services</option><option *ngFor="let s of coverage?.services">{{s.serviceCode}}</option></select></div>
+      <div class="col-md-4"><label class="form-label">ZIP filter</label><input class="form-control" [(ngModel)]="coverageZip" maxlength="5" placeholder="01007"></div>
+      <div class="col-md-4 d-flex align-items-end"><button class="btn btn-outline-primary" (click)="coveragePage = 1; loadCoverage()">Search coverage</button></div></div>
+    <p>{{coverage?.total || 0}} matching service + ZIP pairs. Latest import: {{coverage?.latest?.importedOn | date:'medium'}} · {{coverage?.latest?.insertedPairCount || 0}} inserted.</p>
+    <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Service</th><th>ZIP</th><th>Status</th><th></th></tr></thead>
+      <tbody><tr *ngFor="let z of coverage?.items"><td>{{z.serviceCode}}</td><td>{{z.zipCode}}</td><td>{{z.isEnabled ? 'Enabled' : 'Disabled'}}</td>
+        <td><button class="btn btn-sm btn-outline-secondary" (click)="toggleCoverage(z.serviceCode, z.zipCode, !z.isEnabled)">{{z.isEnabled ? 'Disable' : 'Enable'}}</button></td></tr></tbody></table></div>
+    <div class="d-flex gap-2 mb-4"><button class="btn btn-sm btn-outline-secondary" [disabled]="coveragePage <= 1" (click)="coveragePage = coveragePage - 1; loadCoverage()">Previous</button><span>Page {{coveragePage}}</span>
+      <button class="btn btn-sm btn-outline-secondary" [disabled]="coveragePage * 50 >= (coverage?.total || 0)" (click)="coveragePage = coveragePage + 1; loadCoverage()">Next</button></div>
+    <h6>Upload coverage</h6><p class="text-muted">Use a ZIP-only text file with a chosen service, or two columns headed Service,Zip. Unmapped or invalid rows block the import and are shown before any changes.</p>
+    <label class="form-label">Service for ZIP-only files</label><select class="form-select mb-2" [(ngModel)]="importService" (ngModelChange)="importResult = null"><option *ngFor="let s of coverage?.services">{{s.serviceCode}}</option></select>
+    <input class="form-control mb-2" type="file" accept=".txt,.csv" (change)="readCoverageFile($event)">
+    <label class="form-check mb-2"><input class="form-check-input" type="checkbox" [(ngModel)]="replaceCoverage" (ngModelChange)="importResult = null"><span class="form-check-label">Replace coverage for the services in this file (disable omitted ZIPs)</span></label>
+    <button class="btn btn-outline-primary me-2" [disabled]="!importText || importBusy" (click)="importCoverage(false)">Preview import</button>
+    <button class="btn btn-primary" [disabled]="!importResult || importResult.errors?.length || importResult.applied || importBusy" (click)="importCoverage(true)">Apply reviewed import</button>
+    <div *ngIf="importResult" class="mt-3"><p>{{importResult.message}} {{importResult.rows ? importResult.rows + ' rows reviewed.' : ''}}</p>
+      <ul><li *ngFor="let e of importResult.errors">Line {{e.line}}: {{e.raw}} — {{e.reason}}</li></ul></div>
+  </div></div>
+</div>

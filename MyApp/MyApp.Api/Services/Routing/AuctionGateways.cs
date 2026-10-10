@@ -54,38 +54,65 @@ public sealed class AuctionGateway(IServiceScopeFactory scopes, IDataProtectionP
 {
     private readonly IDataProtector _protector = protection.CreateProtector("Homeyy.ExternalAuction.PostReferences.v1");
     public static readonly ProviderCapability[] Capabilities = [
-        new("BLUEINK", true, true, "auth_code", "Configured verticals", "Existing post compliance; no certificates on ping", "Configured test/production ping and post", null),
+        new("BLUEINK", true, true, "auth_code", "Configured verticals", "TrustedForm or Jornaya required on ping; contact data on winner post only", "Configured test/production ping and post", null),
         new("NETWORX", true, true, "token", "Active task mappings", "TrustedForm/consent on post", "Configured BaseUrl; test ZIP 00001", null),
         new("Mili", true, true, "ping_id", "Roofing, Windows, HVAC, Bathroom", "Existing post compliance", "Configured ping/post; lp_test", null),
         new("InsuranceTales", true, true, "ping_id", "Windows", "Existing post compliance", "Configured ping/post; lp_test", null),
-        new("Modernize", true, true, "pingToken", "Roofing, Windows, HVAC, Bathroom", "TrustedForm and TCPA consent on winner post", "Configured /ping-post/pings and /posts; price in USD; token valid up to 30 minutes", null) ];
+        new("Modernize", true, true, "pingToken", "Roofing, Windows, Bathroom, HVAC", "TrustedForm required on winner post", "Configured production ping/post", "Requires production tagId and provider approval") ];
     private static IAuctionProvider? Find(IServiceProvider services, string code) => services.GetServices<IExternalLeadProvider>()
-        .OfType<IAuctionProvider>().SingleOrDefault(x => x.PlatformCode == code);
-    public bool Enabled(string platform, string vertical) { using var s = scopes.CreateScope(); return Find(s.ServiceProvider, platform)?.IsEnabled(vertical) == true; }
+        .OfType<IAuctionProvider>().SingleOrDefault(x => string.Equals(x.PlatformCode, code, StringComparison.OrdinalIgnoreCase));
+    public bool Enabled(string platform, string vertical) { if (AuctionProviderPolicy.Excluded(platform)) return false; using var s = scopes.CreateScope(); return Find(s.ServiceProvider, platform)?.IsEnabled(vertical) == true; }
     public bool Idempotent(string platform) { using var s = scopes.CreateScope(); return Find(s.ServiceProvider, platform)?.SupportsIdempotentPost == true; }
     public async Task<AuctionOffer> PingAsync(string platform, AuctionFacts facts, CancellationToken ct)
     {
+        if (AuctionProviderPolicy.Excluded(platform)) throw new InvalidOperationException("Provider excluded from auction.");
         using var s = scopes.CreateScope();
+        var provider = Find(s.ServiceProvider, platform);
+        if (provider == null || !provider.IsEnabled(facts.Vertical))
+            throw new InvalidOperationException("Provider disabled or unavailable.");
+        if (platform.Equals("BLUEINK", StringComparison.OrdinalIgnoreCase))
+        {
+            var db = s.ServiceProvider.GetRequiredService<MyAppDbContext>();
+            var proof = await db.Leads.AsNoTracking().Where(l => l.Id == facts.LeadId)
+                .Select(l => new { l.TrustedFormCertificateUrl, l.JornayaLeadId }).SingleAsync(ct);
+            return await ((ExternalDeliveries.BlueInk.BlueInkLeadProvider)provider)
+                .PingWithComplianceAsync(facts, proof.TrustedFormCertificateUrl, proof.JornayaLeadId, true, ct);
+        }
         if (platform == "Mili")
         {
             var db = s.ServiceProvider.GetRequiredService<MyAppDbContext>();
-            await using var cap = await LeadExecutionLock.AcquireResourceAsync(db, $"Homeyy.Mili.PingQuota.{facts.Vertical}", ct);
-            if (cap == null) return new(false, null, null, null, "{}", "{}", "Mili shared quota reservation busy.");
-            var now = DateTime.UtcNow;
-            var history = db.LeadRoutingAttempts.Where(a => a.PlatformCode == "Mili" && a.LeadRoutingRun.VerticalCode == facts.Vertical);
-            if (await history.CountAsync(a => a.PingDispatchedOn >= now.AddMinutes(-1), ct) >= 1 ||
-                await history.CountAsync(a => a.PingDispatchedOn >= now.AddHours(-1), ct) >= 45 ||
-                await history.CountAsync(a => a.PingDispatchedOn >= now.AddDays(-1), ct) >= 1250)
-                return new(false, null, null, null, "{}", "{}", "Mili shared rolling quota reached.");
-            var attempt = await history.SingleAsync(a => a.LeadId == facts.LeadId && a.Status == "PingStarted", ct);
-            if (attempt.PingDispatchedOn != null) return new(false, null, null, null, "{}", "{}", "Mili ping already reserved; no replay.");
-            attempt.PingDispatchedOn = now;
-            await db.SaveChangesAsync(ct);
-        }
-        return await Find(s.ServiceProvider, platform)!.PingAsync(facts, ct);
+            while (true)
+            {
+                TimeSpan wait;
+                await using (var cap = await LeadExecutionLock.AcquireResourceAsync(db, $"Homeyy.Mili.PingQuota.{facts.Vertical}", ct))
+                {
+                    if (cap == null) wait = TimeSpan.FromMilliseconds(250);
+                    else
+                    {
+                        var now = DateTime.UtcNow;
+                        var history = db.LeadRoutingAttempts.Where(a => a.PlatformCode == "Mili" && a.LeadRoutingRun.VerticalCode == facts.Vertical);
+                        var times = await history.Where(a => a.PingDispatchedOn >= now.AddDays(-1))
+                            .Select(a => a.PingDispatchedOn!.Value).ToListAsync(ct);
+                        wait = MiliQuotaPolicy.Wait(times, now);
+                        if (wait <= TimeSpan.Zero)
+                        {
+                            var attempt = await history.SingleAsync(a => a.LeadId == facts.LeadId && a.Status == "PingStarted", ct);
+                            if (attempt.PingDispatchedOn != null)
+                                return new(false, null, null, null, "{}", "{}", "Mili ping already reserved; no replay.");
+                            attempt.PingDispatchedOn = now;
+                            await db.SaveChangesAsync(ct);
+                            break;
+                        }
+                    }
+                }
+                // Wait without holding the database lock. The auction cancellation token
+                // prevents sending after its deadline; restart never replays a reserved ping.
+                await Task.Delay(wait, ct);
+            }
+        }        return await Find(s.ServiceProvider, platform)!.PingAsync(facts, ct);
     }
     public async Task<AuctionPost> PostAsync(string platform, AuctionWork work, string reference, string? context, string key, CancellationToken ct)
-    { using var s = scopes.CreateScope(); return await Find(s.ServiceProvider, platform)!.PostAsync(work.Lead, work.Run.VerticalCode, reference, context, key, ct); }
+    { if (AuctionProviderPolicy.Excluded(platform)) throw new InvalidOperationException("Provider excluded from auction."); using var s = scopes.CreateScope(); return await Find(s.ServiceProvider, platform)!.PostAsync(work.Lead, work.Run.VerticalCode, reference, context, key, ct); }
     public string Protect(string value) => _protector.Protect(value);
     public string Unprotect(string value) => _protector.Unprotect(value);
 }

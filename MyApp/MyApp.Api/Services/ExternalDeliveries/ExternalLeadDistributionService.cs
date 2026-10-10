@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
 using System.Text.Json;
@@ -7,25 +7,28 @@ using MyApp.Api.Services.Routing;
 
 namespace MyApp.Api.Services.ExternalDeliveries
 {
-    public class ExternalLeadDistributionService
+    public class ExternalLeadDistributionService : ILeadRoutingQueue
     {
         private readonly MyAppDbContext _db;
         private readonly ILogger<ExternalLeadDistributionService> _logger;
         private readonly ExclusiveLeadRoutingService _exclusiveRouting;
         private readonly ExclusiveRoutingOptions _routingOptions;
         private readonly ExternalLeadAuctionOptions _auctionOptions;
+        private readonly ILeadExecutionLocker _locker;
         public ExternalLeadDistributionService(
             MyAppDbContext db,
             ILogger<ExternalLeadDistributionService> logger,
             ExclusiveLeadRoutingService exclusiveRouting,
             IOptions<ExclusiveRoutingOptions> routingOptions,
-            IOptions<ExternalLeadAuctionOptions> auctionOptions)
+            IOptions<ExternalLeadAuctionOptions> auctionOptions,
+            ILeadExecutionLocker locker)
         {
             _db = db;
             _logger = logger;
             _exclusiveRouting = exclusiveRouting;
             _routingOptions = routingOptions.Value;
             _auctionOptions = auctionOptions.Value;
+            _locker = locker;
         }
 
         // ============================================================
@@ -92,7 +95,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
 
             if (RoutingActivation.Mode(_auctionOptions.Enabled, _routingOptions.Enabled) == "Auction")
             {
-                await using var ownership = await LeadExecutionLock.AcquireAsync(_db, lead.Id, cancellationToken);
+                await using var ownership = await _locker.AcquireAsync(_db, lead.Id, cancellationToken);
                 if (ownership == null) return;
                 if (!RoutingActivation.CanCreateAuction(
                     await _db.LeadRoutingRuns.AnyAsync(x => x.LeadId == lead.Id, cancellationToken),

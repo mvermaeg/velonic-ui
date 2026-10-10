@@ -9,6 +9,8 @@ public sealed class AuctionConfigurationCheck(IOptions<ExternalLeadAuctionOption
 {
     public Task StartAsync(CancellationToken ct)
     {
+        logger.LogInformation("Lead routing mode: {Mode}; ExternalLeadAuction:Enabled={AuctionEnabled}. Completed website and Meta leads use the same options. Credentials redacted.",
+            auction.Value.Enabled ? "Auction" : "Legacy", auction.Value.Enabled);
         if (!auction.Value.Enabled) return Task.CompletedTask;
         using var scope = scopes.CreateScope();
         var gateway = scope.ServiceProvider.GetRequiredService<IAuctionGateway>();
@@ -18,7 +20,7 @@ public sealed class AuctionConfigurationCheck(IOptions<ExternalLeadAuctionOption
             if (verticals.Length == 0)
                 logger.LogWarning("Auction provider {Provider} is unavailable: disabled, unsupported verticals, missing credentials, invalid HTTPS endpoints or split ping/post mode disabled. Check configuration; values redacted.", provider.PlatformCode);
         }
-        logger.LogInformation("Modernize uses the documented price/pingToken contract. Production activation requires provider staging approval. Unknown winner post outcomes require reconciliation; automatic replay is disabled.");
+        logger.LogInformation("Modernize participates when configured with an approved production tag ID. Unknown winner post outcomes require reconciliation; automatic replay is disabled.");
         if (networx.Value.Enabled)
         {
             var n = networx.Value;

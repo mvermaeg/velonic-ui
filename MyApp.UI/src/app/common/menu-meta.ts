@@ -189,7 +189,13 @@ export const MENU: MenuItem[] = [
        {
         key: 'bidding-settings',
         label: 'Bidding Settings',
-        link: '/clients/bidding-settings',
+       link: '/clients/bidding-settings',
+        parentKey: 'clients'
+      },
+      {
+        key: 'lead-routing-control',
+        label: 'Lead Routing Control',
+        link: '/clients/routing-control',
         parentKey: 'clients'
       },
       {

@@ -20,6 +20,7 @@ public sealed partial class ModernizeLeadProvider : IAuctionProvider
     public async Task<AuctionOffer> PingAsync(AuctionFacts facts, CancellationToken ct)
     {
         if (!IsEnabled(facts.Vertical)) return RejectPing("Modernize is disabled or not configured for this service.");
+        if (!facts.IsTest && _options.UseStaging) return RejectPing("Real lead cannot use Modernize staging.");
         var payload = AuctionPayload(facts);
         if (payload == null) return RejectPing("Modernize requires supported project/material answers and home ownership.");
         var endpoint = AuctionEndpoint;
@@ -48,6 +49,8 @@ public sealed partial class ModernizeLeadProvider : IAuctionProvider
     {
         var error = ValidateLead(lead);
         if (error != null) return RejectPost(error);
+        if (string.IsNullOrWhiteSpace(lead.TrustedFormCertificateUrl))
+            return RejectPost("Modernize requires TrustedForm proof on winner post.");
         if (!IsEnabled(vertical) || string.IsNullOrWhiteSpace(reference)) return RejectPost("Modernize winner is no longer enabled or has no saved ping token.");
         PingSnapshot? snapshot;
         try { snapshot = JsonSerializer.Deserialize<PingSnapshot>(context ?? "null"); }
@@ -114,8 +117,10 @@ public sealed partial class ModernizeLeadProvider : IAuctionProvider
                     var x when x.Contains("tar") => "ROOFING_TAR_TORCHDOWN",
                     var x when x.Contains("composite") => "ROOFING_COMPOSITE", _ => null };
                 if (service == null || !repair && !install) return null;
+                var homeType = Value("roofInstallationHomeType");
+                if (project == "installnewroof" && homeType is not ("Newly constructed home" or "Existing home")) return null;
                 payload["service"] = service;
-                payload["RoofingPlan"] = repair ? "Repair existing roof" : project.Contains("replace") ? "Completely replace roof" : "Install roof on new construction";
+                payload["RoofingPlan"] = repair ? "Repair existing roof" : project.Contains("replace") || homeType == "Existing home" ? "Completely replace roof" : "Install roof on new construction";
                 break;
             case "Windows":
                 var count = Value("windowCount", "numWindows", "windowsCount", "windowQuantity");

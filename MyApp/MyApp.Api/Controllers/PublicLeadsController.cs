@@ -1,13 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyApp.Api.Data;
 using MyApp.Api.Data.Entities;
 using MyApp.Api.DTOs.Leads;
 using MyApp.Api.DTOs.Location;
-using MyApp.Api.Services.Bidding;
-using MyApp.Api.Services.Deliveries;
 using MyApp.Api.Services.EmailValidation;
-using MyApp.Api.Services.ExternalDeliveries;
+using MyApp.Api.Services.Routing;
 using MyApp.Api.Services.Fraud;
 using MyApp.Api.Services.Location;
 using System.Text.Json;
@@ -19,35 +17,29 @@ namespace MyApp.Api.Controllers
     public class PublicLeadsController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        private readonly ExternalLeadDistributionService _externalLeadDistributionService;
+        private readonly CompletedLeadRouter _completedLeadRouter;
         private readonly BouncerEmailValidationService _emailValidation;
-        private readonly LeadDeliveryService _leadDeliveryService;
         private readonly IpLocationService _ipLocationService;
-        private readonly LeadBiddingService _leadBiddingService;
         private readonly MyAppDbContext _db;
         private readonly ILeadFraudService _leadFraudService;
         private readonly IAddressValidationService _addressValidationService;
 
         public PublicLeadsController(
             MyAppDbContext db,
-            LeadBiddingService leadBiddingService,
             ILeadFraudService leadFraudService,
             IpLocationService ipLocationService,
             IAddressValidationService addressValidationService,
-            LeadDeliveryService leadDeliveryService,
             BouncerEmailValidationService emailValidation,
-            ExternalLeadDistributionService externalLeadDistributionService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            CompletedLeadRouter completedLeadRouter)
         {
             _db = db;
-            _leadBiddingService = leadBiddingService;
             _leadFraudService = leadFraudService;
             _addressValidationService = addressValidationService;
             _ipLocationService = ipLocationService;
-            _leadDeliveryService = leadDeliveryService;
             _emailValidation = emailValidation;
-            _externalLeadDistributionService = externalLeadDistributionService;
             _configuration = configuration;
+            _completedLeadRouter = completedLeadRouter;
         }
 
         [HttpPost("validate-email")]
@@ -683,36 +675,7 @@ namespace MyApp.Api.Controllers
                 //}
 
 
-                if (!lead.IsTest)
-                {
-                    // Preserve the existing production process.
-                    await _leadBiddingService.RunForLeadAsync(lead.Id);
-
-                    await _externalLeadDistributionService
-                        .QueueForLeadAsync(lead.Id);
-
-                    var winningBid = await _db.LeadBiddingResults
-                        .Where(x =>
-                            x.LeadId == lead.Id &&
-                            x.IsWon &&
-                            !x.IsSold)
-                        .OrderByDescending(x => x.BidAmount)
-                        .FirstOrDefaultAsync();
-
-                    if (winningBid != null)
-                    {
-                        await _leadDeliveryService
-                            .CreateDeliveryFromBiddingResultAsync(
-                                winningBid.Id);
-                    }
-                }
-                else if (_configuration.GetValue<bool>("LeadRouting:Enabled") || _configuration.GetValue<bool>("ExternalLeadAuction:Enabled"))
-                {
-                    // Test leads enter only the new exclusive router.
-                    // Existing internal bidding/delivery remains untouched.
-                    await _externalLeadDistributionService
-                        .QueueForLeadAsync(lead.Id);
-                }
+                await _completedLeadRouter.CompleteAsync(lead, HttpContext.RequestAborted);
 
 
 

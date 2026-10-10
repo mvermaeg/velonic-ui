@@ -405,7 +405,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.BlueInk
                 cancellationToken);
         }
 
-        private static Dictionary<string, object?> BuildPayload(
+        private Dictionary<string, object?> BuildPayload(
             Lead lead,
             string verticalCode,
             string? authCode,
@@ -475,7 +475,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.BlueInk
             return payload;
         }
 
-        private static Dictionary<string, object?> BuildVerticalData(
+        private Dictionary<string, object?> BuildVerticalData(
     string verticalCode,
     Lead lead,
     Dictionary<string, JsonElement> additionalData)
@@ -506,10 +506,10 @@ namespace MyApp.Api.Services.ExternalDeliveries.BlueInk
                         new Dictionary<string, object?>
                         {
                             ["project_type"] =
-                                GetString(additionalData, "projectType"),
+                                MapRoofingProject(additionalData),
 
                             ["roofing_type"] =
-                                GetString(additionalData, "roofingType")
+                                MapRoofingValue(_options.RoofingMaterials, GetString(additionalData, "roofType") ?? GetString(additionalData, "roofingType") ?? GetString(additionalData, "roofingMaterial"))
                         });
                     break;
 
@@ -703,10 +703,12 @@ namespace MyApp.Api.Services.ExternalDeliveries.BlueInk
 
             try
             {
-                return JsonSerializer.Deserialize<
-                    Dictionary<string, JsonElement>>(json)
-                    ?? new Dictionary<string, JsonElement>(
-                        StringComparer.OrdinalIgnoreCase);
+                var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json)
+                    ?? new Dictionary<string, JsonElement>();
+                var fields = new Dictionary<string, JsonElement>(result, StringComparer.OrdinalIgnoreCase);
+                if (fields.TryGetValue("answers", out var answers) && answers.ValueKind == JsonValueKind.Object)
+                    foreach (var answer in answers.EnumerateObject()) fields[answer.Name] = answer.Value.Clone();
+                return fields;
             }
             catch
             {

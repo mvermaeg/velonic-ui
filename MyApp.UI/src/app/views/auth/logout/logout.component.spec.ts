@@ -1,3 +1,4 @@
+import { componentTestProviders } from '../../../testing/component-test-providers'
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { LogoutComponent } from './logout.component'
@@ -8,6 +9,7 @@ describe('LogoutComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      providers: componentTestProviders(),
       imports: [LogoutComponent],
     }).compileComponents()
 

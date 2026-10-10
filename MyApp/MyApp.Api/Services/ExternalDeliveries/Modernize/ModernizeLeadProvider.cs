@@ -444,6 +444,9 @@ namespace MyApp.Api.Services.ExternalDeliveries.Modernize
         private static string ResolveRoofingPlan(
             Dictionary<string, JsonElement> data)
         {
+            if (string.Equals(GetString(data, "projectType"), "Install New Roof", StringComparison.OrdinalIgnoreCase) &&
+                GetString(data, "roofInstallationHomeType") == "Newly constructed home")
+                return "Install roof on new construction";
             var text =
                 GetString(
                     data,
