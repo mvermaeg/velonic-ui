@@ -157,6 +157,19 @@ await Check("BlueInk split adapter ping omits contacts; post uses stored token",
     Assert(post.Accepted && handler.Bodies.Count == 2 && handler.Bodies[1].Contains("offer-token") && handler.Bodies[1].Contains(lead.Email!), "Separate post did not use token/contact");
     Assert(!post.RequestAudit.Contains(lead.Email!) && !post.RequestAudit.Contains(lead.FullName!), "Post audit leaked PII");
 });
+await Check("BLUEINK records safe validation categories and fences generic post outcomes", async () => {
+    foreach (var body in new[] { "{\"status\":\"failed\",\"errors\":\"invalid phone 5551234567 private@example.test TEST-SECRET\"}", "{}", "not-json" }) {
+        var handler = new CaptureHandler([body]);
+        var provider = ProductionRoutingChecks.BlueInk(handler);
+        var lead = Fixture.Lead(); lead.AdditionalDataJson = "{\"answers\":{\"projectType\":\"Replace Roof\",\"roofType\":\"Metal Roofing\"}}";
+        var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+        Assert(!offer.Accepted && !offer.Error!.Contains("private@example.test") && !offer.Error.Contains("TEST-SECRET"), "BLUEINK error exposed contacts or credentials");
+        var post = await provider.PostAsync(lead, "Roofing", "test-token", null, "stable-key", default);
+        Assert(!post.Accepted && !AuctionPolicy.CanRetry(post, false), "Unsafe post replay");
+        if (body.Contains("invalid phone")) Assert(post.Error!.Contains("Provider validation: phone") && !post.OutcomeUnknown, "Validation reason discarded");
+        else Assert(post.OutcomeUnknown, "Ambiguous BLUEINK post was treated as definitive failure");
+    }
+});
 await Check("InsuranceTales XML bid/token and contact-free ping", async () => {
     var handler = new CaptureHandler(["<response><result>success</result><ping_id>xml-token</ping_id><price>18.75</price></response>"]);
     var provider = new InsuranceTalesLeadProvider(new HttpClient(handler), Options.Create(new InsuranceTalesOptions {

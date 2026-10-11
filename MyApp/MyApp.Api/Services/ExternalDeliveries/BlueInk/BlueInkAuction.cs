@@ -39,7 +39,7 @@ public partial class BlueInkLeadProvider : IAuctionProvider
         var accepted = response.IsSuccessStatusCode && result.Status?.Equals("success", StringComparison.OrdinalIgnoreCase) == true;
         var price = AuctionPolicy.Price(result.Price);
         return new(accepted, price, result.AuthCode, null, AuctionAudit.Payload(payload),
-            AuctionAudit.Response(accepted, price, (int)response.StatusCode), accepted ? null : "Provider rejected ping.");
+            AuctionAudit.Response(accepted, price, (int)response.StatusCode), accepted ? null : "BLUEINK: " + ProviderFailureReason.Classify(result.Errors) + ".");
     }
     public async Task<AuctionPost> PostAsync(Lead lead, string vertical, string reference, string? context, string idempotencyKey, CancellationToken ct)
     {
@@ -53,9 +53,12 @@ public partial class BlueInkLeadProvider : IAuctionProvider
             settings.Token, JsonSerializer.Serialize(payload, JsonOptions), ct);
         var result = ParseResponse(await response.Content.ReadAsStringAsync(ct));
         var accepted = response.IsSuccessStatusCode && result.Status?.Equals("success", StringComparison.OrdinalIgnoreCase) == true;
-        return new(accepted, false, !accepted && (int)response.StatusCode >= 500, result.ConfirmationId ?? reference,
+        var reason = ProviderFailureReason.Classify(result.Errors);
+        var unknown = !accepted && ((int)response.StatusCode >= 500 || string.IsNullOrWhiteSpace(result.Status) ||
+            reason == "Unspecified provider rejection; provider logs required");
+        return new(accepted, false, unknown, result.ConfirmationId ?? reference,
             AuctionAudit.Payload(payload), AuctionAudit.Response(accepted, status: (int)response.StatusCode),
-            accepted ? null : "Provider rejected post or returned an unconfirmed outcome.", (int)response.StatusCode);
+            accepted ? null : "BLUEINK: " + reason + (unknown ? "; post acceptance unconfirmed." : "; post rejected."), (int)response.StatusCode);
     }
 
     private static string? MapRoofingValue(Dictionary<string, string> approved, string? input)

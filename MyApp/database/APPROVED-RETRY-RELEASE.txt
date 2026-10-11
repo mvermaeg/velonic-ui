@@ -67,3 +67,18 @@ D:\Development\Velonic\MyApp.UI\dist\velonic\browser to marketing.homeyy.com.
 Both UI changes were already committed before this API-only correction.
 
 No AWS/IIS deployment was performed by this task.
+
+Follow-up — 11 October 2026, 15:21 UTC
+The guarded retry-lead-142-approved.sql was applied after confirming no previous
+winner, post or delivery and active NETWORX Cedar Shake replacement task 329.
+Existing run 27 was reused. NETWORX accepted the winner-only post at 15:21:45 UTC
+with a bid of 1.20 and success code 2621519641. Do not resend lead 142 again.
+Mili rejected its ping with an eligibility filter; BLUEINK timed out; Modernize
+was excluded. The bid is not confirmed payable revenue or a matched result.
+
+The subsequent BLUEINK code correction retains only fixed rejection categories
+instead of discarding the provider's error. Generic or malformed post outcomes
+now require reconciliation and cannot automatically replay or switch winners.
+Publish the latest API binaries to activate this correction. This change cannot
+recover the discarded historical errors for 144 or 149. Leads already posted
+to any winner remain on hold until their provider outcome/release is confirmed.
