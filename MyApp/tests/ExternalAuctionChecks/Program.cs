@@ -203,6 +203,18 @@ await Check("Mili uses separate contact-free ping and stored-token post", async 
     Assert(handler.Bodies[1].Contains("type=Exclusive") && !handler.Bodies[1].Contains("type=Shared"), "Winner post changed exclusive type");
     Assert(!handler.Bodies[1].Contains("lp_test=1"), "Real-lead winner post incorrectly used test mode");
 });
+await Check("approved supplemental Mili ping/post use Shared without exposing contacts on ping", async () => {
+    var handler = new CaptureHandler(["<response><result>success</result><ping_id>shared-token</ping_id><price>12</price></response>",
+        "<response><result>success</result><lead_id>shared-delivery</lead_id></response>"]);
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = false,
+        Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
+    var lead = Fixture.Lead(); lead.IsTest = false;
+    var offer = await provider.PingSharedAsync(AuctionFacts.From(lead, "Roofing"), default);
+    Assert(offer.Accepted && handler.Bodies[0].Contains("type=Shared") && !handler.Bodies[0].Contains("type=Exclusive"), "Supplemental sale falsely claimed exclusivity");
+    foreach (var secret in new[] { lead.Email!, lead.Phone!, lead.FullName!, lead.Address! }) Assert(!Uri.UnescapeDataString(handler.Bodies[0]).Contains(secret), "Shared ping leaked contacts");
+    var post = await provider.PostSharedAsync(lead, "Roofing", offer.Reference!, offer.PostContext, default);
+    Assert(post.Accepted && handler.Bodies[1].Contains("type=Shared") && handler.Bodies.Count == 2, "Shared winner post changed contract");
+});
 await Check("Mili campaign errors are classified without contacts; production stays live and quota blocks repeated ping", async () => {
     var handler = new CaptureHandler(["<response><result>failed</result><price>0.00</price><errors><error>Invalid Campaign ID or Key TEST-SECRET private@example.com</error></errors></response>"]);
     var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = true,

@@ -8,6 +8,10 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
         !string.IsNullOrWhiteSpace(c.CampaignId) && !string.IsNullOrWhiteSpace(c.CampaignKey) &&
         AuctionPolicy.HttpsEndpoint(_options.PingUrl) && AuctionPolicy.HttpsEndpoint(_options.PostUrl);
     public async Task<AuctionOffer> PingAsync(AuctionFacts facts, CancellationToken ct)
+        => await PingAuctionAsync(facts, "Exclusive", ct);
+    public Task<AuctionOffer> PingSharedAsync(AuctionFacts facts, CancellationToken ct)
+        => PingAuctionAsync(facts, "Shared", ct);
+    private async Task<AuctionOffer> PingAuctionAsync(AuctionFacts facts, string type, CancellationToken ct)
     {
         if (!IsWithinMiliSchedule(out _))
             return new(false, null, null, null, "{}", "{}", "Mili outside permitted Pacific posting hours.");
@@ -17,7 +21,7 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
         var payload = BuildPingFields(facts.ToMappingLead(), ResolveCampaign(facts.Vertical)!, project);
         // The auction posts to exactly one locked winner. Legacy Shared configuration
         // does not describe this contract and can fail the provider's TYPE filter.
-        payload["type"] = "Exclusive";
+        payload["type"] = type;
         payload["lp_response"] = "xml";
         if (facts.IsTest) payload["lp_test"] = "1"; else payload.Remove("lp_test");
         using var content = new FormUrlEncodedContent(payload);
@@ -28,11 +32,15 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
             AuctionAudit.Response(accepted, parsed.Price, (int)response.StatusCode), accepted ? null : SafeMiliError(parsed.Error), project);
     }
     public async Task<AuctionPost> PostAsync(Lead lead, string vertical, string reference, string? context, string idempotencyKey, CancellationToken ct)
+        => await PostAuctionAsync(lead, vertical, reference, context, "Exclusive", ct);
+    public Task<AuctionPost> PostSharedAsync(Lead lead, string vertical, string reference, string? context, CancellationToken ct)
+        => PostAuctionAsync(lead, vertical, reference, context, "Shared", ct);
+    private async Task<AuctionPost> PostAuctionAsync(Lead lead, string vertical, string reference, string? context, string type, CancellationToken ct)
     {
         var validation = ValidateLead(lead);
         if (validation != null || context == null) return new(false, false, false, null, "{}", "{}", validation ?? "Project snapshot missing.");
         var payload = BuildPostFields(lead, ResolveCampaign(vertical)!, reference, context);
-        payload["type"] = "Exclusive";
+        payload["type"] = type;
         payload["lp_response"] = "xml";
         if (lead.IsTest) payload["lp_test"] = "1"; else payload.Remove("lp_test");
         using var content = new FormUrlEncodedContent(payload);
