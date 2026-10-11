@@ -52,6 +52,6 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
         if (value.Contains("TYPE", StringComparison.OrdinalIgnoreCase) && value.Contains("filter", StringComparison.OrdinalIgnoreCase)) return "Mili rejected: TYPE filter mismatch.";
         if (value.Contains("duplicate", StringComparison.OrdinalIgnoreCase)) return "Mili rejected: Duplicate.";
         if (value.Contains("parse", StringComparison.OrdinalIgnoreCase)) return "Mili response malformed; acceptance unconfirmed.";
-        return "Mili rejected or returned an unconfirmed outcome; consult provider logs.";
+        return "Mili: " + ProviderFailureReason.Classify(value) + ".";
     }
 }

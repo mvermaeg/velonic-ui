@@ -18,6 +18,15 @@ using MyApp.Api.Services.ExternalDeliveries.Networx;
 var passed = 0;
 void Assert(bool condition, string message) { if (!condition) throw new Exception(message); }
 async Task Check(string name, Func<Task> test) { await test(); Console.WriteLine("PASS " + name); passed++; }
+await Check("provider failure classifications retain actionable categories without echoed contacts or credentials", () => {
+    Assert(ProviderFailureReason.Classify("invalid phone 2025550123 for private@example.test; key=SECRET") == "Provider validation: phone", "Unsafe error persistence");
+    Assert(ProviderFailureReason.Classify("No buyers found") == "No buyer match", "No-buyer classification lost");
+    Assert(ProviderFailureReason.Classify("duplicate lead") == "Duplicate submission", "Duplicate classification lost");
+    Assert(ProviderFailureReason.Classify("expired token") == "Expired request token", "Expiry classification lost");
+    Assert(ProviderFailureReason.Classify("TYPE filter") == "Provider eligibility filter", "Filter classification lost");
+    Assert(!ProviderFailureReason.Classify("private@example.test SECRET").Contains("SECRET"), "Raw provider error exposed");
+    return Task.CompletedTask;
+});
 Fixture New(params (string Code, decimal Bid, int Delay)[] offers) => new(offers);
 await Check("service + ZIP match selects Thumbtack and prevents all pings/posts", async () => {
     var f = New(("A", 10, 0)); f.TT.Covered = true;

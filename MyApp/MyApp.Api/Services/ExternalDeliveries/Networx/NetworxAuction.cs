@@ -44,7 +44,7 @@ public partial class NetworxLeadProvider : IAuctionProvider
         var accepted = response.IsSuccessStatusCode && IsSuccessful(parsed);
         var price = AuctionPolicy.Price(parsed.Price);
         return new(accepted, price, parsed.Token, null, AuctionAudit.Payload(payload),
-            AuctionAudit.Response(accepted, price, (int)response.StatusCode), accepted ? null : "Provider rejected ping.", task);
+            AuctionAudit.Response(accepted, price, (int)response.StatusCode), accepted ? null : "NETWORX: " + ProviderFailureReason.Classify(parsed.ErrorMessage) + ".", task);
     }
     public async Task<AuctionPost> PostAsync(Lead lead, string vertical, string reference, string? context, string idempotencyKey, CancellationToken ct)
     {
@@ -57,6 +57,6 @@ public partial class NetworxLeadProvider : IAuctionProvider
         var accepted = response.IsSuccessStatusCode && IsSuccessful(parsed);
         return new(accepted, false, !accepted && (int)response.StatusCode >= 500, parsed.SuccessCode ?? reference,
             AuctionAudit.Payload(payload), AuctionAudit.Response(accepted, status: (int)response.StatusCode),
-            accepted ? null : "Provider rejected post or returned an unconfirmed outcome.", (int)response.StatusCode);
+            accepted ? null : "NETWORX: " + ProviderFailureReason.Classify(parsed.ErrorMessage) + "; post acceptance unconfirmed.", (int)response.StatusCode);
     }
 }
