@@ -17,8 +17,13 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
         if (ownership == null) return;
         var w = await store.LoadAsync(id, ct);
         if (w == null || Terminal(w.Run.Status)) return;
+        if (w.Run.Status == "ApprovedRetryPending")
+        {
+            if (!w.RiskReviewApproved) { await Finish(w, "Cancelled", "Run-specific risk approval missing; manual review required.", ct); return; }
+            w.Run.Status = "Pending";
+        }
         if (w.Run.WinnerAttemptId != null && w.Run.Status == "Posting") { await PostWinner(w, ct); return; }
-        if (!w.Lead.IsCompleted || w.Lead.IsDeleted || MyApp.Api.Services.Fraud.LeadRoutingRiskPolicy.Blocks(w.Lead))
+        if (!w.Lead.IsCompleted || w.Lead.IsDeleted || MyApp.Api.Services.Fraud.LeadRoutingRiskPolicy.Blocks(w.Lead, w.RiskReviewApproved))
         { await Finish(w, "Cancelled", "Lead is no longer eligible.", ct); return; }
 
         if (w.Run.WinnerAttemptId != null) { await PostWinner(w, ct); return; }
@@ -77,7 +82,9 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
                 var supported = rule.PlatformCode != null && gateway.Enabled(rule.PlatformCode, w.Run.VerticalCode);
                 w.Attempts.Add(new LeadRoutingAttempt { LeadRoutingRunId = w.Run.Id, LeadId = w.Lead.Id,
                     LeadRoutingRuleId = rule.Id, DestinationType = "ExternalPlatform", PlatformCode = rule.PlatformCode,
-                AttemptNumber = 1, CreatedOn = DateTime.UtcNow, Status = supported ? "PingStarted" : "Excluded",
+                AttemptNumber = w.Attempts.Where(a => string.Equals(a.PlatformCode, rule.PlatformCode, StringComparison.OrdinalIgnoreCase))
+                    .Select(a => a.AttemptNumber).DefaultIfEmpty(0).Max() + 1,
+                    CreatedOn = DateTime.UtcNow, Status = supported ? "PingStarted" : "Excluded",
                     PingRequestAudit = supported ? AuctionAudit.Request(rule.PlatformCode!, "ping-intent", w.Lead.Id) : null,
                     ErrorMessage = supported ? null : "Provider disabled, unsupported, or missing a monetary bid contract." });
             }

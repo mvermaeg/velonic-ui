@@ -18,7 +18,7 @@ public sealed class ExternalAuctionWorker(IServiceScopeFactory scopes, IOptions<
                     var db = scope.ServiceProvider.GetRequiredService<MyAppDbContext>();
                     var now = DateTime.UtcNow;
                     var ids = await db.LeadRoutingRuns.AsNoTracking().Where(x => x.RoutingMode == "Auction" &&
-                        (x.Status == "Pending" || x.Status == "CheckingThumbtack" || x.Status == "Pinging" ||
+                        (x.Status == "Pending" || x.Status == "ApprovedRetryPending" || x.Status == "CheckingThumbtack" || x.Status == "Pinging" ||
                          x.Status == "CollectingBids" || x.Status == "WinnerSelected" || x.Status == "Posting") &&
                         (x.NextAttemptOn == null || x.NextAttemptOn <= now)).OrderBy(x => x.CreatedOn).Select(x => x.Id).Take(20).ToListAsync(stoppingToken);
                     foreach (var id in ids)

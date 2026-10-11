@@ -5,7 +5,10 @@ using MyApp.Api.Data.Entities;
 
 namespace MyApp.Api.Services.Routing;
 
-public sealed record AuctionWork(LeadRoutingRun Run, Lead Lead, List<LeadRoutingAttempt> Attempts);
+public sealed record AuctionWork(LeadRoutingRun Run, Lead Lead, List<LeadRoutingAttempt> Attempts)
+{
+    public bool RiskReviewApproved { get; init; }
+}
 public interface IAuctionStore
 {
     Task<AuctionWork?> LoadAsync(long id, CancellationToken ct);
@@ -55,7 +58,11 @@ public sealed class SqlAuctionStore(MyAppDbContext db, IAuctionGateway gateway) 
         db.ChangeTracker.Clear();
         var run = await db.LeadRoutingRuns.Include(x => x.Lead).ThenInclude(x => x.LeadType)
             .Include(x => x.LeadRoutingAttempts).FirstOrDefaultAsync(x => x.Id == id && x.RoutingMode == "Auction", ct);
-        return run == null ? null : new(run, run.Lead, run.LeadRoutingAttempts.ToList());
+        if (run == null) return null;
+        var approval = Fraud.LeadRoutingRiskPolicy.ApprovalRemark(run.Id);
+        var approved = await db.LeadStatusHistories.AsNoTracking().AnyAsync(h =>
+            h.LeadId == run.LeadId && h.Remarks == approval && h.ChangedOn >= run.CreatedOn, ct);
+        return new(run, run.Lead, run.LeadRoutingAttempts.ToList()) { RiskReviewApproved = approved };
     }
     public async Task<List<LeadRoutingRule>> RulesAsync(AuctionWork w, CancellationToken ct)
     {

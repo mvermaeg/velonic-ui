@@ -28,7 +28,7 @@ public static class DashboardReport
         var deliveredToday = await external.Where(x => x.DeliveredOn >= today).Select(x => x.LeadId)
             .Union(internalDeliveries.Where(x => x.DeliveredOn >= today).Select(x => x.LeadId)).CountAsync(ct);
         var runs = db.LeadRoutingRuns.AsNoTracking().Where(x => leads.Any(l => l.Id == x.LeadId));
-        var pending = await runs.CountAsync(x => x.Status == "Pending" || x.Status == "CheckingThumbtack" ||
+        var pending = await runs.CountAsync(x => x.Status == "Pending" || x.Status == "ApprovedRetryPending" || x.Status == "CheckingThumbtack" ||
             x.Status == "Pinging" || x.Status == "CollectingBids" || x.Status == "WinnerSelected" || x.Status == "Posting", ct);
         var recent = runs.Where(x => x.CreatedOn >= from && x.CreatedOn <= now);
         var thumbtack = await recent.CountAsync(x => x.ThumbtackSearchStartedOn != null || x.Status == "ThumbtackSelected" || x.Status == "ThumbtackFailed", ct);

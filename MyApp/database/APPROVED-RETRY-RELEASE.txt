@@ -1,0 +1,69 @@
+Approved lead retry release — 11 October 2026
+
+Required publication
+Publish MyApp.Api from the latest main commit. Release output generated locally:
+D:\Development\Velonic\MyApp\MyApp.Api\bin\Release\net8.0\publish-routing-20261011
+
+Use the existing AWS API deployment process and restart its application after
+copying the Release binaries. Preserve the live appsettings files, environment
+variables, connection string, provider credentials and durable data-protection
+key ring. The local publication output includes local configuration files:
+do not replace the live configuration with them. No schema migration is needed.
+
+Keep ExternalLeadAuction:Enabled=true, LeadRouting:Enabled=false, the auction
+window at 90 seconds, AllowWinnerFallback=false and the existing key-ring path.
+The code now allows automatic routing for fraud scores through 60 inclusive;
+quality and IsSuspicious do not separately block that approved numerical range.
+Invalid email, incomplete/deleted leads, coverage exclusivity and winner-only
+posting protections remain. The higher-score exception is scoped to one run;
+it never changes the stored fraud score or authorizes duplicate routing.
+
+Operations already applied to AWS VelonicDB
+144 / run 29: home type recorded as Newly constructed home. Existing queued
+auction scheduled for 2026-10-11 11:00 UTC (16:30 IST). Old attempts retained.
+145 / run 33: one user-approved genuine-request exception recorded. Scheduled
+for 2026-10-11 11:01 UTC (16:31 IST), status ApprovedRetryPending. Older API
+workers ignore that status. The updated worker processes it after publication
+and after the scheduled time, using the same authoritative coverage check.
+147 / run 31: ReconciliationRequired, NETWORX winner retained, no resend. The
+HTTP 400 post had no retained detailed rejection or accepted delivery evidence.
+Provider confirmation is required before recording its final outcome.
+
+The one-time scripts prepare-approved-retries-144-145.sql and
+mark-lead-147-reconciliation.sql are already applied. They are idempotent and
+guarded by per-lead application locks and ownership/delivery checks; do not
+manually requeue these leads or insert another routing run. They are not schema
+migrations and do not themselves call a provider.
+
+After publication
+Read /api/lead-routing/runs/29, /33 and /31 using the existing authenticated
+admin routing API/UI. Check new attempts and
+provider error categories after 16:31 IST. Pending means queued, not delivered.
+Only a Delivered attempt/accepted delivery confirms provider receipt; a bid
+does not confirm a sale or payable earnings. The API honors Mili's Pacific
+04:00–22:30 window and its actual ping quotas. Do not bypass those provider caps.
+
+Remaining external dependencies
+NETWORX: obtain approved IDs for Tar installation/repair/replacement and Natural
+Slate installation. No mapping is guessed. In particular lead 144 cannot ping
+NETWORX until its Tar installation mapping is confirmed. Lead 145's Metal
+replacement mapping is already supported. Ask NETWORX for the detailed post
+outcome of Custom ID 147 / ZIP 79763 / token reference
+115976acb0ac4a538b829713882. Do not send that reference as a new lead ID.
+Mili: historical errors were generic; the next safe attempt records a fixed
+privacy-safe rejection category. Campaign activation/eligibility decisions must
+be confirmed with Mili if no bid is returned. No bid is not proof of a code bug.
+Modernize: requires an active publisher account, approved services, production
+tagId and provider go-live approval. Missing production credentials cannot be
+invented. It participates only when valid production configuration is supplied.
+
+UI publication
+No UI changes were made for this retry/risk correction: API publication alone
+activates it. If the previous public roofing home-type question has not yet
+been published, separately publish D:\Development\Velonic\Homeyy.com\dist
+to the public site. If the earlier real-data marketing dashboard has not been
+published, separately publish
+D:\Development\Velonic\MyApp.UI\dist\velonic\browser to marketing.homeyy.com.
+Both UI changes were already committed before this API-only correction.
+
+No AWS/IIS deployment was performed by this task.

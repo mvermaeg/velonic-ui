@@ -18,20 +18,45 @@ using MyApp.Api.Services.ExternalDeliveries.Networx;
 var passed = 0;
 void Assert(bool condition, string message) { if (!condition) throw new Exception(message); }
 async Task Check(string name, Func<Task> test) { await test(); Console.WriteLine("PASS " + name); passed++; }
-await Check("quality above 60 routes regardless of suspicious flag; lower quality and invalid email are blocked", async () => {
-    foreach (var score in new[] { 25, 59, 60, 61, 75, 100 }) {
+await Check("fraud through 60 routes including quality 40-60; higher fraud and invalid email are blocked", async () => {
+    foreach (var score in new[] { 0, 39, 40, 59, 60, 61, 75, 100 }) {
         var f = New(("A", 10, 0));
         f.Store.Work.Lead.IsTest = false;
         f.Store.Work.Lead.IsSuspicious = true;
-        f.Store.Work.Lead.FraudScore = 100 - score;
-        f.Store.Work.Lead.LeadQualityScore = score;
+        f.Store.Work.Lead.FraudScore = score;
+        f.Store.Work.Lead.LeadQualityScore = 100 - score;
         await f.Run();
-        Assert(f.Store.Work.Run.Status == (score > 60 ? "Won" : "Cancelled"), "Incorrect quality boundary");
-        Assert(score > 60 || f.Gateway.Pings.Count == 0, "Blocked lead pinged");
+        Assert(f.Store.Work.Run.Status == (score <= 60 ? "Won" : "Cancelled"), "Incorrect fraud boundary");
+        Assert(score <= 60 || f.Gateway.Pings.Count == 0, "Blocked lead pinged");
     }
     var invalid = New(("A", 10, 0)); invalid.Store.Work.Lead.IsTest = false;
     invalid.Store.Work.Lead.LeadQualityScore = 100; invalid.Store.Work.Lead.IsInvalidEmail = true;
     await invalid.Run(); Assert(invalid.Gateway.Pings.Count == 0, "Invalid email routed");
+});
+await Check("approved risk retry keeps score, routes once and cannot bypass invalid email", async () => {
+    var f = New(("A", 10, 0), ("B", 5, 0));
+    f.Store.Work.Lead.IsTest = false; f.Store.Work.Lead.FraudScore = 75;
+    f.Store.Work.Lead.IsSuspicious = true; f.Store.Work.Run.Status = "ApprovedRetryPending";
+    f.Store.Work = f.Store.Work with { RiskReviewApproved = true };
+    await f.Run(); await f.Run();
+    Assert(f.Store.Work.Run.Status == "Won" && f.Gateway.Posts.SequenceEqual(["A"]) && f.Store.Work.Lead.FraudScore == 75, "Exception changed score or delivered twice");
+    var missing = New(("A", 10, 0)); missing.Store.Work.Run.Status = "ApprovedRetryPending";
+    await missing.Run(); Assert(missing.Gateway.Pings.Count == 0, "Missing approval bypassed");
+    var invalid = New(("A", 10, 0)); invalid.Store.Work.Lead.IsTest = false;
+    invalid.Store.Work.Lead.IsInvalidEmail = true;
+    invalid.Store.Work = invalid.Store.Work with { RiskReviewApproved = true };
+    await invalid.Run(); Assert(invalid.Gateway.Pings.Count == 0, "Approval bypassed invalid email");
+    var covered = New(("A", 10, 0)); covered.Store.Work.Lead.IsTest = false;
+    covered.Store.Work.Lead.FraudScore = 75; covered.TT.Covered = true;
+    covered.Store.Work.Run.Status = "ApprovedRetryPending";
+    covered.Store.Work = covered.Store.Work with { RiskReviewApproved = true };
+    await covered.Run(); Assert(covered.Store.Work.Run.Status == "ThumbtackSelected" && covered.Gateway.Pings.Count == 0, "Risk approval bypassed Thumbtack ownership");
+});
+await Check("authorized replay retains previous rejected attempts with increasing attempt numbers", async () => {
+    var f = New(("A", 10, 0));
+    f.Store.Work.Attempts.Add(new() { Id = 1, PlatformCode = "A", Status = "Rejected", AttemptNumber = 1 });
+    await f.Run();
+    Assert(f.Store.Work.Attempts.Count == 2 && f.Store.Work.Attempts.Last().AttemptNumber == 2 && f.Gateway.Posts.Count == 1, "Replay history lost or duplicate delivery");
 });
 await Check("provider failure classifications retain actionable categories without echoed contacts or credentials", () => {
     Assert(ProviderFailureReason.Classify("invalid phone 2025550123 for private@example.test; key=SECRET") == "Provider validation: phone", "Unsafe error persistence");
@@ -248,6 +273,13 @@ await Check("Networx actual split adapter sends mapped task, token and winner-on
     var post = await p.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "stable-key", default);
     Assert(post.Accepted && handler.Bodies.Count == 2 && handler.Bodies[1].Contains("net-token"), "Networx separate post");
 });
+await Check("NETWORX generic HTTP 400 post requires reconciliation without automatic replay", async () => {
+    using var db = new MyAppDbContext(new DbContextOptionsBuilder<MyAppDbContext>().UseSqlServer("Server=offline.invalid;Database=NeverOpened;Integrated Security=true").Options);
+    var handler = new CaptureHandler(["<response><statusCode>400</statusCode></response>"], HttpStatusCode.BadRequest);
+    var provider = new NetworxLeadProvider(new HttpClient(handler), db, Options.Create(new NetworxOptions { Enabled = true, UserId = "test-user", AccessKey = "TEST-SECRET" }), NullLogger<NetworxLeadProvider>.Instance, new TestTaskLookup(["mapped-task"]));
+    var result = await provider.PostAsync(Fixture.Lead(), "Roofing", "net-token", "mapped-task", "stable-key", default);
+    Assert(!result.Accepted && result.OutcomeUnknown && !AuctionPolicy.CanRetry(result, false), "Generic failed post replay permitted");
+});
 await Check("Networx readiness enumerates 18 roofing options plus existing services", () => {
     Assert(NetworxLeadProvider.RequiredTaskOptions["Roofing"].Length == 18 && NetworxLeadProvider.RequiredTaskOptions.Values.Sum(x => x.Length) == 32, "Mapping manifest"); return Task.CompletedTask;
 });
@@ -448,11 +480,11 @@ sealed class FakeGateway((string Code, decimal Bid, int Delay)[] offers) : IAuct
         return Task.FromResult(new AuctionPost(true, false, false, "delivery-id", "{}", "{}"));
     }
 }
-sealed class CaptureHandler(string[] responses) : HttpMessageHandler
+sealed class CaptureHandler(string[] responses, HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
 {
     public List<string> Bodies = []; private int index;
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-    { Bodies.Add(await request.Content!.ReadAsStringAsync(ct)); return new(HttpStatusCode.OK) { Content = new StringContent(responses[Math.Min(index++, responses.Length - 1)], Encoding.UTF8) }; }
+    { Bodies.Add(await request.Content!.ReadAsStringAsync(ct)); return new(status) { Content = new StringContent(responses[Math.Min(index++, responses.Length - 1)], Encoding.UTF8) }; }
 }
 sealed class NoonPacific : TimeProvider { public override DateTimeOffset GetUtcNow() => new(2026, 9, 28, 19, 0, 0, TimeSpan.Zero); }
 sealed class TestTaskLookup(List<string> tasks) : INetworxAuctionTaskLookup

@@ -55,8 +55,12 @@ public partial class NetworxLeadProvider : IAuctionProvider
         using var response = await SendAsync(payload, ct);
         var parsed = ParseResponse(await response.Content.ReadAsStringAsync(ct));
         var accepted = response.IsSuccessStatusCode && IsSuccessful(parsed);
-        return new(accepted, false, !accepted && (int)response.StatusCode >= 500, parsed.SuccessCode ?? reference,
+        var reason = ProviderFailureReason.Classify(parsed.ErrorMessage);
+        // Generic/malformed post replies require winner-only reconciliation.
+        var unknown = !accepted && ((int)response.StatusCode >= 500 ||
+            reason == "Unspecified provider rejection; provider logs required");
+        return new(accepted, false, unknown, parsed.SuccessCode ?? reference,
             AuctionAudit.Payload(payload), AuctionAudit.Response(accepted, status: (int)response.StatusCode),
-            accepted ? null : "NETWORX: " + ProviderFailureReason.Classify(parsed.ErrorMessage) + "; post acceptance unconfirmed.", (int)response.StatusCode);
+            accepted ? null : "NETWORX: " + reason + (unknown ? "; post acceptance unconfirmed." : "; post rejected."), (int)response.StatusCode);
     }
 }

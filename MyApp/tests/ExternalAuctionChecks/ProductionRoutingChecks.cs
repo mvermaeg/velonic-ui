@@ -28,6 +28,22 @@ static class ProductionRoutingChecks
 {
     public static async Task Run(Func<string, Func<Task>, Task> check, Action<bool, string> assert)
     {
+        await check("SQL auction store requires an approval for this lead and exact run, after creation", async () => {
+            await using var f = await ProductionFixture.Create();
+            await f.Router.CompleteAsync(f.Lead);
+            var run = await f.Db.LeadRoutingRuns.SingleAsync();
+            var gateway = new Fixture([]).Gateway;
+            var store = new SqlAuctionStore(f.Db, gateway);
+            assert(!(await store.LoadAsync(run.Id, default))!.RiskReviewApproved, "Unapproved run bypassed risk");
+            var history = new LeadStatusHistory { LeadId = f.Lead.Id, NewStatus = "New", ChangedOn = run.CreatedOn.AddSeconds(1), Remarks = LeadRoutingRiskPolicy.ApprovalRemark(run.Id + 1) };
+            f.Db.LeadStatusHistories.Add(history); await f.Db.SaveChangesAsync();
+            assert(!(await store.LoadAsync(run.Id, default))!.RiskReviewApproved, "Approval applied to another run");
+            history = await f.Db.LeadStatusHistories.SingleAsync(); history.Remarks = LeadRoutingRiskPolicy.ApprovalRemark(run.Id);
+            history.ChangedOn = run.CreatedOn.AddSeconds(-1); await f.Db.SaveChangesAsync();
+            assert(!(await store.LoadAsync(run.Id, default))!.RiskReviewApproved, "Stale approval applied");
+            history = await f.Db.LeadStatusHistories.SingleAsync(); history.ChangedOn = run.CreatedOn.AddSeconds(1); await f.Db.SaveChangesAsync();
+            assert((await store.LoadAsync(run.Id, default))!.RiskReviewApproved, "Approved run not recognized after reload");
+        });
         await check("dashboard excludes test/deleted leads, deduplicates deliveries and does not report bids as earnings", async () => {
             await using var f = await ProductionFixture.Create();
             var now = new DateTime(2026, 10, 10, 12, 30, 0, DateTimeKind.Utc);
@@ -39,7 +55,7 @@ static class ProductionRoutingChecks
                 f.Db.ExternalLeadDeliveries.Add(new() { LeadId = id, PlatformCode = "NETWORX", Status = "Delivered", DeliveredOn = now.AddMinutes(-10) });
             // Historical double-delivery records must not double count one received lead.
             f.Db.ExternalLeadDeliveries.Add(new() { LeadId = f.Lead.Id, PlatformCode = "BLUEINK", Status = "Delivered", DeliveredOn = now.AddMinutes(-10) });
-            f.Db.LeadRoutingRuns.Add(new() { LeadId = f.Lead.Id, VerticalCode = "Roofing", RoutingMode = "Auction", Status = "Pending", CreatedOn = now });
+            f.Db.LeadRoutingRuns.Add(new() { LeadId = f.Lead.Id, VerticalCode = "Roofing", RoutingMode = "Auction", Status = "ApprovedRetryPending", CreatedOn = now });
             await f.Db.SaveChangesAsync();
             var report = await MyApp.Api.Services.Reporting.DashboardReport.ReadAsync(f.Db, now, default);
             assert(report.TotalLeads == 1 && report.LeadsToday == 1 && report.DeliveredToday == 1 && report.Pending == 1, "Incorrect live dashboard counts");
