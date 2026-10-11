@@ -18,18 +18,19 @@ using MyApp.Api.Services.ExternalDeliveries.Networx;
 var passed = 0;
 void Assert(bool condition, string message) { if (!condition) throw new Exception(message); }
 async Task Check(string name, Func<Task> test) { await test(); Console.WriteLine("PASS " + name); passed++; }
-await Check("routing risk cutoff includes 60 and preserves invalid-email protection", async () => {
-    foreach (var score in new[] { 40, 59, 60, 61, 75 }) {
+await Check("quality above 60 routes regardless of suspicious flag; lower quality and invalid email are blocked", async () => {
+    foreach (var score in new[] { 25, 59, 60, 61, 75, 100 }) {
         var f = New(("A", 10, 0));
         f.Store.Work.Lead.IsTest = false;
         f.Store.Work.Lead.IsSuspicious = true;
-        f.Store.Work.Lead.FraudScore = score;
+        f.Store.Work.Lead.FraudScore = 100 - score;
+        f.Store.Work.Lead.LeadQualityScore = score;
         await f.Run();
-        Assert(f.Store.Work.Run.Status == (score <= 60 ? "Won" : "Cancelled"), "Incorrect score boundary");
-        Assert(score <= 60 || f.Gateway.Pings.Count == 0, "Blocked lead pinged");
+        Assert(f.Store.Work.Run.Status == (score > 60 ? "Won" : "Cancelled"), "Incorrect quality boundary");
+        Assert(score > 60 || f.Gateway.Pings.Count == 0, "Blocked lead pinged");
     }
     var invalid = New(("A", 10, 0)); invalid.Store.Work.Lead.IsTest = false;
-    invalid.Store.Work.Lead.FraudScore = 60; invalid.Store.Work.Lead.IsInvalidEmail = true;
+    invalid.Store.Work.Lead.LeadQualityScore = 100; invalid.Store.Work.Lead.IsInvalidEmail = true;
     await invalid.Run(); Assert(invalid.Gateway.Pings.Count == 0, "Invalid email routed");
 });
 await Check("provider failure classifications retain actionable categories without echoed contacts or credentials", () => {
@@ -387,7 +388,7 @@ sealed class Fixture
         foreach (var x in Gateway.Offers) Store.Work.Attempts.Add(new() { Id = Store.Work.Attempts.Count + 1, LeadRoutingRunId = 1,
             PlatformCode = x.Code, Status = "BidAccepted", PingReferenceId = "encrypted-token", OfferedBidAmount = x.Bid, BidReceivedOn = DateTime.UtcNow });
     }
-    public static Lead Lead() => new() { Id = 1, LeadTypeId = 1, IsCompleted = true, Postcode = "01007", OwnsProperty = true,
+    public static Lead Lead() => new() { Id = 1, LeadTypeId = 1, LeadQualityScore = 100, IsCompleted = true, Postcode = "01007", OwnsProperty = true,
         FullName = "Private Person", Email = "private@example.test", Phone = "5551234567", Address = "12 Private Street",
         TrustedFormCertificateUrl = "CERTIFICATE", LeadStatus = "New", IpAddress = "192.0.2.1", City = "Spokane", State = "WA",
         LandingPageUrl = "https://homeyy.com/roofing?email=private@example.test", TcpaComplianceText = "Test consent",
