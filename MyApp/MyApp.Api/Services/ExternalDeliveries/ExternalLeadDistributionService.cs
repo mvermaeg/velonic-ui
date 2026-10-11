@@ -61,12 +61,7 @@ namespace MyApp.Api.Services.ExternalDeliveries
              * Test leads may pass because providers can use their
              * configured test/staging environments.
              */
-            if (!lead.IsTest &&
-                (
-                    lead.IsSuspicious ||
-                    lead.IsInvalidEmail ||
-                    lead.FraudScore >= 80
-                ))
+            if (MyApp.Api.Services.Fraud.LeadRoutingRiskPolicy.Blocks(lead))
             {
                 _logger.LogInformation(
                     "External delivery skipped for LeadId {LeadId}. " +

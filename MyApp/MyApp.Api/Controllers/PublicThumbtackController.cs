@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -180,12 +180,7 @@ namespace MyApp.Api.Controllers
              * Keep the same fraud protection used by the existing
              * distribution system.
              */
-            if (!lead.IsTest &&
-                (
-                    lead.IsSuspicious ||
-                    lead.IsInvalidEmail ||
-                    lead.FraudScore >= 80
-                ))
+            if (MyApp.Api.Services.Fraud.LeadRoutingRiskPolicy.Blocks(lead))
             {
                 return Ok(new
                 {

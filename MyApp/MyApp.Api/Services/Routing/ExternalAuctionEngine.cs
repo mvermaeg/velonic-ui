@@ -18,7 +18,7 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
         var w = await store.LoadAsync(id, ct);
         if (w == null || Terminal(w.Run.Status)) return;
         if (w.Run.WinnerAttemptId != null && w.Run.Status == "Posting") { await PostWinner(w, ct); return; }
-        if (!w.Lead.IsCompleted || w.Lead.IsDeleted || !w.Lead.IsTest && (w.Lead.IsSuspicious || w.Lead.IsInvalidEmail || w.Lead.FraudScore >= 80))
+        if (!w.Lead.IsCompleted || w.Lead.IsDeleted || MyApp.Api.Services.Fraud.LeadRoutingRiskPolicy.Blocks(w.Lead))
         { await Finish(w, "Cancelled", "Lead is no longer eligible.", ct); return; }
 
         if (w.Run.WinnerAttemptId != null) { await PostWinner(w, ct); return; }
