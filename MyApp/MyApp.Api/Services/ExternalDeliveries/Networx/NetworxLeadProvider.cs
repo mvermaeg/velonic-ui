@@ -986,32 +986,22 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
         private static string BuildComments(
             Lead lead)
         {
-            var parts = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(
-                    lead.CampaignName))
+            // NETWORX comments are exclusively customer-authored free text.
+            // Never synthesize notes from tracking metadata or serialize the form.
+            if (string.IsNullOrWhiteSpace(lead.AdditionalDataJson)) return string.Empty;
+            try
             {
-                parts.Add(
-                    $"Campaign: {lead.CampaignName}");
+                using var document = JsonDocument.Parse(lead.AdditionalDataJson);
+                var root = document.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) return string.Empty;
+                if (root.TryGetProperty("comments", out var comments) && comments.ValueKind == JsonValueKind.String)
+                    return comments.GetString()?.Trim() ?? string.Empty;
+                if (root.TryGetProperty("answers", out var answers) && answers.ValueKind == JsonValueKind.Object &&
+                    answers.TryGetProperty("comments", out comments) && comments.ValueKind == JsonValueKind.String)
+                    return comments.GetString()?.Trim() ?? string.Empty;
             }
-
-            if (!string.IsNullOrWhiteSpace(
-                    lead.PageName))
-            {
-                parts.Add(
-                    $"Page: {lead.PageName}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(
-                    lead.AdditionalDataJson))
-            {
-                parts.Add(
-                    $"Project data: {lead.AdditionalDataJson}");
-            }
-
-            return string.Join(
-                " | ",
-                parts);
+            catch (JsonException) { }
+            return string.Empty;
         }
 
         private static Dictionary<string, string>

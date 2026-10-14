@@ -58,6 +58,14 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
         if (value.Contains("Invalid Campaign", StringComparison.OrdinalIgnoreCase)) return "Mili authentication failed: Invalid Campaign ID or Key.";
         if (value.Contains("No Match", StringComparison.OrdinalIgnoreCase)) return "Mili rejected: No Match.";
         if (value.Contains("TYPE", StringComparison.OrdinalIgnoreCase) && value.Contains("filter", StringComparison.OrdinalIgnoreCase)) return "Mili rejected: TYPE filter mismatch.";
+        if (value.Contains("filter", StringComparison.OrdinalIgnoreCase))
+        {
+            // Retain only approved field names, never echoed values or contacts.
+            foreach (var field in new[] { "Project", "zip_code", "state", "ip_address", "lp_campaign_id" })
+                if (System.Text.RegularExpressions.Regex.IsMatch(value, @"\b" + field + @"\b",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    return "Mili rejected: " + field + " eligibility filter.";
+        }
         if (value.Contains("duplicate", StringComparison.OrdinalIgnoreCase)) return "Mili rejected: Duplicate.";
         if (value.Contains("parse", StringComparison.OrdinalIgnoreCase)) return "Mili response malformed; acceptance unconfirmed.";
         return "Mili: " + ProviderFailureReason.Classify(value) + ".";

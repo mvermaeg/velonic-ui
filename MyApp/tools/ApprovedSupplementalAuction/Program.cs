@@ -28,6 +28,7 @@ if (target.DataSource != "52.54.2.36,1433" || target.InitialCatalog != "VelonicD
 target.ConnectTimeout = 8; connection = target.ConnectionString;
 var blueOptions = config.GetSection(BlueInkOptions.SectionName).Get<BlueInkOptions>()!;
 var miliOptions = config.GetSection(MiliOptions.SectionName).Get<MiliOptions>()!;
+var minimumBid = config.GetSection("ExternalLeadAuction").Get<ExternalLeadAuctionOptions>()!.MinimumBidAmount;
 if (blueOptions.UseTestEndpoints || miliOptions.UseTestMode || miliOptions.LeadType != "Shared") throw new InvalidOperationException("Approved round requires production endpoints and configured Mili Shared type.");
 var keyDirectory = Path.Combine(AppContext.BaseDirectory, "supplemental-key-ring");
 Directory.CreateDirectory(keyDirectory);
@@ -84,7 +85,7 @@ async Task Process(long id) {
         PostContext = o.Offer.PostContext == null ? null : protector.Protect(o.Offer.PostContext) } }).ToArray();
     await Exec(c, "UPDATE VelonicDBUser.LeadSupplementalAuctions SET OffersJson=@offers,UpdatedOn=SYSUTCDATETIME() WHERE LeadId=@id;", ("@id", id), ("@offers", JsonSerializer.Serialize(protectedOffers)));
     foreach (var o in offers) Console.WriteLine($"Lead {id} / {o.Platform}: {(o.Valid ? $"bid {o.Offer.Amount}" : o.Offer.Error ?? "invalid/no bid")}.");
-    var winner = offers.Where(o => o.Valid).OrderByDescending(o => o.Offer.Amount).ThenBy(o => o.ReceivedOn).FirstOrDefault();
+    var winner = offers.Where(o => o.Valid && o.Offer.Amount >= minimumBid).OrderByDescending(o => o.Offer.Amount).ThenBy(o => o.ReceivedOn).FirstOrDefault();
     if (winner == null) {
         await Exec(c, "UPDATE VelonicDBUser.LeadSupplementalAuctions SET Status='NoBid',UpdatedOn=SYSUTCDATETIME() WHERE LeadId=@id;", ("@id", id));
         Console.WriteLine($"Lead {id}: NoBid; no contact data posted."); return;

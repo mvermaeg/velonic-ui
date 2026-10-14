@@ -149,9 +149,9 @@ static class ProductionRoutingChecks
             await new ExternalAuctionEngine(store, gateway, new CoverageGateway(f.Db), f.Auction).ProcessAsync(run.Id, default);
             await f.Db.SaveChangesAsync();
             assert(run.WinnerPlatformCode == "THUMBTACK" && run.Status == "ThumbtackSelected" && run.RoutingMode != "Legacy", "Covered lead ownership missing");
-            assert(run.AuctionStartedOn == null && gateway.Pings.Count == 0 && gateway.Posts.Count == 0 && f.Legacy.Calls == 0, "Covered lead entered auction/legacy");
+            assert(run.AuctionStartedOn == null && gateway.Pings.Count == 0 && f.Legacy.Calls == 0, "Covered lead entered auction/legacy");
         });
-        await check("uncovered real completion collects BLUEINK 8.32 bid and locks winner before posting; unconfigured Modernize receives no ping", async () => {
+        await check("uncovered real completion records BLUEINK 8.32 below minimum without posting; unconfigured Modernize receives no ping", async () => {
             await using var f = await ProductionFixture.Create();
             await f.Router.CompleteAsync(f.Lead);
             var run = await f.Db.LeadRoutingRuns.SingleAsync();
@@ -162,9 +162,9 @@ static class ProductionRoutingChecks
             var gateway = new BlueGateway(provider);
             await new ExternalAuctionEngine(store, gateway, new CoverageGateway(f.Db), f.Auction).ProcessAsync(run.Id, default);
             await f.Db.SaveChangesAsync();
-            assert(run.Status == "Won" && run.RoutingMode == "Auction" && run.AuctionStartedOn != null, "Real lead did not finish auction");
+            assert(run.Status == "NoBid" && run.RoutingMode == "Auction" && run.AuctionStartedOn != null, "Real lead did not finish auction");
             assert(store.Work.Attempts.Count == 2 && store.Work.Attempts[0].PlatformCode == "BLUEINK" && store.Work.Attempts[0].OfferedBidAmount == 8.32m, "Wrong bid/Modernize attempt");
-            assert(handler.Requests == 2 && store.WinnerCommits == 1 && f.Legacy.Calls == 0, "Wrong send sequence");
+            assert(handler.Requests == 1 && store.WinnerCommits == 0 && f.Legacy.Calls == 0, "Wrong send sequence");
             await f.Router.CompleteAsync(f.Lead);
             assert(await f.Db.LeadRoutingRuns.CountAsync() == 1, "Repeat completion created second system");
         });

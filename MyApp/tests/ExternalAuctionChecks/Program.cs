@@ -65,6 +65,8 @@ await Check("provider failure classifications retain actionable categories witho
     Assert(ProviderFailureReason.Classify("expired token") == "Expired request token", "Expiry classification lost");
     Assert(ProviderFailureReason.Classify("TYPE filter") == "Provider eligibility filter", "Filter classification lost");
     Assert(!ProviderFailureReason.Classify("private@example.test SECRET").Contains("SECRET"), "Raw provider error exposed");
+    Assert(typeof(MiliLeadProvider).GetMethod("SafeMiliError", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.Invoke(null, new object[] { "Project filter failed private@example.test SECRET" }) as string == "Mili rejected: Project eligibility filter.", "Mili filter field lost or raw response exposed");
+    Assert(typeof(MiliLeadProvider).GetMethod("SafeMiliError", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.Invoke(null, new object[] { "zip_code filter failed 12345 SECRET" }) as string == "Mili rejected: zip_code eligibility filter.", "Mili ZIP filter detail unsafe");
     return Task.CompletedTask;
 });
 Fixture New(params (string Code, decimal Bid, int Delay)[] offers) => new(offers);
@@ -74,6 +76,21 @@ await Check("service + ZIP match selects Thumbtack and prevents all pings/posts"
     Assert(f.Store.Work.Lead.LeadStatus != "Sold", "Recommendations must not be sold");
 });
 await Check("uncovered ZIP opens auction", async () => { var f = New(("A", 10, 0)); await f.Run(); Assert(f.Store.Work.Run.Status == "Won", "Expected auction"); });
+await Check("all external bids below 20 produce no delivery, including duplicate processing", async () => {
+    var f = New(("A", 19, 0), ("B", 8, 0)); f.Options.MinimumBidAmount = 20;
+    await f.Run(); await f.Run();
+    Assert(f.Store.Work.Run.Status == "NoBid" && f.Gateway.Posts.Count == 0 && f.Store.Work.Run.WinnerAttemptId == null, "Below-floor lead delivered");
+    Assert(f.Store.Work.Attempts.All(a => a.Status == "BelowMinimumBid"), "Below-floor audit missing");
+});
+await Check("exactly 20 qualifies and only highest qualifying winner posts", async () => {
+    var f = New(("A", 19, 0), ("B", 20, 0)); f.Options.MinimumBidAmount = 20;
+    await f.Run(); await f.Run(); Assert(f.Gateway.Posts.SequenceEqual(["B"]), "Boundary or duplicate winner post");
+});
+await Check("minimum bid defaults to 20 and rejects invalid configuration", () => {
+    var o = new ExternalLeadAuctionOptions(); Assert(o.MinimumBidAmount == 20, "Unsafe default");
+    o.MinimumBidAmount = -1; Assert(!ExternalLeadAuctionOptions.Valid(o), "Negative floor accepted");
+    return Task.CompletedTask;
+});
 await Check("covered zero professionals never opens auction", async () => {
     var f = New(("A", 10, 0)); f.TT.Covered = true; f.TT.Available = false; await f.Run(); Assert(f.Store.Work.Run.Status == "ThumbtackSelected" && f.Gateway.Pings.Count == 0 && f.Gateway.Posts.Count == 0, "Covered no-results must stay exclusive");
 });
@@ -226,6 +243,19 @@ await Check("Mili campaign errors are classified without contacts; production st
     Assert(handler.Bodies[0].Contains("lp_response=xml") && !handler.Bodies[0].Contains("lp_test=1"), "Production mode or XML contract incorrect");
     var second = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
     Assert(!second.Accepted && handler.Bodies.Count == 1 && second.Error!.Contains("quota"), "Repeated ping exceeded cap");
+});
+await Check("NETWORX comments contain only customer text, never generated metadata or JSON", () => {
+    var method = typeof(NetworxLeadProvider).GetMethod("BuildComments", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
+    var lead = Fixture.Lead(); lead.CampaignName = "Internal campaign"; lead.PageName = "Internal page";
+    foreach (var json in new[] { "{}", "{\"answers\":{\"email\":\"private@example.test\",\"projectType\":\"Repair Roof\"}}", "{\"comments\":{\"email\":\"private@example.test\"}}", "broken" }) {
+        lead.AdditionalDataJson = json;
+        Assert((string)method.Invoke(null, new object[] { lead })! == "", "Generated or malformed data leaked into comments");
+    }
+    foreach (var json in new[] { "{\"comments\":\" Roof leaking in three places. \"}", "{\"answers\":{\"comments\":\"Roof leaking in three places.\"}}" }) {
+        lead.AdditionalDataJson = json;
+        Assert((string)method.Invoke(null, new object[] { lead })! == "Roof leaking in three places.", "Customer comments lost");
+    }
+    return Task.CompletedTask;
 });
 await Check("Networx existing XML contract parses price and post token", () => {
     var method = typeof(MyApp.Api.Services.ExternalDeliveries.Networx.NetworxLeadProvider)
@@ -431,7 +461,7 @@ Console.WriteLine($"All {passed} checks passed. Isolated SQLite integration test
 
 sealed class Fixture
 {
-    public MemoryStore Store; public FakeGateway Gateway; public FakeThumbtack TT = new(); public ExternalLeadAuctionOptions Options = new();
+    public MemoryStore Store; public FakeGateway Gateway; public FakeThumbtack TT = new(); public ExternalLeadAuctionOptions Options = new() { MinimumBidAmount = 0 };
     public Fixture((string Code, decimal Bid, int Delay)[] offers)
     {
         Store = new(new(new LeadRoutingRun { Id = 1, LeadId = 1, VerticalCode = "Roofing", RoutingMode = "Auction", Status = "Pending" }, Lead(), []));

@@ -49,7 +49,7 @@ public sealed class LeadRoutingController : ControllerBase
     [HttpGet("auction-capabilities")]
     public IActionResult Capabilities([FromServices] IOptions<ExternalLeadAuctionOptions> options,
         [FromServices] IAuctionGateway gateway) => Ok(new { options = new { options.Value.Enabled,
-            options.Value.AuctionWindowSeconds, options.Value.AllowWinnerFallback, options.Value.ThumbtackErrorPolicy,
+            options.Value.AuctionWindowSeconds, options.Value.MinimumBidAmount, options.Value.AllowWinnerFallback, options.Value.ThumbtackErrorPolicy,
             options.Value.MaxWinnerPostAttempts, options.Value.PostTimeoutSeconds, options.Value.RetryDelaySeconds },
             providers = AuctionGateway.Capabilities.Select(x => new { capability = x,
                 enabledVerticals = new[] { "Roofing", "Windows", "Bathroom", "HVAC", "Gutters" }.Where(v => gateway.Enabled(x.PlatformCode, v)),

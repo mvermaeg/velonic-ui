@@ -7,6 +7,7 @@ namespace MyApp.Api.Services.Routing;
 public sealed class ExternalLeadAuctionOptions
 {
     public bool Enabled { get; set; }
+    public decimal MinimumBidAmount { get; set; } = 20m;
     public int AuctionWindowSeconds { get; set; } = 90;
     public int PostTimeoutSeconds { get; set; } = 45;
     public int MaxWinnerPostAttempts { get; set; } = 3;
@@ -15,6 +16,7 @@ public sealed class ExternalLeadAuctionOptions
     public string ThumbtackErrorPolicy { get; set; } = "FailClosed";
     public string? KeyRingPath { get; set; }
     public static bool Valid(ExternalLeadAuctionOptions x) => !x.AllowWinnerFallback &&
+        x.MinimumBidAmount >= 0 && x.MinimumBidAmount <= 99999999999999.9999m && decimal.Round(x.MinimumBidAmount, 4) == x.MinimumBidAmount &&
         x.AuctionWindowSeconds is >= 1 and <= 300 && x.PostTimeoutSeconds is >= 1 and <= 120 &&
         x.MaxWinnerPostAttempts is >= 1 and <= 10 && x.RetryDelaySeconds is >= 1 and <= 86400 &&
         x.ThumbtackErrorPolicy is "FailClosed" or "FallThrough" &&

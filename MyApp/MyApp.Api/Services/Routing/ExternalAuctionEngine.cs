@@ -113,6 +113,7 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
                 a.PostContext = received.Offer.PostContext == null ? null : gateway.Protect(received.Offer.PostContext);
                 var rejected = received.Timeout ? "TimedOut" : AuctionPolicy.Reject(received.Offer, received.ReceivedOn,
                     w.Run.AuctionClosesOn.Value, DateTime.UtcNow);
+                if (rejected == null && received.Offer.Amount < _options.MinimumBidAmount) rejected = "BelowMinimumBid";
                 a.Status = rejected ?? "BidAccepted"; a.ErrorMessage = received.Offer.Error ?? rejected;
                 await store.SaveAsync(w, ct);
             }
@@ -123,8 +124,8 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
         await store.SaveAsync(w, ct);
         while (true)
         {
-            var winner = AuctionPolicy.Winner(w.Attempts, w.Run.AuctionClosesOn ?? DateTime.MinValue, DateTime.UtcNow);
-            if (winner == null) { await Finish(w, "NoBid", "No valid available bids.", ct); return; }
+            var winner = AuctionPolicy.Winner(w.Attempts.Where(a => a.OfferedBidAmount >= _options.MinimumBidAmount), w.Run.AuctionClosesOn ?? DateTime.MinValue, DateTime.UtcNow);
+            if (winner == null) { await Finish(w, "NoBid", "No valid bid meets the configured minimum.", ct); return; }
             if (await store.LockWinnerAsync(w, winner, ct)) break;
             winner.Status = "CapReached";
             await store.SaveAsync(w, ct);
@@ -142,6 +143,8 @@ public sealed class ExternalAuctionEngine(IAuctionStore store, IAuctionGateway g
             await Finish(w, "ReconciliationRequired", "Post outcome unknown after restart. Reconcile with the locked winner; automatic replay is unsafe.", ct); return;
         }
         if (w.Run.NextAttemptOn > DateTime.UtcNow) return;
+        if (a.OfferedBidAmount == null || a.OfferedBidAmount < _options.MinimumBidAmount)
+        { await Finish(w, "Failed", "Locked winner bid is below the configured minimum; no post or fallback permitted.", ct); return; }
         if (!gateway.Enabled(a.PlatformCode!, w.Run.VerticalCode))
         { await Finish(w, "Failed", "Locked winner is disabled. No fallback permitted.", ct); return; }
         if (a.BidExpiresOn <= DateTime.UtcNow || a.PostAttempts >= Math.Max(1, _options.MaxWinnerPostAttempts))
