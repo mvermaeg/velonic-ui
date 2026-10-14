@@ -76,18 +76,18 @@ await Check("service + ZIP match selects Thumbtack and prevents all pings/posts"
     Assert(f.Store.Work.Lead.LeadStatus != "Sold", "Recommendations must not be sold");
 });
 await Check("uncovered ZIP opens auction", async () => { var f = New(("A", 10, 0)); await f.Run(); Assert(f.Store.Work.Run.Status == "Won", "Expected auction"); });
-await Check("all external bids below 20 produce no delivery, including duplicate processing", async () => {
-    var f = New(("A", 19, 0), ("B", 8, 0)); f.Options.MinimumBidAmount = 20;
+await Check("all external bids below 10 produce no delivery, including duplicate processing", async () => {
+    var f = New(("A", 9, 0), ("B", 8, 0)); f.Options.MinimumBidAmount = 10;
     await f.Run(); await f.Run();
     Assert(f.Store.Work.Run.Status == "NoBid" && f.Gateway.Posts.Count == 0 && f.Store.Work.Run.WinnerAttemptId == null, "Below-floor lead delivered");
     Assert(f.Store.Work.Attempts.All(a => a.Status == "BelowMinimumBid"), "Below-floor audit missing");
 });
-await Check("exactly 20 qualifies and only highest qualifying winner posts", async () => {
-    var f = New(("A", 19, 0), ("B", 20, 0)); f.Options.MinimumBidAmount = 20;
+await Check("exactly 10 qualifies and only highest qualifying winner posts", async () => {
+    var f = New(("A", 9, 0), ("B", 10, 0)); f.Options.MinimumBidAmount = 10;
     await f.Run(); await f.Run(); Assert(f.Gateway.Posts.SequenceEqual(["B"]), "Boundary or duplicate winner post");
 });
-await Check("minimum bid defaults to 20 and rejects invalid configuration", () => {
-    var o = new ExternalLeadAuctionOptions(); Assert(o.MinimumBidAmount == 20, "Unsafe default");
+await Check("minimum bid defaults to 10 and rejects invalid configuration", () => {
+    var o = new ExternalLeadAuctionOptions(); Assert(o.MinimumBidAmount == 10, "Unsafe default");
     o.MinimumBidAmount = -1; Assert(!ExternalLeadAuctionOptions.Valid(o), "Negative floor accepted");
     return Task.CompletedTask;
 });

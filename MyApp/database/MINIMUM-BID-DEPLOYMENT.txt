@@ -1,8 +1,8 @@
-Publish MyApp.Api only from MyApp.Api/bin/Release/net8.0/publish-minimum-bid-20261014.
+Publish MyApp.Api only from MyApp.Api/bin/Release/net8.0/publish-minimum-bid-10-20261014.
 Preserve production credentials, connection strings and persistent auction key ring.
-Set ExternalLeadAuction:MinimumBidAmount to 20 in the live configuration.
-If using environment variables, set ExternalLeadAuction__MinimumBidAmount=20.
-Check for an existing environment override; do not leave an override below 20.
+Set ExternalLeadAuction:MinimumBidAmount to 10 in the live configuration.
+If using environment variables, set ExternalLeadAuction__MinimumBidAmount=10.
+Check for an existing environment override; do not leave an override different from 10.
 Keep ExternalLeadAuction:Enabled=true and AllowWinnerFallback=false.
 Recycle/restart the API after publication. No SQL migration or Angular publish required.
 BelowMinimumBid attempts are retained; a run without a qualifying bid finishes NoBid.

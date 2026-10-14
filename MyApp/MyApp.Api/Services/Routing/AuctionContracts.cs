@@ -7,7 +7,7 @@ namespace MyApp.Api.Services.Routing;
 public sealed class ExternalLeadAuctionOptions
 {
     public bool Enabled { get; set; }
-    public decimal MinimumBidAmount { get; set; } = 20m;
+    public decimal MinimumBidAmount { get; set; } = 10m;
     public int AuctionWindowSeconds { get; set; } = 90;
     public int PostTimeoutSeconds { get; set; } = 45;
     public int MaxWinnerPostAttempts { get; set; } = 3;
