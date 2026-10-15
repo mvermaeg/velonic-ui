@@ -47,6 +47,8 @@ namespace MyApp.Api.Controllers
                         (x.FullName != null && x.FullName.Contains(search)) ||
                         (x.Email != null && x.Email.Contains(search)) ||
                         (x.Phone != null && x.Phone.Contains(search)) ||
+                        (x.City != null && x.City.Contains(search)) ||
+                        (x.FraudLevel != null && x.FraudLevel.Contains(search)) ||
                         (x.Postcode != null && x.Postcode.Contains(search)));
                 }
 
@@ -66,6 +68,13 @@ namespace MyApp.Api.Controllers
                     query = query.Where(x => x.LeadQualityScore >= minQualityScore.Value);
 
                 var total = await query.CountAsync();
+                var delivered = await query.Where(l =>
+                    _db.ExternalLeadDeliveries.Any(d => d.LeadId == l.Id && d.Status == "Delivered" && d.DeliveredOn != null) ||
+                    _db.LeadDeliveries.Any(d => d.LeadId == l.Id && d.DeliveryStatus == "Delivered" && d.DeliveredOn != null)).CountAsync();
+                var campaigns = await _db.Leads.Where(l => !l.IsDeleted && l.CampaignName != null && l.CampaignName != "")
+                    .Select(l => l.CampaignName).Distinct().OrderBy(x => x).ToListAsync();
+                var statuses = await _db.Leads.Where(l => !l.IsDeleted && l.LeadStatus != null && l.LeadStatus != "")
+                    .Select(l => l.LeadStatus).Distinct().OrderBy(x => x).ToListAsync();
 
                 var data = await query
                     .OrderByDescending(x => x.Id)
@@ -120,6 +129,11 @@ namespace MyApp.Api.Controllers
                     total,
                     page,
                     pageSize,
+                    summary = new { totalLeads = total, deliveredLeads = delivered, confirmedRevenue = (decimal?)null,
+                        netProfit = (decimal?)null, averageSaleValue = (decimal?)null,
+                        financialNote = "Provider earnings and acquisition costs are not reconciled. Bids and delivery receipts are not confirmed earnings." },
+                    campaigns,
+                    statuses,
                     data
                 });
             }

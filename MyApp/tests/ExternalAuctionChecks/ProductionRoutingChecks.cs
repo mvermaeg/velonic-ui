@@ -62,6 +62,14 @@ static class ProductionRoutingChecks
             assert(report.Hourly.Count == 24 && report.Hourly.Sum(x => x.Leads) == 1 && report.Hourly.Sum(x => x.Delivered) == 1, "Incorrect hourly buckets");
             assert(report.Providers.Count == 2 && report.Providers.All(x => x.Delivered == 1) && report.RecentRuns.Single().LeadId == f.Lead.Id, "Test/deleted or duplicates leaked");
             assert(report.ConfirmedEarnings == null && report.Cost == null && report.Profit == null, "Fabricated financial data");
+            var controller = new LeadsController(f.Db, null!);
+            var result = await controller.GetLeads(null, null, null, null, null, null, 1, 1) as Microsoft.AspNetCore.Mvc.OkObjectResult;
+            using var json = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(result!.Value));
+            var summary = json.RootElement.GetProperty("summary");
+            assert(json.RootElement.GetProperty("data").GetArrayLength() == 1 && summary.GetProperty("totalLeads").GetInt32() == 2,
+                "Lead dashboard totals incorrectly limited to current page");
+            assert(summary.GetProperty("deliveredLeads").GetInt32() == 2 && summary.GetProperty("confirmedRevenue").ValueKind == System.Text.Json.JsonValueKind.Null,
+                "Lead summary duplicated provider receipts or invented revenue");
             var sql = f.Db.Leads.Where(x => !x.IsTest && !x.IsDeleted).GroupBy(x => new { x.CreatedAt.Date, x.CreatedAt.Hour }).Select(g => g.Count()).ToQueryString();
             assert(sql.Length > 0, "Grouping query failed");
             assert(typeof(DashboardController).GetCustomAttributes(typeof(Microsoft.AspNetCore.Authorization.AuthorizeAttribute), true)

@@ -12,7 +12,7 @@ export class LeadsService {
 
   private apiUrl = `${environment.apiUrl}/leads`
 
-  getLeads(page = 1, pageSize = 20) {
+  getLeads(page = 1, pageSize = 20, search = '', campaignName = '', status = '') {
     const token = this.authService.getToken()
 
     const headers = token
@@ -22,7 +22,7 @@ export class LeadsService {
       : new HttpHeaders()
 
     return this.http.get<any>(
-      `${this.apiUrl}?page=${page}&pageSize=${pageSize}`,
+      `${this.apiUrl}?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}&campaignName=${encodeURIComponent(campaignName)}&status=${encodeURIComponent(status)}`,
       { headers }
     )
   }
@@ -39,7 +39,7 @@ export class LeadsService {
 //   private http = inject(HttpClient)
 //   private apiUrl = `${environment.apiUrl}/leads`
 
-//   getLeads(page = 1, pageSize = 20) {
-//     return this.http.get<any>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`)
+//   getLeads(page = 1, pageSize = 20, search = '', campaignName = '', status = '') {
+//     return this.http.get<any>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}&campaignName=${encodeURIComponent(campaignName)}&status=${encodeURIComponent(status)}`)
 //   }
 // }

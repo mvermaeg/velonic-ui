@@ -1,0 +1,24 @@
+Lead dashboard: marketing.homeyy.com/#/leads/dashboard
+
+Publish the API first, then marketing UI. No SQL migration is required.
+API output: MyApp.Api/bin/Release/net8.0/publish-lead-dashboard-20261016
+UI output: D:/Development/Velonic/MyApp.UI/dist/velonic/browser
+Copy contents of browser into the existing marketing site's IIS folder.
+Preserve live API settings, credentials, auction key ring and existing IIS web.config.
+Keep live ExternalLeadAuction:MinimumBidAmount=10. No environment-file edit is required.
+Restart API and hard-refresh marketing UI after publishing.
+
+The existing GET /api/leads now returns summary, campaigns and statuses alongside
+its existing paginated data. Summary counts apply to the entire filtered query,
+not just the displayed page. Accepted delivery counts deduplicate each lead.
+The existing list's test/deletion visibility is preserved; deleted leads are excluded.
+
+Colors, gradient classes, layout and stylesheet are preserved. Search (Enter or
+Refresh), campaign/status filters, pagination and current-page CSV export use real
+lead data. Lead contact data is no longer printed to the browser console.
+
+Financial values remain null/Unavailable until authoritative reconciled earnings
+and costs are imported. Existing lead Sales fields, ping offers and accepted
+provider receipts are not proof of payable revenue. To enable financial reporting,
+provide provider settlement/earnings exports linked to Homeyy lead IDs and actual
+acquisition costs. Do not manually substitute a bid for confirmed earnings.

@@ -3,29 +3,31 @@
 <div class="stats-container mb-3">
   <div class="card card_hover gradient-blue">
     <h4>Total Leads</h4>
-    <h2>{{ totalLeads }}</h2>
+    <h2>{{ hasData ? totalLeads : '-' }}</h2>
     <p>Filtered results</p>
   </div>
 
   <div class="card card_hover gradient-purple">
     <h4>Total Sales</h4>
-    <h2>${{ totalSales | number: '1.0-0' }}</h2>
-    <p>Revenue generated</p>
+    <h2>{{ hasData && totalSales !== null ? (totalSales | currency:'USD':'symbol':'1.2-2') : 'Unavailable' }}</h2>
+    <p>Confirmed revenue</p>
   </div>
 
   <div class="card card_hover gradient-green">
     <h4>Total Profit</h4>
-    <h2>${{ totalProfit | number: '1.0-0' }}</h2>
+    <h2>{{ hasData && totalProfit !== null ? (totalProfit | currency:'USD':'symbol':'1.2-2') : 'Unavailable' }}</h2>
     <p>Net profit</p>
   </div>
 
   <div class="card card_hover gradient-orange">
     <h4>Avg. Sale Value</h4>
-    <h2>${{ avgSaleValue | number: '1.0-0' }}</h2>
-    <p>Per lead</p>
+    <h2>{{ hasData && avgSaleValue !== null ? (avgSaleValue | currency:'USD':'symbol':'1.2-2') : 'Unavailable' }}</h2>
+    <p>Per confirmed sale</p>
   </div>
 </div>
 
+<p class="text-muted" *ngIf="hasData">{{ financialNote }} Accepted deliveries: {{ deliveredLeads }}.</p>
+<div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>
 <div class="card mb-3">
   <div class="card-body">
     <div class="row g-2">
@@ -34,24 +36,26 @@
           type="text"
           class="form-control"
           placeholder="Search by name, email, phone, city, risk..."
-          [(ngModel)]="search"
+          [(ngModel)]="search" (keyup.enter)="loadLeads(true)"
         />
       </div>
 
       <div class="col-md-3">
-        <select class="form-select">
-          <option>Campaigns</option>
+        <select class="form-select" [(ngModel)]="campaignName" (ngModelChange)="loadLeads(true)" [disabled]="loading">
+          <option value="">All campaigns</option>
+          <option *ngFor="let item of campaigns" [value]="item">{{ item }}</option>
         </select>
       </div>
 
       <div class="col-md-3">
-        <select class="form-select">
-          <option>Status</option>
+        <select class="form-select" [(ngModel)]="status" (ngModelChange)="loadLeads(true)" [disabled]="loading">
+          <option value="">All statuses</option>
+          <option *ngFor="let item of statuses" [value]="item">{{ item }}</option>
         </select>
       </div>
 
       <div class="col-md-2">
-        <button class="btn btn-primary w-100" type="button" (click)="loadLeads()">
+        <button class="btn btn-primary w-100" type="button" (click)="loadLeads(true)" [disabled]="loading">
           Refresh
         </button>
       </div>
@@ -66,7 +70,7 @@
       <small class="text-muted">Website / affiliate / campaign lead records</small>
     </div>
 
-    <button class="btn btn-sm btn-success" type="button">
+    <button class="btn btn-sm btn-success" type="button" (click)="exportLeads()" [disabled]="loading || !leads.length" title="Export current page">
       Export
     </button>
   </div>
@@ -224,6 +228,10 @@
 
 
 
+<div class="d-flex justify-content-between align-items-center my-3" *ngIf="hasData">
+<span>Page {{ page }} - {{ totalLeads }} filtered leads - Export includes current page</span>
+<div><button class="btn btn-outline-primary me-2" (click)="changePage(-1)" [disabled]="loading || page === 1">Previous</button>
+<button class="btn btn-outline-primary" (click)="changePage(1)" [disabled]="loading || page * pageSize >= totalLeads">Next</button></div></div>
 <div class="modal-backdrop fade show" *ngIf="selectedLead"></div>
 
 <div class="modal d-block" tabindex="-1" *ngIf="selectedLead">

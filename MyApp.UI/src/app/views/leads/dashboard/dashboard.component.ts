@@ -20,9 +20,9 @@ export class DashboardComponent implements OnInit {
   loading = false
 
   totalLeads = 0
-  totalSales = 0
-  totalProfit = 0
-  avgSaleValue = 0
+  totalSales: number | null = null
+  totalProfit: number | null = null
+  avgSaleValue: number | null = null
 
   search = ''
 
@@ -37,69 +37,56 @@ export class DashboardComponent implements OnInit {
     this.loadLeads()
   }
 
-  // loadLeads() {
-  //   this.loading = true
-
-  //   this.leadsService.getLeads(1, 20).subscribe({
-  //     next: (res) => {
-  //       this.leads = res.data || []
-  //       this.totalLeads = res.total || this.leads.length
-  //       this.totalSales = this.leads.reduce((sum, x) => sum + Number(x.sales || 0), 0)
-  //       this.totalProfit = this.leads.reduce((sum, x) => sum + Number(x.profit || 0), 0)
-  //       this.avgSaleValue = this.totalLeads > 0 ? this.totalSales / this.totalLeads : 0
-  //       this.loading = false
-  //     },
-  //     error: () => {
-  //       this.loading = false
-  //     },
-  //   })
-  // }
-
-  loadLeads() {
-  this.loading = true
-
-  this.leadsService.getLeads(1, 20).subscribe({
-    next: (res) => {
-
-      console.log('LEADS API RESPONSE:', res)
-
-      this.leads = res?.data || []
-      this.totalLeads = res?.total ?? this.leads.length
-
-      this.totalSales = this.leads.reduce(
-        (sum, x) => sum + Number(x.sales || 0),
-        0
-      )
-
-      this.totalProfit = this.leads.reduce(
-        (sum, x) => sum + Number(x.profit || 0),
-        0
-      )
-
-      this.avgSaleValue =
-        this.totalLeads > 0
-          ? this.totalSales / this.totalLeads
-          : 0
-
-      console.log('TOTAL LEADS:', this.totalLeads)
-      console.log('LEADS:', this.leads)
-
-      this.loading = false
-    },
-
-    error: (err) => {
-
-      console.error('LEADS API ERROR:', err)
-      console.error('STATUS:', err?.status)
-      console.error('ERROR BODY:', err?.error)
-      console.error('URL:', err?.url)
-
-      this.leads = []
-      this.totalLeads = 0
-      this.loading = false
-    },
-  })
-}
+  error = ''
+  hasData = false
+  financialNote = ''
+  deliveredLeads = 0
+  campaignName = ''
+  status = ''
+  campaigns: string[] = []
+  statuses: string[] = []
+  page = 1
+  pageSize = 20
+  loadLeads(resetPage = false) {
+    if (this.loading) return
+    if (resetPage) this.page = 1
+    this.loading = true
+    this.error = ''
+    this.leadsService.getLeads(this.page, this.pageSize, this.search, this.campaignName, this.status).subscribe({
+      next: res => {
+        this.leads = res?.data || []
+        this.totalLeads = res?.total ?? 0
+        this.totalSales = res?.summary?.confirmedRevenue ?? null
+        this.totalProfit = res?.summary?.netProfit ?? null
+        this.avgSaleValue = res?.summary?.averageSaleValue ?? null
+        this.deliveredLeads = res?.summary?.deliveredLeads ?? 0
+        this.financialNote = res?.summary?.financialNote || 'Financial reconciliation unavailable.'
+        this.campaigns = res?.campaigns || []
+        this.statuses = res?.statuses || []
+        this.hasData = true
+        this.loading = false
+      },
+      error: () => {
+        this.hasData = false
+        this.leads = []
+        this.error = 'Lead dashboard could not be loaded. Please retry.'
+        this.loading = false
+      }
+    })
+  }
+  changePage(delta: number) {
+    if (this.loading) return
+    this.page += delta
+    this.loadLeads()
+  }
+  exportLeads() {
+    const fields = ['id','createdAt','fullName','email','phone','campaignName','postcode','state','city','leadStatus']
+    const cell = (value: unknown) => '"' + String(value ?? '').replace(/^[=+@-]/, "'$&").replace(/"/g, '""') + '"'
+    const csv = [fields.join(','), ...this.leads.map(row => fields.map(key => cell(row[key])).join(','))].join('\r\n')
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}))
+    const link = document.createElement('a'); link.href = url; link.download = 'leads-current-page.csv'; link.click()
+    URL.revokeObjectURL(url)
+  }
   openManualDelivery(lead: any) {
     this.selectedLead = lead
     this.manualClientId = null
@@ -145,121 +132,5 @@ export class DashboardComponent implements OnInit {
     })
   }
 
-  get filteredLeads() {
-    if (!this.search) return this.leads
-
-    const s = this.search.toLowerCase()
-
-    return this.leads.filter((x) =>
-      [
-        x.id,
-        x.fullName,
-        x.email,
-        x.emailVerificationStatus,
-        x.emailVerificationReason,
-        x.isEmailDeliverable,
-        x.phone,
-        x.campaignName,
-        x.affiliateName,
-        x.pageName,
-        x.postcode,
-        x.state,
-        x.city,
-        x.country,
-        x.visitorCountry,
-        x.ipAddress,
-        x.fraudLevel,
-        x.fraudReasons,
-        x.leadQualityScore,
-        x.leadStatus,
-      ]
-        .filter((v) => v !== null && v !== undefined && v !== '')
-        .some((v) => String(v).toLowerCase().includes(s))
-    )
-  }
+  get filteredLeads() { return this.leads }
 }
-
-
-// import { Component, OnInit, inject } from '@angular/core'
-// import { PageTitleComponent } from '@common/page-title.component'
-// import { CommonModule } from '@angular/common'
-// import { FormsModule } from '@angular/forms'
-// import { LeadsService } from '@core/service/leads.service'
-
-// @Component({
-//   selector: 'app-dashboard',
-//   standalone: true,
-//   imports: [PageTitleComponent, CommonModule, FormsModule],
-//   templateUrl: './dashboard.component.html',
-//   styleUrl: './dashboard.component.scss',
-// })
-// export class DashboardComponent implements OnInit {
-//   private leadsService = inject(LeadsService)
-
-//   leads: any[] = []
-//   loading = false
-
-//   totalLeads = 0
-//   totalSales = 0
-//   totalProfit = 0
-//   avgSaleValue = 0
-
-//   search = ''
-
-//   ngOnInit(): void {
-//     this.loadLeads()
-//   }
-
-//   loadLeads() {
-//     this.loading = true
-
-//     this.leadsService.getLeads(1, 20).subscribe({
-//       next: (res) => {
-//         this.leads = res.data || []
-
-//         this.totalLeads = res.total || this.leads.length
-//         this.totalSales = this.leads.reduce((sum, x) => sum + Number(x.sales || 0), 0)
-//         this.totalProfit = this.leads.reduce((sum, x) => sum + Number(x.profit || 0), 0)
-//         this.avgSaleValue = this.totalLeads > 0 ? this.totalSales / this.totalLeads : 0
-
-//         this.loading = false
-//       },
-//       error: () => {
-//         this.loading = false
-//       },
-//     })
-//   }
-
-//   get filteredLeads() {
-//     if (!this.search) return this.leads
-
-//     const s = this.search.toLowerCase()
-
-//     return this.leads.filter((x) =>
-//       [
-//         x.id,
-//         x.fullName,
-//         x.email,
-//         x.emailVerificationStatus,
-//         x.emailVerificationReason,
-//         x.isEmailDeliverable,
-//         x.phone,
-//         x.campaignName,
-//         x.affiliateName,
-//         x.pageName,
-//         x.postcode,
-//         x.state,
-//         x.city,
-//         x.country,
-//         x.visitorCountry,
-//         x.ipAddress,
-//         x.fraudLevel,
-//         x.fraudReasons,
-//         x.leadQualityScore,
-//         x.leadStatus,
-//       ]
-//         .filter((v) => v !== null && v !== undefined && v !== '')
-//         .some((v) => String(v).toLowerCase().includes(s))
-//     )
-//   }
-// }
