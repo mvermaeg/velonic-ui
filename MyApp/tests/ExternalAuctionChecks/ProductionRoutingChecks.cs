@@ -44,6 +44,37 @@ static class ProductionRoutingChecks
             history = await f.Db.LeadStatusHistories.SingleAsync(); history.ChangedOn = run.CreatedOn.AddSeconds(1); await f.Db.SaveChangesAsync();
             assert((await store.LoadAsync(run.Id, default))!.RiskReviewApproved, "Approved run not recognized after reload");
         });
+        await check("auction outcomes synchronize persisted lead status and history without duplicate audit entries", async () => {
+            await using var f = await ProductionFixture.Create();
+            await f.Router.CompleteAsync(f.Lead);
+            var run = await f.Db.LeadRoutingRuns.SingleAsync();
+            var work = new AuctionWork(run, f.Lead, []);
+            var store = new SqlAuctionStore(f.Db, new FakeGateway([]));
+            foreach (var state in new[] { "CollectingBids", "NoBid", "ReconciliationRequired", "ThumbtackSelected", "ThumbtackFailed", "Cancelled", "Failed", "Won" }) {
+                run.Status = state;
+                await store.SaveAsync(work, default);
+                var expected = state == "Won" ? "Sold" : state;
+                assert(f.Lead.LeadStatus == expected, "Persisted lead status differs from routing outcome");
+                var count = await f.Db.LeadStatusHistories.CountAsync();
+                await store.SaveAsync(work, default);
+                assert(await f.Db.LeadStatusHistories.CountAsync() == count, "Repeated save duplicated audit");
+            }
+            assert(await f.Db.LeadStatusHistories.AnyAsync(h => h.LeadId == f.Lead.Id && h.NewStatus == "NoBid"), "NoBid history missing");
+        });
+        await check("historical New leads display and filter by actual routing result without backfill", async () => {
+            await using var f = await ProductionFixture.Create();
+            f.Lead.LeadStatus = "New";
+            f.Db.LeadRoutingRuns.Add(new() { LeadId = f.Lead.Id, VerticalCode = "Roofing", RoutingMode = "Auction", Status = "NoBid", CreatedOn = DateTime.UtcNow });
+            await f.Db.SaveChangesAsync();
+            var controller = new LeadsController(f.Db, null!);
+            var result = await controller.GetLeads(null, null, "NoBid", null, null, null, 1, 20) as Microsoft.AspNetCore.Mvc.OkObjectResult;
+            using var json = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(result!.Value));
+            assert(json.RootElement.GetProperty("total").GetInt32() == 1 && json.RootElement.GetProperty("data")[0].GetProperty("LeadStatus").GetString() == "NoBid", "Historical routing status/filter mismatch");
+            assert(f.Lead.LeadStatus == "New", "Read-only historical projection mutated lead");
+            result = await controller.GetLeads(null, null, "New", null, null, null, 1, 20) as Microsoft.AspNetCore.Mvc.OkObjectResult;
+            using var empty = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(result!.Value));
+            assert(empty.RootElement.GetProperty("total").GetInt32() == 0, "Stale New status remained filterable");
+        });
         await check("dashboard excludes test/deleted leads, deduplicates deliveries and does not report bids as earnings", async () => {
             await using var f = await ProductionFixture.Create();
             var now = new DateTime(2026, 10, 10, 12, 30, 0, DateTimeKind.Utc);

@@ -1,0 +1,39 @@
+Routing status correction (2026-10-16)
+
+Publish API only: MyApp.Api/bin/Release/net8.0/publish-routing-status-20261016
+Preserve live appsettings, credentials, connection strings and auction key ring.
+Keep ExternalLeadAuction:MinimumBidAmount=10. Restart/recycle API after publishing.
+No SQL migration, production backfill or new UI build is required for this fix.
+The prior dashboard UI update must already be deployed for server-side status filters.
+
+New auction saves synchronize Leads.LeadStatus with the run and append history only
+when the status changes, in the same SaveChanges transaction. Won retains the
+existing Sold label; this means acknowledged delivery, not confirmed earnings.
+Other results retain their exact routing status: NoBid, ReconciliationRequired,
+ThumbtackSelected, ThumbtackFailed, Failed, Cancelled and in-progress run states.
+
+GET /api/leads derives historical Auction status from LeadRoutingRuns, so records
+previously left as New display/filter correctly immediately after API publication.
+Leads without Auction runs keep their existing status. No providers are called by
+this projection; old leads are not retried or delivered.
+
+Mili: response parsing now considers every returned XML error, rather than only
+the first; existing fixed safe classifications prevent raw contact/credential text
+being written to auction audit. This is a diagnostic correction, not a guarantee
+of campaign eligibility or bids. It does not recover old discarded error details.
+
+Provider information still required:
+Mili: Roofing campaign rejection logs for recent leads 154-157, exact failed filter
+and allowed Project/type values. Confirm Exclusive for new single-winner leads and
+Shared for explicitly approved historical resale; confirm campaign is live and
+which restrictions are configured. No additional credentials requested.
+BLUEINK: receipt/rejection confirmation for Homeyy lead 131 posted 2026-10-11
+15:34:34 UTC, and exact ping rejection logs for leads 156-158. Existing generic
+HTTP 200 without confirmed acceptance remains reconciliation-only. Do not repost.
+Modernize: account-issued production tagId (local ProductionTagId is blank),
+production activation/approval for the intended verticals, and confirmation that
+the configured partner source belongs to that tag. Use the secure configuration
+channel for any secrets; do not fabricate or reuse a staging tag in production.
+NETWORX: exact task ID for Tar Roofing repair (ROOF_REPAIR_TAR), or explicit
+confirmation of an accepted equivalent task. Do not substitute Flat/SinglePly
+solely because its name might sound related. No new live mapping was guessed.

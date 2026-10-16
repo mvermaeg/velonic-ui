@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MyApp.Api.Data;
 using MyApp.Api.DTOs.Leads;
 using MyApp.Api.Services.Fraud;
+using MyApp.Api.Services.Routing;
 
 namespace MyApp.Api.Controllers
 {
@@ -40,6 +41,7 @@ namespace MyApp.Api.Controllers
                 var query = _db.Leads
                     .Where(x => x.IsDeleted == false)
                     .AsQueryable();
+                var routingStatuses = LeadRoutingStatus.Read(_db);
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
@@ -56,7 +58,7 @@ namespace MyApp.Api.Controllers
                     query = query.Where(x => x.CampaignName == campaignName);
 
                 if (!string.IsNullOrWhiteSpace(status))
-                    query = query.Where(x => x.LeadStatus == status);
+                    query = query.Where(x => routingStatuses.Any(s => s.LeadId == x.Id && s.Status == status));
 
                 if (!string.IsNullOrWhiteSpace(fraudLevel))
                     query = query.Where(x => x.FraudLevel == fraudLevel);
@@ -73,8 +75,8 @@ namespace MyApp.Api.Controllers
                     _db.LeadDeliveries.Any(d => d.LeadId == l.Id && d.DeliveryStatus == "Delivered" && d.DeliveredOn != null)).CountAsync();
                 var campaigns = await _db.Leads.Where(l => !l.IsDeleted && l.CampaignName != null && l.CampaignName != "")
                     .Select(l => l.CampaignName).Distinct().OrderBy(x => x).ToListAsync();
-                var statuses = await _db.Leads.Where(l => !l.IsDeleted && l.LeadStatus != null && l.LeadStatus != "")
-                    .Select(l => l.LeadStatus).Distinct().OrderBy(x => x).ToListAsync();
+                var statuses = await routingStatuses.Where(s => s.Status != null && s.Status != "")
+                    .Select(s => s.Status).Distinct().OrderBy(x => x).ToListAsync();
 
                 var data = await query
                     .OrderByDescending(x => x.Id)
@@ -109,7 +111,7 @@ namespace MyApp.Api.Controllers
 
                         Step = x.Step,
                         IsCompleted = x.IsCompleted,
-                        LeadStatus = x.LeadStatus,
+                        LeadStatus = routingStatuses.Where(s => s.LeadId == x.Id).Select(s => s.Status).FirstOrDefault(),
 
                         FraudScore = x.FraudScore,
                         LeadQualityScore = x.LeadQualityScore,

@@ -96,6 +96,15 @@ public sealed class SqlAuctionStore(MyAppDbContext db, IAuctionGateway gateway) 
         foreach (var a in work.Attempts.Where(x => x.Id == 0))
             if (db.Entry(a).State == EntityState.Detached) db.LeadRoutingAttempts.Add(a);
         work.Run.UpdatedOn = DateTime.UtcNow;
+        var status = LeadRoutingStatus.FromRun(work.Run.Status);
+        if (work.Lead.LeadStatus != status)
+        {
+            db.LeadStatusHistories.Add(new LeadStatusHistory { LeadId = work.Lead.Id,
+                OldStatus = work.Lead.LeadStatus, NewStatus = status, ChangedOn = DateTime.UtcNow,
+                Remarks = $"Auction routing status synchronized; run={work.Run.Id}." });
+            work.Lead.LeadStatus = status;
+            work.Lead.UpdatedOn = DateTime.UtcNow;
+        }
         await db.SaveChangesAsync(ct);
     }
     public async Task<bool> LockWinnerAsync(AuctionWork work, LeadRoutingAttempt attempt, CancellationToken ct)
@@ -136,7 +145,6 @@ public sealed class SqlAuctionStore(MyAppDbContext db, IAuctionGateway gateway) 
         delivery.ExternalReferenceId = result.DeliveryId; delivery.RequestPayload = result.RequestAudit;
         delivery.ResponsePayload = result.ResponseAudit; delivery.HttpStatusCode = result.HttpStatus;
         delivery.ErrorMessage = result.Error; delivery.UpdatedOn = DateTime.UtcNow;
-        if (result.Accepted) { w.Lead.LeadStatus = "Sold"; w.Lead.UpdatedOn = DateTime.UtcNow; }
         await SaveAsync(w, ct);
     }
 }

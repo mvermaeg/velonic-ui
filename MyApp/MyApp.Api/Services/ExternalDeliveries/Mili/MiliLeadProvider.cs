@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using System.Xml.Linq;
 using Microsoft.Extensions.Options;
@@ -853,13 +853,9 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
 
                 if (!result.Success)
                 {
-                    result.Error =
-                        root?
-                            .Element("errors")?
-                            .Elements("error")
-                            .Select(
-                                x => x.Value)
-                            .FirstOrDefault();
+                    var errors = root?.Element("errors")?.Elements("error")
+                        .Select(x => x.Value).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+                    result.Error = errors is { Length: > 0 } ? string.Join("; ", errors) : null;
 
                     result.Error ??=
                         result.Message;
@@ -941,13 +937,9 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
 
                 if (!result.Success)
                 {
-                    result.Error =
-                        root?
-                            .Element("errors")?
-                            .Elements("error")
-                            .Select(
-                                x => x.Value)
-                            .FirstOrDefault();
+                    var errors = root?.Element("errors")?.Elements("error")
+                        .Select(x => x.Value).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+                    result.Error = errors is { Length: > 0 } ? string.Join("; ", errors) : null;
 
                     result.Error ??=
                         result.Message;

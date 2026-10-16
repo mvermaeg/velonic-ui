@@ -244,6 +244,13 @@ await Check("Mili campaign errors are classified without contacts; production st
     var second = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
     Assert(!second.Accepted && handler.Bodies.Count == 1 && second.Error!.Contains("quota"), "Repeated ping exceeded cap");
 });
+await Check("Mili retains actionable later filter errors without persisting raw provider text", async () => {
+    var handler = new CaptureHandler(["<response><result>failed</result><errors><error>Filter failed SECRET</error><error>TYPE filter mismatch private@example.test</error></errors></response>"]);
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = false,
+        Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "SECRET" } }), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
+    var offer = await provider.PingAsync(AuctionFacts.From(Fixture.Lead(), "Roofing"), default);
+    Assert(!offer.Accepted && offer.Error == "Mili rejected: TYPE filter mismatch.", "Later filter diagnostic lost or raw error exposed");
+});
 await Check("NETWORX comments contain only customer text, never generated metadata or JSON", () => {
     var method = typeof(NetworxLeadProvider).GetMethod("BuildComments", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
     var lead = Fixture.Lead(); lead.CampaignName = "Internal campaign"; lead.PageName = "Internal page";
