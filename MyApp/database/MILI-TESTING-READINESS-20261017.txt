@@ -1,0 +1,57 @@
+Mili field corrections and production hold -- 2026-10-17
+
+Provider evidence: Mili says testing is incomplete and there are no connected
+buyers. No local code change or minimum-bid change can activate those buyers.
+Keep the external-auction minimum at USD 10 and keep one winner only.
+
+Corrected both ping/post field builders:
+- US full state names become validated uppercase two-letter codes.
+- lp_s1 uses configured InternalSourceId (default Homeyy; no fabricated ad source).
+- jornaya_lead_id and universal_leadid use the captured valid Jornaya GUID.
+- trusted_form and trusted_form_cert_url contain the full captured certificate URL.
+- trusted_form_cert_id contains only its validated 40-character certificate ID.
+- TCPA and tcpa_language are included on ping as well as post.
+- The production gateway retrieves an explicit compliance-only record for Mili,
+  preserving user_agent and consent proof without sending name, email, phone or
+  street address on ping. Project, city, state, ZIP, IP, ownership and landing-page
+  origin come from the existing contact-free facts. Campaign credentials and pub_id
+  remain in their dedicated provider fields, never in public audit output.
+- IsTest=true sends lp_test=1 on ping AND post. Real leads never use lp_test=1.
+- Ordinary auctions use Exclusive. Explicit approved supplemental rounds use Shared.
+- Missing required proof/location/source data blocks HTTP with a fixed reason;
+  certificates, consent and lead IDs are never generated to fill missing evidence.
+- Malformed/ambiguous winner post responses require reconciliation, not replay.
+
+Deployment:
+Publish API from MyApp.Api/bin/Release/net8.0/publish-mili-compliance-20261017.
+No SQL migration or marketing UI rebuild is needed for the API adapter changes.
+Preserve all live credentials, connection strings, existing publisher/campaign
+settings and persistent key ring. Merge only these fields under ExternalIntegrations:Mili:
+  ProductionApproved: false
+  InternalSourceId: Homeyy
+Leave ProductionApproved=false until Mili confirms testing passed AND buyers are
+connected. Its code default is false too. Keep UseTestMode=false for production.
+Check environment overrides. Restart the API after publication.
+After written approval, change ProductionApproved to true and restart; do not
+activate while proof capture remains missing. This setting is an explicit hold,
+not a claim that existing credentials are incorrect.
+
+Remaining prerequisites:
+1. Homeyy.com needs the account-issued Jornaya installation snippet/account setup.
+   The current public UI accepts jornayaLeadId in its model but contains no active
+   token capture. Provide the real installation snippet and allowed domains. Do
+   not invent a GUID. A website change/build will be needed once the snippet exists.
+2. Use a fresh, explicitly marked test submission with genuine captured TrustedForm
+   and Jornaya proof, real consent text, user agent and location/ownership answers.
+   Historical leads lacking proof cannot be repaired by manufacturing certificates.
+3. With those prerequisites, arrange a test with Mili using lp_test=1 on both
+   operations and the returned lp_ping_id on post. No provider test or contact-data
+   submission was performed during this correction. Unit tests use an offline mock.
+4. Obtain Mili's confirmation of accepted Project/type values and production buyer
+   activation for each vertical before switching ProductionApproved=true.
+
+Screenshot interpretation:
+NoBid means no valid eligible provider offer met the live auction threshold; the
+per-provider attempts explain why. A configured rule BidAmount such as BLUEINK 25
+is not an actual returned ping offer and does not guarantee a USD 25 sale. Historical
+accepted bids below USD 10 predate enforcement and are not retroactively changed.

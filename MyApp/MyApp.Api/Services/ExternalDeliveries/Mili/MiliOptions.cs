@@ -5,6 +5,8 @@
         public const string SectionName = "ExternalIntegrations:Mili";
 
         public bool Enabled { get; set; }
+        public bool ProductionApproved { get; set; } = false;
+        public string InternalSourceId { get; set; } = "Homeyy";
 
         public bool UseTestMode { get; set; } = true;
 

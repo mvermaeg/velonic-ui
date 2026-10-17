@@ -18,7 +18,7 @@ public sealed class AuctionConfigurationCheck(IOptions<ExternalLeadAuctionOption
         {
             var verticals = new[] { "Roofing", "Windows", "Bathroom", "HVAC", "Gutters" }.Where(v => gateway.Enabled(provider.PlatformCode, v)).ToArray();
             if (verticals.Length == 0)
-                logger.LogWarning("Auction provider {Provider} is unavailable: disabled, unsupported verticals, missing credentials, invalid HTTPS endpoints or split ping/post mode disabled. Check configuration; values redacted.", provider.PlatformCode);
+                logger.LogWarning("Auction provider {Provider} is unavailable: disabled, production testing/buyer approval pending, unsupported verticals, missing credentials, invalid HTTPS endpoints or split ping/post mode disabled. Check configuration; values redacted.", provider.PlatformCode);
         }
         logger.LogInformation("Modernize participates when configured with an approved production tag ID. Unknown winner post outcomes require reconciliation; automatic replay is disabled.");
         if (networx.Value.Enabled)

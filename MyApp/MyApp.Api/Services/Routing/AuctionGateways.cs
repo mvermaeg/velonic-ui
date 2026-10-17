@@ -109,7 +109,13 @@ public sealed class AuctionGateway(IServiceScopeFactory scopes, IDataProtectionP
                 // prevents sending after its deadline; restart never replays a reserved ping.
                 await Task.Delay(wait, ct);
             }
-        }        return await Find(s.ServiceProvider, platform)!.PingAsync(facts, ct);
+            var proof = await db.Leads.AsNoTracking().Where(l => l.Id == facts.LeadId)
+                .Select(l => new ExternalDeliveries.Mili.MiliPingCompliance(l.JornayaLeadId,
+                    l.TrustedFormCertificateUrl, l.IsTcpaCompliant, l.TcpaComplianceText, l.UserAgent)).SingleAsync(ct);
+            return await ((ExternalDeliveries.Mili.MiliLeadProvider)provider)
+                .PingWithComplianceAsync(facts, proof, false, ct);
+        }
+        return await Find(s.ServiceProvider, platform)!.PingAsync(facts, ct);
     }
     public async Task<AuctionPost> PostAsync(string platform, AuctionWork work, string reference, string? context, string key, CancellationToken ct)
     { if (AuctionProviderPolicy.Excluded(platform)) throw new InvalidOperationException("Provider excluded from auction."); using var s = scopes.CreateScope(); return await Find(s.ServiceProvider, platform)!.PostAsync(work.Lead, work.Run.VerticalCode, reference, context, key, ct); }

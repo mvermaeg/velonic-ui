@@ -41,6 +41,8 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
                 return Failed(
                     "MILI integration is disabled.");
             }
+            if (!lead.IsTest && (!_options.ProductionApproved || _options.UseTestMode))
+                return Failed("Mili production blocked pending testing and buyer activation approval.");
 
             var vertical =
                 ResolveVertical(lead.LeadTypeId);
@@ -71,7 +73,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
             }
 
             var validation =
-                ValidateLead(lead);
+                ValidateLead(lead) ?? ValidatePingCompliance(lead);
 
             if (validation != null)
             {
@@ -340,7 +342,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
                         lead.City ?? string.Empty,
 
                     ["state"] =
-                        lead.State ?? string.Empty,
+                        StateCode(lead.State) ?? string.Empty,
 
                     ["zip_code"] =
                         lead.Postcode ?? string.Empty,
@@ -414,7 +416,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
                         lead.City ?? string.Empty,
 
                     ["state"] =
-                        lead.State ?? string.Empty,
+                        StateCode(lead.State) ?? string.Empty,
 
                     ["zip_code"] =
                         lead.Postcode ?? string.Empty,
@@ -464,6 +466,9 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
             Dictionary<string, string> fields,
             Lead lead)
         {
+            fields["lp_s1"] = _options.InternalSourceId;
+            fields["TCPA"] = lead.IsTcpaCompliant == true ? "YES" : "NO";
+            fields["tcpa_language"] = lead.TcpaComplianceText ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(
                     _options.PubId))
             {
@@ -482,6 +487,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
             if (!string.IsNullOrWhiteSpace(
                     lead.JornayaLeadId))
             {
+                fields["jornaya_lead_id"] = lead.JornayaLeadId;
                 fields["universal_leadid"] =
                     lead.JornayaLeadId;
             }
@@ -494,6 +500,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili
                  * TrustedForm fields.
                  */
 
+                fields["trusted_form_cert_id"] = CertificateId(lead.TrustedFormCertificateUrl) ?? string.Empty;
                 fields["trusted_form"] =
                     lead.TrustedFormCertificateUrl;
 

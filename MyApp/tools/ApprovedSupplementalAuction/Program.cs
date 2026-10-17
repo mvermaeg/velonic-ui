@@ -78,7 +78,7 @@ async Task Process(long id) {
     using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(90));
     var tasks = new List<Task<OfferResult>>();
     if (useBlue) tasks.Add(Receive("BLUEINK", () => blue.PingWithComplianceAsync(facts, lead.TrustedFormCertificateUrl, lead.JornayaLeadId, true, deadline.Token)));
-    if (useMili) tasks.Add(Receive("Mili", () => mili.PingSharedAsync(facts, deadline.Token)));
+    if (useMili) tasks.Add(Receive("Mili", () => mili.PingWithComplianceAsync(facts, MiliPingCompliance.From(lead), true, deadline.Token)));
     var offers = await Task.WhenAll(tasks);
     var protectedOffers = offers.Select(o => o with { Offer = o.Offer with {
         Reference = string.IsNullOrWhiteSpace(o.Offer.Reference) ? null : protector.Protect(o.Offer.Reference),

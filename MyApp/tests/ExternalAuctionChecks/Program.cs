@@ -205,28 +205,78 @@ await Check("audit redacts credentials, tokens, free text and contacts recursive
 await Check("Mili uses separate contact-free ping and stored-token post", async () => {
     var handler = new CaptureHandler(["<response><result>success</result><ping_id>mili-token</ping_id><price>30</price></response>",
         "<response><result>success</result><lead_id>mili-delivery</lead_id></response>"]);
-    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true,
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, ProductionApproved = true, PubId = "THG-2407",
         UseTestMode = false,
         Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(),
         NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
-    var lead = Fixture.Lead(); var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    var lead = Fixture.MiliLead(); var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
     Assert(offer.Accepted && offer.Amount == 30 && offer.Reference == "mili-token", "Mili bid parsing");
+    var pingFields = handler.Bodies[0].Split('&').Select(x => x.Split('=', 2))
+        .ToDictionary(x => Uri.UnescapeDataString(x[0]), x => Uri.UnescapeDataString(x[1].Replace('+', ' ')));
+    var required = new[] { "city", "home_owner", "ip_address", "jornaya_lead_id", "landing_page", "lp_campaign_id", "lp_campaign_key",
+        "lp_s1", "Project", "pub_id", "state", "TCPA", "tcpa_language", "trusted_form", "trusted_form_cert_id", "trusted_form_cert_url", "type", "universal_leadid", "user_agent", "zip_code" };
+    Assert(required.All(k => pingFields.TryGetValue(k, out var v) && !string.IsNullOrWhiteSpace(v)), "Mili requested ping fields missing");
+    Assert(pingFields["state"] == "CA" && pingFields["TCPA"] == "YES" && pingFields["home_owner"] == "YES" && pingFields["zip_code"] == "01007", "Mili formatting incorrect");
+    Assert(pingFields["trusted_form_cert_id"] == "0123456789abcdef0123456789abcdef01234567" && pingFields["trusted_form_cert_url"] == lead.TrustedFormCertificateUrl && pingFields["universal_leadid"] == pingFields["jornaya_lead_id"], "Consent identifier mapping incorrect");
     Assert(handler.Bodies[0].Contains("type=Exclusive") && !handler.Bodies[0].Contains("type=Shared"), "Auction ping used legacy shared type");
     Assert(!lead.IsTest && !handler.Bodies[0].Contains("lp_test=1"), "Real-lead Mili ping incorrectly used test mode");
-    foreach (var secret in new[] { lead.Email!, lead.Phone!, lead.FullName!, lead.Address!, lead.TrustedFormCertificateUrl! })
+    foreach (var secret in new[] { lead.Email!, lead.Phone!, lead.FullName!, lead.Address! })
         Assert(!Uri.UnescapeDataString(handler.Bodies[0]).Contains(secret), "Mili ping contact leak");
     var result = await provider.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "stable-key", default);
     Assert(result.Accepted && handler.Bodies.Count == 2 && handler.Bodies[1].Contains("mili-token"), "Mili separate post");
+    var postFields = handler.Bodies[1].Split('&').Select(x => x.Split('=', 2))
+        .ToDictionary(x => Uri.UnescapeDataString(x[0]), x => Uri.UnescapeDataString(x[1].Replace('+', ' ')));
+    Assert(required.All(k => postFields.ContainsKey(k)) && new[] { "address", "email_address", "first_name", "last_name", "lp_ping_id", "phone_home" }.All(postFields.ContainsKey), "Mili requested post fields missing");
+    Assert(postFields["state"] == "CA" && postFields["trusted_form_cert_id"] == pingFields["trusted_form_cert_id"], "Ping/post state or certificate mismatch");
     Assert(handler.Bodies[1].Contains("type=Exclusive") && !handler.Bodies[1].Contains("type=Shared"), "Winner post changed exclusive type");
     Assert(!handler.Bodies[1].Contains("lp_test=1"), "Real-lead winner post incorrectly used test mode");
+});
+await Check("Mili blocks production until buyer approval and never fabricates missing compliance proof", async () => {
+    var handler = new CaptureHandler(["unused"]);
+    var settings = new MiliOptions { Enabled = true, UseTestMode = false, PubId = "THG-2407",
+        Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } };
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(settings), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
+    var lead = Fixture.MiliLead();
+    var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
+    Assert(!offer.Accepted && !provider.IsEnabled("Roofing") && handler.Bodies.Count == 0, "Unapproved production sent");
+    settings.ProductionApproved = true;
+    foreach (var field in new[] { "jornaya", "certificate", "state", "consent", "agent", "ownership" }) {
+        var invalid = Fixture.MiliLead();
+        if (field == "jornaya") invalid.JornayaLeadId = null;
+        if (field == "certificate") invalid.TrustedFormCertificateUrl = "https://untrusted.example/123";
+        if (field == "state") invalid.State = "Unknown";
+        if (field == "consent") invalid.IsTcpaCompliant = false;
+        if (field == "agent") invalid.UserAgent = null;
+        if (field == "ownership") invalid.OwnsProperty = null;
+        offer = await provider.PingWithComplianceAsync(AuctionFacts.From(invalid, "Roofing"), MiliPingCompliance.From(invalid), false, default);
+        Assert(!offer.Accepted && handler.Bodies.Count == 0, "Missing compliance was invented or sent");
+    }
+});
+await Check("Mili malformed winner response remains unknown and cannot trigger replay", async () => {
+    var handler = new CaptureHandler(["<response><result>success</result><ping_id>token</ping_id><price>30</price></response>", "not xml"]);
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, ProductionApproved = true, UseTestMode = false, PubId = "THG-2407",
+        Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
+    var lead = Fixture.MiliLead();
+    var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
+    var result = await provider.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "stable", default);
+    Assert(!result.Accepted && result.OutcomeUnknown && !AuctionPolicy.CanRetry(result, false), "Ambiguous Mili post permitted replay");
+});
+await Check("Mili approved test payload marks ping and winner post as test without enabling production", async () => {
+    var handler = new CaptureHandler(["<response><result>success</result><ping_id>test-token</ping_id><price>30</price></response>", "<response><result>success</result><lead_id>test-receipt</lead_id></response>"]);
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = true, PubId = "THG-2407",
+        Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
+    var lead = Fixture.MiliLead(); lead.IsTest = true;
+    var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
+    var post = await provider.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "test-only", default);
+    Assert(offer.Accepted && post.Accepted && handler.Bodies.All(b => b.Contains("lp_test=1")) && !provider.IsEnabled("Roofing"), "Test payload escaped to production");
 });
 await Check("approved supplemental Mili ping/post use Shared without exposing contacts on ping", async () => {
     var handler = new CaptureHandler(["<response><result>success</result><ping_id>shared-token</ping_id><price>12</price></response>",
         "<response><result>success</result><lead_id>shared-delivery</lead_id></response>"]);
-    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = false,
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, ProductionApproved = true, PubId = "THG-2407", UseTestMode = false,
         Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
-    var lead = Fixture.Lead(); lead.IsTest = false;
-    var offer = await provider.PingSharedAsync(AuctionFacts.From(lead, "Roofing"), default);
+    var lead = Fixture.MiliLead(); lead.IsTest = false;
+    var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), true, default);
     Assert(offer.Accepted && handler.Bodies[0].Contains("type=Shared") && !handler.Bodies[0].Contains("type=Exclusive"), "Supplemental sale falsely claimed exclusivity");
     foreach (var secret in new[] { lead.Email!, lead.Phone!, lead.FullName!, lead.Address! }) Assert(!Uri.UnescapeDataString(handler.Bodies[0]).Contains(secret), "Shared ping leaked contacts");
     var post = await provider.PostSharedAsync(lead, "Roofing", offer.Reference!, offer.PostContext, default);
@@ -234,21 +284,22 @@ await Check("approved supplemental Mili ping/post use Shared without exposing co
 });
 await Check("Mili campaign errors are classified without contacts; production stays live and quota blocks repeated ping", async () => {
     var handler = new CaptureHandler(["<response><result>failed</result><price>0.00</price><errors><error>Invalid Campaign ID or Key TEST-SECRET private@example.com</error></errors></response>"]);
-    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = true,
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, ProductionApproved = true, PubId = "THG-2407", UseTestMode = false,
         Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "TEST-SECRET" } }), new MiliRateLimiter(),
         NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
-    var lead = Fixture.Lead(); lead.IsTest = false;
-    var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    var lead = Fixture.MiliLead(); lead.IsTest = false;
+    var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
     Assert(!offer.Accepted && offer.Error == "Mili authentication failed: Invalid Campaign ID or Key.", "Campaign rejection not classified safely");
     Assert(handler.Bodies[0].Contains("lp_response=xml") && !handler.Bodies[0].Contains("lp_test=1"), "Production mode or XML contract incorrect");
-    var second = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    var second = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
     Assert(!second.Accepted && handler.Bodies.Count == 1 && second.Error!.Contains("quota"), "Repeated ping exceeded cap");
 });
 await Check("Mili retains actionable later filter errors without persisting raw provider text", async () => {
     var handler = new CaptureHandler(["<response><result>failed</result><errors><error>Filter failed SECRET</error><error>TYPE filter mismatch private@example.test</error></errors></response>"]);
-    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, UseTestMode = false,
+    var provider = new MiliLeadProvider(new HttpClient(handler), Options.Create(new MiliOptions { Enabled = true, ProductionApproved = true, PubId = "THG-2407", UseTestMode = false,
         Roofing = new() { Enabled = true, CampaignId = "test", CampaignKey = "SECRET" } }), new MiliRateLimiter(), NullLogger<MiliLeadProvider>.Instance, new NoonPacific());
-    var offer = await provider.PingAsync(AuctionFacts.From(Fixture.Lead(), "Roofing"), default);
+    var lead = Fixture.MiliLead();
+    var offer = await provider.PingWithComplianceAsync(AuctionFacts.From(lead, "Roofing"), MiliPingCompliance.From(lead), false, default);
     Assert(!offer.Accepted && offer.Error == "Mili rejected: TYPE filter mismatch.", "Later filter diagnostic lost or raw error exposed");
 });
 await Check("NETWORX comments contain only customer text, never generated metadata or JSON", () => {
@@ -481,6 +532,13 @@ sealed class Fixture
         Store.Work.Run.Status = "CollectingBids"; Store.Work.Run.AuctionClosesOn = DateTime.UtcNow.AddSeconds(90);
         foreach (var x in Gateway.Offers) Store.Work.Attempts.Add(new() { Id = Store.Work.Attempts.Count + 1, LeadRoutingRunId = 1,
             PlatformCode = x.Code, Status = "BidAccepted", PingReferenceId = "encrypted-token", OfferedBidAmount = x.Bid, BidReceivedOn = DateTime.UtcNow });
+    }
+    public static Lead MiliLead() {
+        var lead = Lead();
+        lead.TrustedFormCertificateUrl = "https://cert.trustedform.com/0123456789abcdef0123456789abcdef01234567";
+        lead.JornayaLeadId = "abc123ab-c123-abc1-23ab-c123abc123ab";
+        lead.UserAgent = "Mozilla/5.0 HomeyyContractTest"; lead.IsTcpaCompliant = true;
+        lead.State = "California"; return lead;
     }
     public static Lead Lead() => new() { Id = 1, LeadTypeId = 1, LeadQualityScore = 100, IsCompleted = true, Postcode = "01007", OwnsProperty = true,
         FullName = "Private Person", Email = "private@example.test", Phone = "5551234567", Address = "12 Private Street",

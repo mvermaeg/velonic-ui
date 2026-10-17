@@ -4,21 +4,33 @@ namespace MyApp.Api.Services.ExternalDeliveries.Mili;
 
 public sealed partial class MiliLeadProvider : IAuctionProvider
 {
-    public bool IsEnabled(string vertical) => _options.Enabled && ResolveCampaign(vertical) is { Enabled: true } c &&
+    public bool IsEnabled(string vertical) => _options.Enabled && _options.ProductionApproved && !_options.UseTestMode && ResolveCampaign(vertical) is { Enabled: true } c &&
         !string.IsNullOrWhiteSpace(c.CampaignId) && !string.IsNullOrWhiteSpace(c.CampaignKey) &&
+        !string.IsNullOrWhiteSpace(_options.PubId) && !string.IsNullOrWhiteSpace(_options.InternalSourceId) &&
         AuctionPolicy.HttpsEndpoint(_options.PingUrl) && AuctionPolicy.HttpsEndpoint(_options.PostUrl);
     public async Task<AuctionOffer> PingAsync(AuctionFacts facts, CancellationToken ct)
-        => await PingAuctionAsync(facts, "Exclusive", ct);
+        => await PingAuctionAsync(facts, null, "Exclusive", ct);
     public Task<AuctionOffer> PingSharedAsync(AuctionFacts facts, CancellationToken ct)
-        => PingAuctionAsync(facts, "Shared", ct);
-    private async Task<AuctionOffer> PingAuctionAsync(AuctionFacts facts, string type, CancellationToken ct)
+        => PingAuctionAsync(facts, null, "Shared", ct);
+    public Task<AuctionOffer> PingWithComplianceAsync(AuctionFacts facts, MiliPingCompliance compliance, bool shared, CancellationToken ct)
+        => PingAuctionAsync(facts, compliance, shared ? "Shared" : "Exclusive", ct);
+    private async Task<AuctionOffer> PingAuctionAsync(AuctionFacts facts, MiliPingCompliance? compliance, string type, CancellationToken ct)
     {
+        var campaign = ResolveCampaign(facts.Vertical);
+        if (!_options.Enabled || campaign is not { Enabled: true } || string.IsNullOrWhiteSpace(campaign.CampaignId) || string.IsNullOrWhiteSpace(campaign.CampaignKey))
+            return new(false, null, null, null, "{}", "{}", "Mili campaign configuration missing; no ping sent.");
+        if (!facts.IsTest && (!_options.ProductionApproved || _options.UseTestMode))
+            return new(false, null, null, null, "{}", "{}", "Mili production blocked pending testing and buyer activation approval.");
+        var mappingLead = facts.ToMappingLead();
+        compliance?.Apply(mappingLead);
+        var missing = ValidatePingCompliance(mappingLead);
+        if (missing != null) return new(false, null, null, null, "{}", "{}", missing);
         if (!IsWithinMiliSchedule(out _))
             return new(false, null, null, null, "{}", "{}", "Mili outside permitted Pacific posting hours.");
         if (!_rateLimiter.TryAcquire(facts.Vertical, out _))
             return new(false, null, null, null, "{}", "{}", "Mili local per-vertical ping quota reached.");
-        var project = ResolveProject(facts.ToMappingLead(), facts.Vertical);
-        var payload = BuildPingFields(facts.ToMappingLead(), ResolveCampaign(facts.Vertical)!, project);
+        var project = ResolveProject(mappingLead, facts.Vertical);
+        var payload = BuildPingFields(mappingLead, campaign, project);
         // The auction posts to exactly one locked winner. Legacy Shared configuration
         // does not describe this contract and can fail the provider's TYPE filter.
         payload["type"] = type;
@@ -37,7 +49,9 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
         => PostAuctionAsync(lead, vertical, reference, context, "Shared", ct);
     private async Task<AuctionPost> PostAuctionAsync(Lead lead, string vertical, string reference, string? context, string type, CancellationToken ct)
     {
-        var validation = ValidateLead(lead);
+        if (!lead.IsTest && (!_options.ProductionApproved || _options.UseTestMode))
+            return new(false, false, false, null, "{}", "{}", "Mili production blocked pending testing and buyer activation approval.");
+        var validation = ValidateLead(lead) ?? ValidatePingCompliance(lead);
         if (validation != null || context == null) return new(false, false, false, null, "{}", "{}", validation ?? "Project snapshot missing.");
         var payload = BuildPostFields(lead, ResolveCampaign(vertical)!, reference, context);
         payload["type"] = type;
@@ -47,7 +61,9 @@ public sealed partial class MiliLeadProvider : IAuctionProvider
         using var response = await _httpClient.PostAsync(_options.PostUrl, content, ct);
         var parsed = ParsePostResponse(await response.Content.ReadAsStringAsync(ct));
         var accepted = response.IsSuccessStatusCode && parsed.Success;
-        return new(accepted, false, !accepted && (int)response.StatusCode >= 500, parsed.LeadId ?? reference,
+        var unknown = !accepted && ((int)response.StatusCode >= 500 || string.IsNullOrWhiteSpace(parsed.Error) ||
+            parsed.Error.Contains("parse", StringComparison.OrdinalIgnoreCase));
+        return new(accepted, false, unknown, parsed.LeadId ?? reference,
             AuctionAudit.Payload(payload), AuctionAudit.Response(accepted, status: (int)response.StatusCode),
             accepted ? null : SafeMiliError(parsed.Error), (int)response.StatusCode);
     }
