@@ -37,7 +37,7 @@ public partial class NetworxLeadProvider : IAuctionProvider
         var tasks = await _auctionTasks.FindAsync(facts.LeadTypeId.Value, option, ct);
         if (tasks.Count != 1 || string.IsNullOrWhiteSpace(tasks[0]))
             return new(false, null, null, null, "{}", "{}", $"Networx requires exactly one active task mapping: LeadTypeId={facts.LeadTypeId}, option={option}.");
-        var task = tasks[0];
+        var task = tasks[0].Trim();
         var payload = BuildPingFields(lead, task, NormalizeSourceId(_options.SourceId));
         using var response = await SendAsync(payload, ct);
         var parsed = ParseResponse(await response.Content.ReadAsStringAsync(ct));
@@ -60,7 +60,7 @@ public partial class NetworxLeadProvider : IAuctionProvider
         var unknown = !accepted && ((int)response.StatusCode >= 500 ||
             reason == "Unspecified provider rejection; provider logs required");
         return new(accepted, false, unknown, parsed.SuccessCode ?? reference,
-            AuctionAudit.Payload(payload), AuctionAudit.Response(accepted, status: (int)response.StatusCode),
+            AuctionAudit.Payload(payload), AuctionAudit.Response(accepted, AuctionPolicy.Price(parsed.Price), (int)response.StatusCode),
             accepted ? null : "NETWORX: " + reason + (unknown ? "; post acceptance unconfirmed." : "; post rejected."), (int)response.StatusCode);
     }
 }

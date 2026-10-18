@@ -1,0 +1,49 @@
+Read-only production comparison: Homeyy leads 132, 156, 161 (2026-10-18).
+No live leads were retried, pinged, posted, edited or reclassified for this work.
+
+All three have LeadTypeId=1, Replace Roof / Asphalt Shingles, stored TCPA consent,
+nonempty consent text without embedded lead contacts, and a stored certificate.
+ZIPs differ: 132=99208, 156=78361, 161=31005. Data presence does not establish
+certificate authenticity, customer quality or buyer demand.
+Saved actual ping ZIP values match those lead ZIPs in every inspected attempt;
+none was substituted with NETWORX's 00001 test ZIP.
+
+Lead 132's saved legacy ping fields:
+nx_access_key, nx_userId, zipcode, task_id, tcpa_compliance_text.
+Leads 156 and 161 have those same five saved ping audit field names, with no
+additional missing field relative to 132. Audited values are redacted; the original
+task value for recent pings cannot be recovered from that redacted audit alone.
+132's original task is 325. The current active mapping for all three's option,
+ROOF_REPLACE_ASPHALT, is exactly one row, ExternalTaskId=325. Offline tests prove
+the current auction resolves their public form structure to this option.
+
+132's saved post contains dedicated contacts, token, cert_url, source_id=attribution,
+is_business and comments. 156/161 have no actual post because their bids failed
+the minimum threshold; compare their potential post using the shared builder,
+not by claiming a post was sent. Do not send full data merely to obtain a price.
+
+132's actual provider XML contains price 18 on ping and price 47 on successful post.
+Its routing run's historical amount 25 was not that actual ping offer. The portal's
+Matched 47 corroborates the post response in this particular case; it is not a
+general payout guarantee for every successful post. 156's saved bids were 1.80 and
+later 1.35; 161 returned 8.00. A USD 10 floor correctly blocks those offers.
+
+Corrections:
+- source_id now goes on ping as well as post (same normalized configured source).
+  It was absent from 132's ping too, so its omission does not explain the difference
+  between the compared leads. SourceId was already an unused ping-builder argument.
+- Credentials, task ID and TCPA text are trimmed consistently on ping and post.
+  There is no evidence whitespace caused the compared low offers; this removes a
+  potential mismatch without replacing credentials or altering consent wording.
+- Strictly numeric task IDs are retained in safe request audits for future mapping
+  checks; contacts, tokens, credentials and arbitrary text remain redacted.
+- NETWORX post response price is retained separately in its safe numeric response
+  audit. It does not replace the winning ping bid or become confirmed earnings.
+- Customer-only comments correction remains: never restore raw form JSON.
+
+Deployment: publish API only from
+MyApp.Api/bin/Release/net8.0/publish-networx-consistency-20261018
+No SQL migration or UI rebuild is required. Preserve live credentials, connection
+strings, persistent auction key ring, minimum bid 10 and AllowWinnerFallback=false.
+Mili's separate production-testing hold remains in effect pending provider approval.
+No guaranteed increase in NETWORX offer or contractor matching is established.

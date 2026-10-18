@@ -114,7 +114,8 @@ public static class AuctionAudit
             JsonValueKind.Null => null,
             _ => PublicFields.Contains(key) && (element.ValueKind is JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False ||
                 new[] { "zipcode", "zip_code", "postalCode" }.Contains(key) && element.ValueKind == JsonValueKind.String &&
-                element.GetString() is { Length: 5 } zip && zip.All(c => c is >= '0' and <= '9'))
+                element.GetString() is { Length: 5 } zip && zip.All(c => c is >= '0' and <= '9') ||
+                key == "task_id" && element.ValueKind == JsonValueKind.String && element.GetString() is { Length: >= 1 and <= 6 } task && task.All(char.IsAsciiDigit))
                 ? element.Clone() : (object)"[REDACTED]"
         };
         return JsonSerializer.Serialize(Clean(doc.RootElement, ""));

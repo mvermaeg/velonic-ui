@@ -736,6 +736,9 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
                     ["task_id"] =
                         taskId.Trim(),
 
+                    ["source_id"] =
+                        sourceId,
+
                     ["tcpa_compliance_text"] =
                         lead.TcpaComplianceText?.Trim()
                 });
@@ -757,10 +760,10 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
                 new Dictionary<string, string?>
                 {
                     ["nx_access_key"] =
-                        _options.AccessKey,
+                        _options.AccessKey.Trim(),
 
                     ["nx_userId"] =
-                        _options.UserId,
+                        _options.UserId.Trim(),
 
                     ["f_name"] =
                         names.FirstName,
@@ -772,7 +775,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
                         GetZipCode(lead),
 
                     ["task_id"] =
-                        taskId,
+                        taskId.Trim(),
 
                     ["phone"] =
                         NormalizePhone(lead.Phone),
@@ -781,7 +784,7 @@ namespace MyApp.Api.Services.ExternalDeliveries.Networx
                         lead.Email,
 
                     ["tcpa_compliance_text"] =
-                        lead.TcpaComplianceText,
+                        lead.TcpaComplianceText?.Trim(),
 
                     ["cert_url"] =
                         lead.TrustedFormCertificateUrl,

@@ -374,6 +374,40 @@ await Check("Networx missing or ambiguous configured task blocks HTTP with exact
         Assert(!offer.Accepted && handler.Bodies.Count == 0 && offer.Error!.Contains("ROOF_REPLACE_ASPHALT"), "Missing/ambiguous task sent HTTP");
     }
 });
+await Check("NETWORX legacy and auction map equivalent asphalt inputs identically without ping contacts", () => {
+    using var db = new MyAppDbContext(new DbContextOptionsBuilder<MyAppDbContext>().UseSqlServer("Server=offline.invalid;Database=NeverOpened;Integrated Security=true").Options);
+    var provider = new NetworxLeadProvider(new HttpClient(new CaptureHandler(["unused"])), db,
+        Options.Create(new NetworxOptions { UseTestMode = false, AccessKey = " key ", UserId = " user " }), NullLogger<NetworxLeadProvider>.Instance, new TestTaskLookup(["325"]));
+    var builder = typeof(NetworxLeadProvider).GetMethod("BuildPingFields", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+    foreach (var zip in new[] { "99208", "78361", "31005", "01007" }) {
+        var lead = Fixture.Lead(); lead.Postcode = zip; lead.TcpaComplianceText = " Consent text ";
+        lead.AdditionalDataJson = "{\"answers\":{\"projectType\":\"Replace Roof\",\"roofType\":\"Asphalt Shingles\"}}";
+        var facts = AuctionFacts.From(lead, "Roofing");
+        Assert(NetworxLeadProvider.AuctionTaskOption(facts) == "ROOF_REPLACE_ASPHALT", "Public asphalt task changed");
+        var legacy = (Dictionary<string,string>)builder.Invoke(provider, new object[] { lead, "325", "Homeyy" })!;
+        var auction = (Dictionary<string,string>)builder.Invoke(provider, new object[] { facts.ToMappingLead(), "325", "Homeyy" })!;
+        Assert(legacy.OrderBy(x => x.Key).SequenceEqual(auction.OrderBy(x => x.Key)), "Auction dropped a legacy ping field/value");
+        Assert(auction["source_id"] == "Homeyy" && auction["zipcode"] == zip && auction["task_id"] == "325", "Attribution, ZIP or task missing");
+        foreach (var field in new[] { "f_name", "l_name", "phone", "email", "address", "comments", "cert_url" }) Assert(!auction.ContainsKey(field), "Ping exposes contact data");
+    }
+    return Task.CompletedTask;
+});
+await Check("NETWORX preserves ping/post attribution and distinct numeric response prices", async () => {
+    using var db = new MyAppDbContext(new DbContextOptionsBuilder<MyAppDbContext>().UseSqlServer("Server=offline.invalid;Database=NeverOpened;Integrated Security=true").Options);
+    var handler = new CaptureHandler(["<response><statusCode>200</statusCode><token>net-token</token><price>18</price></response>",
+        "<response><statusCode>200</statusCode><successCode>receipt</successCode><price>47</price></response>"]);
+    var provider = new NetworxLeadProvider(new HttpClient(handler), db, Options.Create(new NetworxOptions { Enabled = true, UseTestMode = false, SourceId = " Homeyy ", AccessKey = " key ", UserId = " user " }), NullLogger<NetworxLeadProvider>.Instance, new TestTaskLookup([" 325 "]));
+    var lead = Fixture.Lead(); lead.TcpaComplianceText = " Consent text "; lead.AdditionalDataJson = "{\"projectType\":\"Replace Roof\",\"roofType\":\"Asphalt Shingles\"}";
+    var offer = await provider.PingAsync(AuctionFacts.From(lead, "Roofing"), default);
+    Assert(handler.Bodies.Count == 1 && offer.Amount == 18 && offer.PostContext == "325", "Ping triggered a post or changed offer/task");
+    var result = await provider.PostAsync(lead, "Roofing", offer.Reference!, offer.PostContext, "stable", default);
+    var bodies = handler.Bodies.Select(b => b.Split('&').Select(x => x.Split('=',2)).ToDictionary(x => x[0], x => Uri.UnescapeDataString(x[1].Replace('+',' ')))).ToArray();
+    foreach (var field in new[] { "nx_access_key", "nx_userId", "task_id", "source_id", "zipcode", "tcpa_compliance_text" }) Assert(bodies[0][field] == bodies[1][field], "Ping/post field mismatch");
+    using var audit = System.Text.Json.JsonDocument.Parse(result.ResponseAudit);
+    Assert(result.Accepted && offer.Amount == 18 && audit.RootElement.GetProperty("amount").GetDecimal() == 47, "Post price overwritten or confused with ping bid");
+    using var request = System.Text.Json.JsonDocument.Parse(offer.RequestAudit);
+    Assert(request.RootElement.GetProperty("task_id").GetString() == "325" && !offer.RequestAudit.Contains("net-token"), "Task audit missing or token leaked");
+});
 await Check("Networx actual split adapter sends mapped task, token and winner-only contact", async () => {
     using var db = new MyAppDbContext(new DbContextOptionsBuilder<MyAppDbContext>().UseSqlServer("Server=offline.invalid;Database=NeverOpened;Integrated Security=true").Options);
     var handler = new CaptureHandler(["<response><statusCode>200</statusCode><token>net-token</token><price>42.50</price></response>"]);
