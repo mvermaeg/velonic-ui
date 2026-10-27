@@ -13,7 +13,7 @@ export interface RoutingAttempt {
   postAttempts: number; errorMessage?: string; pingRequestAudit?: string;
   pingResponseAudit?: string; postRequestAudit?: string; postResponseAudit?: string;
 }
-export interface RunDetail { run: RoutingRun; attempts: RoutingAttempt[] }
+export interface RunDetail { run: RoutingRun; attempts: RoutingAttempt[]; bidPolicy?: { minimumBidAmount: number; settingsRevision: number } | null }
 export interface NetworxReadiness {
   items: { vertical: string; option: string; leadTypeIds: number[]; ready: boolean; reason?: string }[];
   note: string;

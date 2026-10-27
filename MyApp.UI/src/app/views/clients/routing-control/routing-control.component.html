@@ -7,7 +7,21 @@
   <div class="alert alert-warning">New rules are disabled by default. Auction mode:
     <strong>{{ capabilities?.options?.enabled ? 'Enabled' : 'Disabled' }}</strong>.
     Window: {{ capabilities?.options?.auctionWindowSeconds || 90 }} seconds. Full contact data goes only to the locked winner.</div>
+  <div class="alert alert-info">Thumbtack coverage is exclusive. Otherwise, all eligible external platforms compete concurrently with equal standing. The highest valid bid wins; equal bids use earliest response time. Legacy priority and fixed bid values do not rank external auction offers.</div>
   <div class="alert alert-info" *ngIf="message">{{ message }}</div>
+  <div class="card mb-3"><div class="card-header"><h5 class="mb-0">External auction minimum bid</h5></div>
+    <div class="card-body">
+      <p>All eligible external platforms use the same minimum. Set 0 to remove the floor; bids must still be positive. Highest valid bid wins, with one winner only.</p>
+      <p class="text-muted">Saved changes apply to new auctions. Auctions already started keep their original minimum. Saving never resends old leads. Thumbtack coverage remains exclusive.</p>
+      <p *ngIf="bidLoading" role="status">Loading minimum…</p>
+      <p *ngIf="bidError" class="alert alert-danger" role="alert">{{bidError}}</p>
+      <p *ngIf="bidMessage" class="alert alert-success" role="status">{{bidMessage}}</p>
+      <label for="minimumBid" class="form-label">Minimum bid (USD)</label>
+      <input id="minimumBid" type="number" min="0" max="1000000" step="0.0001" class="form-control mb-2" [(ngModel)]="minimumBidAmount" [disabled]="bidLoading || bidSaving || !bidSettings || !!bidError">
+      <button class="btn btn-primary me-2" (click)="saveBidSettings()" [disabled]="!bidSettings || !validMinimumBid || bidLoading || bidSaving || !!bidError">{{bidSaving ? 'Saving…' : 'Save minimum'}}</button>
+      <button class="btn btn-outline-secondary" (click)="loadBidSettings()" [disabled]="bidLoading || bidSaving">Reload minimum</button>
+    </div>
+  </div>
   <div class="row g-3">
     <div class="col-xl-4"><div class="card"><div class="card-header"><h5 class="mb-0">Routing Rule</h5></div>
       <div class="card-body">
@@ -28,8 +42,8 @@
         <div class="row g-2">
           <div class="col-6"><label class="form-label">State</label><input class="form-control" [(ngModel)]="form.state" placeholder="All"></div>
           <div class="col-6"><label class="form-label">ZIP</label><input class="form-control" [(ngModel)]="form.postcode" placeholder="All"></div>
-          <div class="col-6"><label class="form-label">Legacy fixed bid</label><input type="number" class="form-control" [(ngModel)]="form.bidAmount"></div>
-          <div class="col-6"><label class="form-label">Rule priority (auction ties use response time)</label><input type="number" class="form-control" [(ngModel)]="form.priority"></div>
+          <div class="col-6" *ngIf="form.destinationType === 'InternalClient'"><label class="form-label">Legacy fixed bid</label><input type="number" class="form-control" [(ngModel)]="form.bidAmount"></div>
+          <div class="col-6" *ngIf="form.destinationType === 'InternalClient'"><label class="form-label">Legacy client priority</label><input type="number" class="form-control" [(ngModel)]="form.priority"></div>
           <div class="col-6"><label class="form-label">Daily cap</label><input type="number" class="form-control" [(ngModel)]="form.dailyCap"></div>
           <div class="col-6"><label class="form-label">Monthly cap</label><input type="number" class="form-control" [(ngModel)]="form.monthlyCap"></div>
         </div>
@@ -40,16 +54,16 @@
         <button class="btn btn-primary w-100" (click)="save()" [disabled]="saving">{{ saving ? 'Saving...' : 'Save rule' }}</button>
       </div></div></div>
     <div class="col-xl-8">
-      <div class="card mb-3"><div class="card-header"><h5 class="mb-0">Configured ranking</h5></div>
+      <div class="card mb-3"><div class="card-header"><h5 class="mb-0">Configured destinations</h5></div>
         <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-          <thead><tr><th>Vertical</th><th>Destination</th><th>Coverage</th><th>Bid</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Vertical</th><th>Destination</th><th>Coverage</th><th>Legacy fixed bid</th><th>Status</th><th></th></tr></thead>
           <tbody><tr *ngFor="let x of rules"><td>{{x.verticalCode}}</td>
             <td>{{x.destinationType === 'InternalClient' ? 'Client #' + x.clientId : x.platformCode}}</td>
-            <td>{{x.state || 'All states'}} / {{x.postcode || 'All ZIPs'}}</td><td>{{x.bidAmount | currency:'USD'}}</td><td>{{x.priority}}</td>
+            <td>{{x.state || 'All states'}} / {{x.postcode || 'All ZIPs'}}</td><td>{{x.destinationType === 'ExternalPlatform' ? 'Not used in auction' : (x.bidAmount | currency:'USD')}}</td>
             <td><span class="badge" [ngClass]="x.isActive ? 'bg-success':'bg-secondary'">{{x.isActive ? 'Active':'Disabled'}}</span></td>
             <td class="text-nowrap"><button class="btn btn-sm btn-outline-primary me-1" (click)="edit(x)">Edit</button>
               <button class="btn btn-sm btn-outline-secondary" (click)="toggle(x)">{{x.isActive ? 'Disable':'Enable'}}</button></td></tr>
-          <tr *ngIf="!loading && rules.length === 0"><td colspan="7" class="text-center text-muted py-4">No routing rules configured.</td></tr></tbody>
+          <tr *ngIf="!loading && rules.length === 0"><td colspan="6" class="text-center text-muted py-4">No routing rules configured.</td></tr></tbody>
         </table></div></div>
       <div class="card"><div class="card-header"><h5 class="mb-0">Recent routing results</h5></div>
         <p *ngIf="runsLoading" class="p-3" role="status">Loading runs…</p><p *ngIf="runsError" class="alert alert-danger">{{runsError}}</p>
@@ -89,6 +103,7 @@
         <label class="form-label">Support-case reference (no contact data)</label><input class="form-control mb-2" maxlength="100" [(ngModel)]="reconciliationReference">
         <button class="btn btn-danger" [disabled]="reconciling || reconciliationReference.length < 3" (click)="reconcile()">Record confirmed outcome</button>
       </div>
+      <p *ngIf="detail.bidPolicy">Minimum used for this auction: {{detail.bidPolicy.minimumBidAmount | currency:'USD':'symbol':'1.2-4'}} · Settings revision {{detail.bidPolicy.settingsRevision}}</p>
       <p *ngIf="detail.run.reconciledOn">Reconciled {{detail.run.reconciledOn | date:'medium'}}: {{detail.run.reconciliationOutcome}} · Case {{detail.run.reconciliationReference}}</p>
       <div class="row g-3 mb-3"><div class="col-md-4"><strong>Status:</strong> {{detail.run.status}}<br><strong>Thumbtack:</strong> {{detail.run.thumbtackEligibility || 'Not checked'}}<br><strong>Search ID:</strong> {{detail.run.thumbtackSearchId || '—'}}</div>
         <div class="col-md-4"><strong>Opened:</strong> {{detail.run.auctionStartedOn | date:'medium'}}<br><strong>Closes:</strong> {{detail.run.auctionClosesOn | date:'medium'}}<br><strong>Winner locked:</strong> {{detail.run.winnerLockedOn | date:'medium'}}</div>

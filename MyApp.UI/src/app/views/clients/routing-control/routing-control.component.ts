@@ -17,6 +17,12 @@ export class RoutingControlComponent implements OnInit, OnDestroy {
   private url = `${environment.apiUrl}/lead-routing`
   loading = false
   saving = false
+  bidSettings: { minimumBidAmount: number; revision: number } | null = null
+  minimumBidAmount: number | null = null
+  bidLoading = false
+  bidSaving = false
+  bidError = ''
+  bidMessage = ''
   message = ''
   rules: any[] = []
   runs: RoutingRun[] = []
@@ -58,6 +64,7 @@ export class RoutingControlComponent implements OnInit, OnDestroy {
       effectiveFrom: null as string | null, effectiveTo: null as string | null }
   }
   refresh() {
+    this.loadBidSettings()
     this.http.get<NetworxReadiness>(`${this.url}/networx-readiness`).subscribe({ next: x => this.readiness = x, error: () => { this.readiness = null; this.message = 'Networx mapping readiness could not be verified.' } })
     this.http.get<any>(`${this.url}/auction-capabilities`).subscribe({ next: x => this.capabilities = x, error: () => this.message = 'Could not load auction capabilities.' })
     this.loadCoverage()
@@ -70,6 +77,30 @@ export class RoutingControlComponent implements OnInit, OnDestroy {
     this.runsLoading = true; this.runsError = ''
     this.http.get<{items: RoutingRun[]}>(`${this.url}/runs?page=1&pageSize=25`).subscribe({
       next: x => { this.runs = x.items || []; this.runsLoading = false }, error: () => { this.runsError = 'Could not load routing runs. Refresh to retry.'; this.runsLoading = false },
+    })
+  }
+  loadBidSettings() {
+    this.bidLoading = true; this.bidError = ''; this.bidSettings = null; this.minimumBidAmount = null
+    this.http.get<{ minimumBidAmount: number; revision: number }>(`${this.url}/bid-settings`).subscribe({
+      next: x => { this.bidSettings = x; this.minimumBidAmount = x.minimumBidAmount; this.bidLoading = false },
+      error: () => { this.bidError = 'Could not load the auction minimum. Refresh before editing.'; this.bidLoading = false },
+    })
+  }
+  get validMinimumBid() {
+    const n = this.minimumBidAmount
+    return n != null && Number.isFinite(n) && n >= 0 && n <= 1000000 && Math.abs(n * 10000 - Math.round(n * 10000)) < 0.000001
+  }
+  saveBidSettings() {
+    if (!this.bidSettings || !this.validMinimumBid || this.bidSaving || this.bidLoading || this.bidError) return
+    this.bidSaving = true; this.bidError = ''; this.bidMessage = ''
+    this.http.put<{ minimumBidAmount: number; revision: number }>(`${this.url}/bid-settings`, {
+      minimumBidAmount: this.minimumBidAmount, expectedRevision: this.bidSettings.revision,
+    }).subscribe({
+      next: x => { this.bidSettings = x; this.minimumBidAmount = x.minimumBidAmount; this.bidSaving = false
+        this.bidMessage = 'Minimum saved for new auctions. Existing auctions and deliveries are unchanged.'
+        if (this.capabilities?.options) this.capabilities.options.minimumBidAmount = x.minimumBidAmount
+      },
+      error: e => { this.bidError = e.status === 409 ? 'Another administrator changed this setting. Reload the minimum before saving again.' : 'Save could not be confirmed. Reload the minimum before trying again.'; this.bidSaving = false },
     })
   }
   save() {

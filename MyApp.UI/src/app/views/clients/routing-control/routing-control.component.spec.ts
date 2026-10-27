@@ -14,8 +14,55 @@ describe('RoutingControlComponent', () => {
     http = TestBed.inject(HttpTestingController)
   })
   afterEach(() => { http.verify(); fixture.destroy() })
+  it('shows equal external bidding without editable priority or a configured ranking', () => {
+    spyOn(component, 'refresh')
+    component.rules = [{ verticalCode: 'Roofing', destinationType: 'ExternalPlatform', platformCode: 'NETWORX', bidAmount: 25, priority: 70, isActive: true }]
+    fixture.detectChanges()
+    const el: HTMLElement = fixture.nativeElement
+    expect(el.textContent).toContain('Configured destinations')
+    expect(el.textContent).toContain('compete concurrently with equal standing')
+    expect(el.textContent).toContain('Not used in auction')
+    expect(el.textContent).not.toContain('Configured ranking')
+    expect(el.textContent).not.toContain('Legacy client priority')
+    const headers = Array.from(el.querySelectorAll('th')).map(x => x.textContent?.trim())
+    expect(headers).not.toContain('Priority')
+  })
+  it('loads and saves zero without changing auction settings until save is clicked', () => {
+    component.loadBidSettings()
+    http.expectOne(r => r.url.endsWith('/bid-settings')).flush({ minimumBidAmount: 10, revision: 4 })
+    component.minimumBidAmount = 0
+    http.expectNone(r => r.method === 'PUT')
+    component.saveBidSettings()
+    const save = http.expectOne(r => r.url.endsWith('/bid-settings') && r.method === 'PUT')
+    expect(save.request.body).toEqual({ minimumBidAmount: 0, expectedRevision: 4 })
+    save.flush({ minimumBidAmount: 0, revision: 5 })
+    expect(component.bidSettings?.revision).toBe(5)
+    expect(component.bidMessage).toContain('new auctions')
+  })
+  it('blocks invalid minimums and requires reload after a conflicting edit', () => {
+    component.bidSettings = { minimumBidAmount: 0, revision: 1 }
+    for (const amount of [-1, NaN, 1000001, 0.00001, null]) {
+      component.minimumBidAmount = amount
+      component.saveBidSettings()
+      http.expectNone(r => r.method === 'PUT')
+    }
+    component.minimumBidAmount = 10; component.saveBidSettings()
+    http.expectOne(r => r.method === 'PUT').flush({}, { status: 409, statusText: 'Conflict' })
+    component.saveBidSettings()
+    http.expectNone(r => r.method === 'PUT')
+    expect(component.bidError).toContain('Reload')
+  })
+  it('does not substitute zero if settings cannot be loaded', () => {
+    component.loadBidSettings()
+    http.expectOne(r => r.url.endsWith('/bid-settings')).flush({}, { status: 500, statusText: 'Unavailable' })
+    expect(component.minimumBidAmount).toBeNull()
+    expect(component.bidSettings).toBeNull()
+    component.saveBidSettings()
+    http.expectNone(r => r.method === 'PUT')
+  })
   it('loads capabilities, rules, runs, coverage and mapping readiness independently', () => {
     component.refresh()
+    http.expectOne(r => r.url.endsWith('/bid-settings')).flush({ minimumBidAmount: 0, revision: 1 })
     http.expectOne(r => r.url.endsWith('/networx-readiness')).flush({ items: [], note: 'Verified' })
     http.expectOne(r => r.url.endsWith('/auction-capabilities')).flush({ options: { enabled: false }, providers: [] })
     http.expectOne(r => r.url.endsWith('/coverage')).flush({ total: 0, items: [], services: [] })
