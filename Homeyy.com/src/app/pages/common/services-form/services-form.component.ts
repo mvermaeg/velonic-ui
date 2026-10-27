@@ -157,6 +157,8 @@ zipCodeVerified = false;
         Validators.required
       ],
 
+      comments: ['', Validators.maxLength(2000)],
+
       purchaseTimeFrame: [''],
 
       phone: [
@@ -734,6 +736,8 @@ checkInitialZipCode(): Promise<boolean> {
             bestTimeToCall:
               value.bestTimeToCall ||
               null,
+
+            comments: String(value.comments || '').trim() || null,
 
             answers: value
           })

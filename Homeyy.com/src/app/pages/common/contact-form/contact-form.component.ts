@@ -353,7 +353,7 @@ export class ContactFormComponent
             formType: 'Contact',
             service: value.Service,
             comments:
-              value.Msg || null
+              String(value.Msg || '').trim() || null
           })
       })
       .subscribe({

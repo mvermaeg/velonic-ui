@@ -90,6 +90,12 @@
                 <div class="error-text" *ngIf="getError('email') as error">{{ error }}</div>
               </div>
 
+            <div class="form-group">
+              <label for="quote-comments">Additional project details (optional)</label>
+              <textarea id="quote-comments" formControlName="comments" rows="4" maxlength="2000"
+                        placeholder="Tell us more about the work you need."></textarea>
+            </div>
+
               <p class="disclaimer">
                 By clicking Get A Quote Today, you agree to Homeyy's Terms of Service and Privacy Policy.
                 You authorize Homeyy, its partners and service professionals, or parties acting on their behalf,

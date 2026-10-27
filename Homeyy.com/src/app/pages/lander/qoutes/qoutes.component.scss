@@ -99,7 +99,7 @@
     .form-group {
         margin-bottom: 20px;
 
-        input {
+        input, textarea {
             width: 100%;
             padding: 12px;
             border: none;
@@ -492,4 +492,9 @@
 button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+.quote-section .form-group textarea {
+    min-height: 110px;
+    resize: vertical;
+    font-family: inherit;
 }

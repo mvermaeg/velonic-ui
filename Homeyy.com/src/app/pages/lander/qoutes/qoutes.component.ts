@@ -310,6 +310,8 @@ export class QoutesComponent implements OnInit {
         ]
       ],
 
+      comments: ['', Validators.maxLength(2000)],
+
       purchaseTimeFrame: [''],
 
       phone: [
@@ -817,6 +819,7 @@ export class QoutesComponent implements OnInit {
             value.purchaseTimeFrame || null,
           bestTimeToCall:
             value.bestTimeToCall || null,
+          comments: String(value.comments || '').trim() || null,
           answers: value
         })
     }).subscribe({

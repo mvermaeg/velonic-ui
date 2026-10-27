@@ -6,7 +6,8 @@ import { QoutesComponent } from '../pages/lander/qoutes/qoutes.component';
 
 describe('Public lead form payloads and duplicate protection', () => {
   for (const kind of ['service', 'contact', 'quote']) {
-    it(kind + ' sends the API fields once while waiting for the certificate and request', async () => {
+    for (const comments of ['  My roof leaks near the chimney. Please call after 5.  ', '   ']) {
+    it(kind + (comments.trim() ? ' with customer notes' : ' without optional notes') + ' sends the API fields once while waiting for the certificate and request', async () => {
       let resolveCertificate!: (value: string | null) => void;
       const response = new Subject<any>();
       const api: any = {
@@ -17,7 +18,7 @@ describe('Public lead form payloads and duplicate protection', () => {
       const fb = new FormBuilder();
       const values = { firstName: 'Test', lastName: 'Homeowner', email: 'test@example.com',
         phone: '2025550123', address: '1 Test Street', zipCode: '02108', zip: '02108',
-        homeOwner: 'yes', purchaseTimeFrame: 'Immediately', bestTimeToCall: 'Morning' };
+        homeOwner: 'yes', comments, purchaseTimeFrame: 'Immediately', bestTimeToCall: 'Morning' };
       let component: any;
       let submit: () => Promise<void>;
       if (kind === 'service') {
@@ -27,7 +28,7 @@ describe('Public lead form payloads and duplicate protection', () => {
       } else if (kind === 'contact') {
         component = new ContactFormComponent(fb, {} as any, api, {} as any);
         submit = () => component.saveContactLead({ Name: 'Test Homeowner', Email: values.email,
-          Mobile: values.phone, Service: 'Roofing', Address: values.address, Zipcode: '02108', Msg: 'Test' });
+          Mobile: values.phone, Service: 'Roofing', Address: values.address, Zipcode: '02108', Msg: comments });
       } else {
         component = new QoutesComponent({} as any, {} as any, fb, {} as any, api);
         component.serviceCode = 'roofing'; component.service_name = 'Roofing';
@@ -46,11 +47,34 @@ describe('Public lead form payloads and duplicate protection', () => {
         countryCode: 'US', isTest: false, isCompleted: true, isTcpaCompliant: true,
         trustedFormCertificateUrl: null, landingPageUrl: window.location.href }));
       expect(body.fingerprintHash).toBeTruthy();
-      expect(JSON.parse(body.additionalDataJson).formType).toBeTruthy();
+      const details = JSON.parse(body.additionalDataJson);
+      expect(details.formType).toBeTruthy();
+      expect(details.comments).toBe(comments.trim() || null);
       expect(body.provider).toBeUndefined();
       expect(body.winner).toBeUndefined();
       response.error({ error: { message: 'Test failure' } });
       expect(component.isSubmitting).toBeFalse();
     });
+    }
   }
+});
+
+describe('Optional customer comments on quote wizards', () => {
+  it('landing wizard accepts empty comments and bounds the input length', () => {
+    const component: any = new ServicesFormComponent(new FormBuilder(), {} as any, {} as any, {} as any);
+    const control = component.form.get('comments');
+    expect(control).toBeTruthy();
+    expect(control.valid).toBeTrue();
+    control.setValue('x'.repeat(2001));
+    expect(control.hasError('maxlength')).toBeTrue();
+  });
+  it('service quote form accepts empty comments and bounds the input length', () => {
+    const component: any = new QoutesComponent({} as any, {} as any, new FormBuilder(), {} as any, {} as any);
+    component.buildForm();
+    const control = component.quoteForm.get('comments');
+    expect(control).toBeTruthy();
+    expect(control.valid).toBeTrue();
+    control.setValue('x'.repeat(2001));
+    expect(control.hasError('maxlength')).toBeTrue();
+  });
 });
