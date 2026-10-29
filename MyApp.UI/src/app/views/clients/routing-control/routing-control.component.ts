@@ -26,6 +26,18 @@ export class RoutingControlComponent implements OnInit, OnDestroy {
   message = ''
   rules: any[] = []
   runs: RoutingRun[] = []
+  runsPage = 1
+  runsPageSize = 25
+  runsTotal = 0
+  private runsRequest = 0
+  private requestedRunsPage = 1
+  get runsTotalPages() { return Math.max(1, Math.ceil(this.runsTotal / this.runsPageSize)) }
+  get runsFirst() { return this.runs.length ? (this.runsPage - 1) * this.runsPageSize + 1 : 0 }
+  get runsLast() { return this.runs.length ? this.runsFirst + this.runs.length - 1 : 0 }
+  get runsPages() {
+    const start = Math.max(1, Math.min(this.runsPage - 2, this.runsTotalPages - 4))
+    return Array.from({ length: Math.min(5, this.runsTotalPages) }, (_, i) => start + i)
+  }
   capabilities: any = null
   detail: RunDetail | null = null
   readiness: NetworxReadiness | null = null
@@ -40,7 +52,7 @@ export class RoutingControlComponent implements OnInit, OnDestroy {
   reconciling = false
   now = Date.now()
   private timer = setInterval(() => this.now = Date.now(), 1000)
-  ngOnDestroy() { clearInterval(this.timer) }
+  ngOnDestroy() { clearInterval(this.timer); this.runsRequest++ }
   utc(value?: string): number { return value ? Date.parse(/Z$|[+-]\d\d:\d\d$/.test(value) ? value : value + 'Z') : this.now }
   get secondsRemaining() { return Math.max(0, Math.ceil((this.utc(this.detail?.run.auctionClosesOn) - this.now) / 1000)) }
   get durationSeconds() { const r = this.detail?.run; return r?.auctionStartedOn ? Math.max(0, Math.floor((this.utc(r.winnerLockedOn || r.completedOn) - this.utc(r.auctionStartedOn)) / 1000)) : 0 }
@@ -74,11 +86,41 @@ export class RoutingControlComponent implements OnInit, OnDestroy {
       next: x => { this.rules = x || []; this.loading = false },
       error: e => { this.message = e?.error?.message || 'Could not load routing rules.'; this.loading = false },
     })
+    this.loadRuns()
+  }
+  loadRuns(page = this.runsPage) {
+    const target = Math.max(1, Math.trunc(page))
+    if (!Number.isFinite(target)) return
+    this.requestedRunsPage = target
+    const request = ++this.runsRequest
+    const pageSize = this.runsPageSize
     this.runsLoading = true; this.runsError = ''
-    this.http.get<{items: RoutingRun[]}>(`${this.url}/runs?page=1&pageSize=25`).subscribe({
-      next: x => { this.runs = x.items || []; this.runsLoading = false }, error: () => { this.runsError = 'Could not load routing runs. Refresh to retry.'; this.runsLoading = false },
+    this.http.get<{items: RoutingRun[]; total: number}>(`${this.url}/runs?page=${target}&pageSize=${pageSize}`).subscribe({
+      next: x => {
+        if (request !== this.runsRequest) return
+        const total = Math.max(0, x.total || 0)
+        const lastPage = Math.max(1, Math.ceil(total / pageSize))
+        this.runsTotal = total
+        if (target > lastPage) { this.loadRuns(lastPage); return }
+        this.runs = x.items || []; this.runsPage = target; this.runsLoading = false
+      },
+      error: () => {
+        if (request !== this.runsRequest) return
+        this.runsError = 'Could not load routing history. Retry this page.'; this.runsLoading = false
+      },
     })
   }
+  retryRuns() { this.loadRuns(this.requestedRunsPage) }
+  goRunsPage(page: number) {
+    if (this.runsLoading || page < 1 || page > this.runsTotalPages || page === this.runsPage) return
+    this.loadRuns(page)
+  }
+  changeRunsPageSize(size: number) {
+    if (this.runsLoading || ![10, 25, 50, 100].includes(Number(size))) return
+    this.runsPageSize = Number(size); this.runsPage = 1; this.runs = []
+    this.loadRuns(1)
+  }
+  openRun(id: number) { this.selectedRunId = id; this.selectRun() }
   loadBidSettings() {
     this.bidLoading = true; this.bidError = ''; this.bidSettings = null; this.minimumBidAmount = null
     this.http.get<{ minimumBidAmount: number; revision: number }>(`${this.url}/bid-settings`).subscribe({
